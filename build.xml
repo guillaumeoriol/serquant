@@ -1,0 +1,1328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Description of svn properties:
+ svn.info                output of the svn info -r HEAD command
+ svn.info.url            excerpt of the ${svn.info} representing the "URL" property
+ svn.info.root           excerpt of the ${svn.info} representing the "Repository Root" property
+ svn.info.revision       excerpt of the ${svn.info} representing the "Revision" property
+ svn.config.tag          tags subdirectory (set in application.properties file) as it cannot be obtained by any svn command
+ rep.version.old          user input
+ rep.version.new          user input
+ rep.version.new.revision ${rep.version.new} minus leading at sign
+ rep.version.new.build    subdirectory where ${rep.version.new} will be checked out or sync
+ rep.version.old.label    expanded ${rep.version.old} used to build changelog name
+ rep.version.new.label    expanded ${rep.version.new} used to build changelog name
+ repository.access.none  flag to determine if any repository access will be done during build 
+ svn.url.old             computed URL (with optional revision) used in svn diff command
+ svn.url.old.path        computed URL (without revision) used to compute svn.url.old.source
+ svn.url.old.source      computed URL (without revision but with source.root.dir) used to remove svn path from svn diff output
+ svn.url.new             computed URL (with optional revision) used in svn diff command
+ svn.url.new.subset      computed URL (with subset and optional revision) used in svn co command
+ svn.url.new.path        computed URL (with subset but without revision) used to clean previous checkout
+-->
+<project name="default" default="dev" basedir=".">
+    <!-- needed by the propertyregex task -->
+    <taskdef resource="net/sf/antcontrib/antlib.xml" />
+
+    <tstamp>
+        <format property="tstamp" pattern="yyyy-MM-dd'T'HH-mm" />
+    </tstamp>
+
+    <!-- =================================================================== -->
+
+    <macrodef name="remoteAction">
+        <attribute name="action" />
+        <attribute name="server" />
+        <attribute name="userid" />
+        <attribute name="password" />
+        <attribute name="remotedir" />
+        <attribute name="fileset" />
+        <sequential>
+            <ftp action="@{action}"
+                 server="@{server}"
+                 userid="@{userid}"
+                 password="@{password}"
+                 remotedir="@{remotedir}/"
+                 passive="yes"
+                 verbose="yes">
+                <fileset refid="@{fileset}" />
+            </ftp>
+        </sequential>
+    </macrodef>
+
+    <!-- check maintenance file -->
+    <target name="check.maintenancefile">
+        <available file="./build/${maintenance.file}"
+                   property="maintenance.file.present" />
+    </target>
+
+    <!-- send maintenance file via FTP -->
+    <target name="send.remote.maintenancefile"
+            depends="check.maintenancefile"
+            if="maintenance.file.present"
+            unless="changelog">
+        <echo>Send maintenance file (${maintenance.file}) to [${target.host}]</echo>
+        <fileset id="maintenance.fileset"
+                 dir="./build"
+                 includes="${maintenance.file}" />
+        <remoteAction action="put"
+                      server="${target.host}"
+                      userid="${target.user}"
+                      password="${target.password}"
+                      remotedir="public"
+                      fileset="maintenance.fileset" />
+    </target>
+
+    <!-- delete maintenance file via FTP -->
+    <target name="send.remote.del.maintenancefile"
+            depends="check.maintenancefile"
+            if="maintenance.file.present"
+            unless="changelog">
+        <echo>Delete maintenance file (${maintenance.file}) to [${target.host}]</echo>
+        <fileset id="maintenance.fileset" includes="${maintenance.file}" />
+        <remoteAction action="del"
+                      server="${target.host}"
+                      userid="${target.user}"
+                      password="${target.password}"
+                      remotedir="public"
+                      fileset="maintenance.fileset" />
+    </target>
+
+    <!-- send all files, except filtered ones, via FTP -->
+    <target name="send.remote.all" unless="changelog">
+        <echo>Send all files by FTP, except filtered ones to [${target.host}]</echo>
+        <remoteAction action="put"
+                      server="${target.host}"
+                      userid="${target.user}"
+                      password="${target.password}"
+                      remotedir="${target.root.dir}"
+                      fileset="fs.build.raw" />
+    </target>
+
+    <!-- send files from changelog, except filtered ones, via FTP -->
+    <target name="send.remote.delta.del" if="changelog.del.present">
+        <echo>Delete files listed in delta [${changelog}.del] by FTP, except filtered ones from [${target.host}]</echo>
+        <remoteAction action="del"
+                      server="${target.host}"
+                      userid="${target.user}"
+                      password="${target.password}"
+                      remotedir="${target.root.dir}"
+                      fileset="fs.changelog.del" />
+    </target>
+
+    <target name="send.remote.delta.put" if="changelog.put.present">
+        <echo>Send files listed in delta [${changelog}.put] by FTP, except filtered ones to [${target.host}]</echo>
+        <remoteAction action="put"
+                      server="${target.host}"
+                      userid="${target.user}"
+                      password="${target.password}"
+                      remotedir="${target.root.dir}"
+                      fileset="fs.changelog.put" />
+    </target>
+
+    <!-- send filtered files via FTP -->
+    <target name="send.remote.filtered" if="build.filtered.exist">
+        <echo>Send filtered files by FTP to [${target.host}]</echo>
+        <remoteAction action="put"
+                      server="${target.host}"
+                      userid="${target.user}"
+                      password="${target.password}"
+                      remotedir="${target.root.dir}"
+                      fileset="fs.build.filtered" />
+    </target>
+
+    <!-- send files via FTP -->
+    <target name="send.remote" if="remote.isset">
+        <antcall target="send.remote.maintenancefile" inheritrefs="true" />
+        <antcall target="send.remote.all" inheritrefs="true" />
+        <antcall target="send.remote.delta.del" inheritrefs="true" />
+        <antcall target="send.remote.delta.put" inheritrefs="true" />
+        <antcall target="send.remote.filtered" inheritrefs="true" />
+        <antcall target="send.remote.del.maintenancefile" inheritrefs="true" />
+    </target>
+
+    <!-- =================================================================== -->
+
+    <macrodef name="localCopy">
+        <attribute name="fileset" />
+        <sequential>
+            <copy todir="${target.root.dir}"
+                  overwrite="yes"
+                  includeEmptyDirs="yes"
+                  verbose="yes">
+                <fileset refid="@{fileset}" />
+            </copy>
+        </sequential>
+    </macrodef>
+
+    <!-- copy all files, except filtered ones -->
+    <target name="send.local.all.with.preserves" if="preserves.exist">
+        <echo>Copy all files, except filtered ones (preserving files listed in [${target.file.preserves}])</echo>
+        <sync todir="${target.root.dir}"
+              overwrite="false"
+              includeEmptyDirs="true"
+              verbose="false">
+            <fileset refid="fs.build.raw" />
+            <preserveintarget>
+                <includesfile name="${target.file.preserves}" />
+            </preserveintarget>
+        </sync>
+    </target>
+
+    <target name="send.local.all.without.preserves" unless="preserves.exist">
+        <echo>Copy all files, except filtered ones (no target file preserved)</echo>
+        <sync todir="${target.root.dir}"
+              overwrite="false"
+              includeEmptyDirs="true"
+              verbose="false">
+            <fileset refid="fs.build.raw" />
+        </sync>
+    </target>
+
+    <target name="send.local.all" unless="changelog">
+        <antcall target="send.local.all.with.preserves" inheritrefs="true" />
+        <antcall target="send.local.all.without.preserves" inheritrefs="true" />
+    </target>
+
+    <!-- copy files from changelog, except filtered ones -->
+    <target name="send.local.delta.del" if="changelog.del.present">
+        <echo>Delete files listed in delta [${changelog}.del]</echo>
+        <delete includeEmptyDirs="yes" verbose="yes">
+            <fileset refid="fs.changelog.del" />
+        </delete>
+    </target>
+
+    <target name="send.local.delta.put" if="changelog.put.present">
+        <echo>Copy files listed in delta [${changelog}.put], except filtered ones</echo>
+        <localCopy fileset="fs.changelog.put" />
+    </target>
+
+    <!-- copy filtered files -->
+    <target name="send.local.filtered" if="build.filtered.exist">
+        <echo>Copy filtered files</echo>
+        <localCopy fileset="fs.build.filtered" />
+    </target>
+
+    <!-- send files to local file system -->
+    <target name="send.local" unless="remote.isset">
+        <antcall target="send.local.all" inheritrefs="true" />
+        <antcall target="send.local.delta.del" inheritrefs="true" />
+        <antcall target="send.local.delta.put" inheritrefs="true" />
+        <antcall target="send.local.filtered" inheritrefs="true" />
+    </target>
+
+    <target name="send.preserve.filtered" if="build.filtered.exist">
+        <echo>Delete files listed in [${target.file.preserves}] from [${build.filtered.dir}/${source.root.dir}] in order to preserve them in target</echo>
+        <delete includeEmptyDirs="yes" verbose="no">
+            <fileset dir="${build.filtered.dir}/${source.root.dir}"
+                     includesfile="${target.file.preserves}"
+                     casesensitive="yes" />
+        </delete>
+    </target>
+
+    <target name="send.preserve.others">
+        <echo>Delete files listed in [${target.file.preserves}] from [${build.raw.dir}/${source.root.dir}] in order to preserve them in target</echo>
+        <delete includeEmptyDirs="yes" verbose="no">
+            <fileset dir="${build.raw.dir}/${source.root.dir}"
+                     includesfile="${target.file.preserves}"
+                     casesensitive="yes" />
+        </delete>
+    </target>
+
+    <target name="send.preserve.conditional" if="preserves.exist">
+        <antcall target="send.preserve.filtered" inheritrefs="true" />
+        <antcall target="send.preserve.others" inheritrefs="true" />
+    </target>
+
+    <target name="send.preserve" if="preserve.delete">
+        <antcall target="send.preserve.conditional" inheritrefs="true" />
+    </target>
+
+    <target name="send" depends="send.preserve,send.local,send.remote" />
+
+    <!-- =================================================================== -->
+    <target name="configure" if="filters.isset">
+        <echo>Configure target-dependent files from [${build.raw.dir}]</echo>
+
+        <!--
+   As Ant properties are immutable, the first value that is set will
+   not be changed by subsequent assignations. The opposite rule applies
+   for filters: the last value set to a token remains. Therefore, we 
+   reverse the order here.
+     -->
+        <filterset id="filter.set" begintoken="@" endtoken="@">
+            <filtersfile file="${filter.properties.mix}" />
+            <filtersfile file="${filter.properties.customer}" />
+            <filtersfile file="${filter.properties.user}" />
+            <filtersfile file="${filter.properties.server}" />
+            <filter token="VERSION_DEPLOYED" value="${deploy.version}" />
+        </filterset>
+
+        <property name="build.filtered.dir" value="${build.raw.dir}-filtered" />
+        <!-- delete filtered folder to check its existence after the copy -->
+        <delete dir="${build.filtered.dir}" />
+
+        <copy todir="${build.filtered.dir}/${source.root.dir}"
+              overwrite="yes"
+              includeEmptyDirs="yes"
+              filtering="true"
+              encoding="ISO-8859-1"
+              verbose="yes">
+            <fileset dir="${build.raw.dir}/${source.root.dir}">
+                <includesfile name="${source.file.filters}" />
+            </fileset>
+            <filterset refid="filter.set" />
+        </copy>
+        <available property="build.filtered.exist"
+                   file="${build.filtered.dir}/${source.root.dir}"
+                   type="dir" />
+
+        <!-- this set will be used to copy the filtered files to target -->
+        <fileset id="fs.build.filtered"
+                 dir="${build.filtered.dir}/${source.root.dir}">
+            <includesfile name="${source.file.filters}" />
+        </fileset>
+
+        <!-- only delete files if a changelog exists or if they will be sent by FTP -->
+        <condition property="preserve.delete">
+            <or>
+                <isset property="remote.isset" />
+                <isset property="changelog" />
+            </or>
+        </condition>
+    </target>
+
+    <!-- =================================================================== -->
+
+    <!-- get files from local file system -->
+    <target name="checkout.local" if="temp.new.is.work">
+        <echo>Get files from local workspace</echo>
+        <sync todir="${build.raw.dir}/${subset.path}"
+              overwrite="false"
+              includeEmptyDirs="true"
+              verbose="false">
+            <fileset dir="${subset.path}" />
+        </sync>
+    </target>
+
+    <target name="checkout.svn.exist" unless="temp.new.is.work">
+        <echo>Check if previous path properties file [${rep.version.new.build}.properties] exists</echo>
+        <condition property="previous.checkout.isset">
+            <and>
+                <available file="${rep.version.new.build}.properties"
+                           filepath="${build.project.dir}" />
+                <length file="${build.project.dir}/${rep.version.new.build}.properties"
+                        when="gt"
+                        length="0" />
+            </and>
+        </condition>
+    </target>
+
+    <target name="checkout.svn.diff"
+            if="previous.checkout.isset"
+            depends="checkout.svn.exist">
+        <property file="${build.project.dir}/${rep.version.new.build}.properties" />
+        <echo>Check if current path [${svn.url.new.path}]</echo>
+        <echo>differs from previous [${previous.checkout.path}]</echo>
+        <condition property="previous.checkout.different">
+            <and>
+                <isset property="previous.checkout.path" />
+                <not>
+                    <equals arg1="${previous.checkout.path}"
+                            arg2="${svn.url.new.path}"
+                            casesensitive="false"
+                            trim="true" />
+                </not>
+            </and>
+        </condition>
+    </target>
+
+    <target name="checkout.svn.clean"
+            if="previous.checkout.different"
+            depends="checkout.svn.diff">
+        <echo>Delete previous build directory [${build.raw.dir}] because current subset is different from previous</echo>
+        <delete dir="${build.raw.dir}" />
+    </target>
+
+    <!--
+   We need to delete the previous build directory when subset changes
+   because SVN would not allow to checkout different subsets in the same
+   working directory.
+   -->
+    <target name="checkout.svn.before"
+            unless="temp.new.is.work"
+            depends="checkout.svn.clean">
+        <echo>Save current subset path to [${rep.version.new.build}.properties] file</echo>
+        <mkdir dir="${build.project.dir}/current" />
+        <mkdir dir="${build.project.dir}/tags" />
+        <echo file="${build.project.dir}/${rep.version.new.build}.properties"
+              append="false">previous.checkout.path=${svn.url.new.path}</echo>
+    </target>
+
+    <!-- 
+   Get files from SVN repository.
+   We do not restrict the checkout to the subset path defined
+   because the SVN client fails when the last set checked out
+   doesn't match the current one. (We would be obliged to delete
+   the working copy after each deploy and consequently do a complete
+   checkout every time (which is time consuming).
+   -->
+    <target name="checkout.svn"
+            unless="temp.new.is.work"
+            depends="checkout.svn.before">
+        <echo>Get files from SVN repository [${svn.url.new.subset}] to [${build.raw.dir}/${subset.path}]</echo>
+        <java classname="org.tmatesoft.svn.cli.SVN" failonerror="true">
+            <!--
+             Be careful: the login and password set here are NOT the server user account
+             but the one set in SVN password database file defined in the repository
+             configuration folder.
+             -->
+            <arg value="--username" />
+            <arg value="${svn.user}" />
+            <arg value="--password" />
+            <arg value="${svn.password}" />
+            <arg value="checkout" />
+            <arg value="${svn.url.new.subset}" />
+            <arg value="${build.raw.dir}/${subset.path}" />
+        </java>
+    </target>
+
+    <target name="checkout" depends="checkout.local,checkout.svn" />
+
+    <!-- =================================================================== -->
+
+    <!--
+   Two JARs from SVNKit are needed by the SVN tasks: svnkit.jar and svnkit-cli.jar.
+   They are made available thru the Preferences: Ant > Runtime > Classpath. 
+   When JVM is forked, the classpath of the java task is NOT the classpath of the
+   Ant script. Consequently, we need to add 'classpath="${java.class.path}"'
+   to the java tag only in this situation.
+   -->
+    <!-- 
+   Select by SVN status.
+   Summarizing diff can only compare repository to repository.
+   Consequently we need another way to get differences from working copy:
+   the svn status command. Unfortunately, this command is unable to compare 
+   working copy with a specific target.
+   -->
+    <target name="select.delta.status" if="select.by.status">
+        <echo>target old=[${rep.version.old.label}]</echo>
+        <echo>target new=[${rep.version.new.label}]</echo>
+        <property name="changelog"
+                  value="${rep.version.old.label}-${rep.version.new.label}.diff" />
+        <echo>Compute changelog [${changelog}] by svn status command</echo>
+
+        <java classname="org.tmatesoft.svn.cli.SVN"
+              output="${build.project.dir}/${changelog}"
+              logError="true"
+              failonerror="true">
+            <!-- 
+             The svn status command doesn't need any login/password. Unfortunately, 
+             the SVNkit connector all the same requires an authentication.
+             -->
+            <arg value="--username" />
+            <arg value="${svn.user}" />
+            <arg value="--password" />
+            <arg value="${svn.password}" />
+            <arg value="status" />
+            <arg value="${subset.path}" />
+        </java>
+        <condition property="changelog.present">
+            <and>
+                <available file="${changelog}"
+                           filepath="${build.project.dir}" />
+                <length file="${build.project.dir}/${changelog}"
+                        when="gt"
+                        length="0" />
+            </and>
+        </condition>
+        <!--
+         In previous SVN versions (don't know exactly when it changed, 1.6.?) 
+         when invoked thru SVNKit, the "svn status" command listed file names
+         with complete path, including the path specified as last argument,
+         while "svn diff" command was listing file names without the path part 
+         specified as last argument. Now, both output complete path.
+         -->
+        <property name="path.to.remove" value="${source.root.dir}[\\/]*" />
+        <property name="path.to.add" value="" />
+    </target>
+
+    <!-- execute svn diff command  - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="select.delta.diff.prepare.uc1" if="root.isset">
+        <property name="svn.url.old.source"
+                  value="${svn.url.old.path}/${source.root.dir}" />
+    </target>
+
+    <target name="select.delta.diff.prepare.uc2" unless="root.isset">
+        <property name="svn.url.old.source" value="${svn.url.old.path}" />
+    </target>
+
+    <target name="select.delta.diff"
+            if="select.by.diff"
+            depends="select.delta.diff.prepare.uc1,select.delta.diff.prepare.uc2">
+        <property name="changelog"
+                  value="${rep.version.old.label}-${rep.version.new.label}.diff" />
+        <echo>Compute changelog [${changelog}] by svn diff command</echo>
+        <echo>  (old URL=[${svn.url.old}])</echo>
+        <echo>  (new URL=[${svn.url.new}])</echo>
+        <!--
+     The 'outputproperty' attribute is only available when fork=true
+     but the 'output' attribute is always available.
+     -->
+        <java classname="org.tmatesoft.svn.cli.SVN"
+              output="${build.project.dir}/${changelog}"
+              logError="true"
+              failonerror="true">
+            <!--
+             Be careful: the login and password set here are NOT the server user account
+             but the one set in SVN password database file defined in the repository
+             configuration folder.
+             -->
+            <arg value="--username" />
+            <arg value="${svn.user}" />
+            <arg value="--password" />
+            <arg value="${svn.password}" />
+            <arg value="diff" />
+            <arg value="--summarize" />
+            <arg value="--old" />
+            <arg value="${svn.url.old}" />
+            <arg value="--new" />
+            <arg value="${svn.url.new}" />
+            <arg value="${subset.path}" />
+        </java>
+        <condition property="changelog.present">
+            <and>
+                <available file="${changelog}"
+                           filepath="${build.project.dir}" />
+                <length file="${build.project.dir}/${changelog}"
+                        when="gt"
+                        length="0" />
+            </and>
+        </condition>
+        <!--
+         In previous SVN versions (don't know exactly when it changed, 1.6.?) 
+         when invoked thru SVNKit, the "svn status" command listed file names
+         with complete path, including the path specified as last argument,
+         while "svn diff" command was listing file names without the path part 
+         specified as last argument. Now, both output complete path.
+         -->
+        <property name="path.to.remove" value="${svn.url.old.source}[\\/]*" />
+        <property name="path.to.add" value="${subset.dir.on-the-left}" />
+    </target>
+
+    <!-- split changelog into del and put file sets  - - - - - - - - - - - - -->
+
+    <target name="select.delta"
+            if="changelog.present"
+            depends="select.delta.status,select.delta.diff">
+        <echo>Split changelog between del and put file sets</echo>
+        <echo>  (path to add=[${path.to.add}])</echo>
+        <echo>  (path to remove=[${path.to.remove}])</echo>
+        <copy file="${build.project.dir}/${changelog}"
+              tofile="${build.project.dir}/${changelog}.del"
+              overwrite="true">
+            <filterchain>
+                <linecontainsregexp>
+                    <regexp pattern="^[D]" />
+                    <!-- delete -->
+                </linecontainsregexp>
+                <tokenfilter>
+                    <replacestring from="\" to="/" />
+                    <!-- A new column (8th) was added to the svn status output in SVN client 1.6 -->
+                    <replaceregex pattern="^........${path.to.remove}(.*)$$"
+                                  replace="${path.to.add}\1" />
+                    <trim />
+                </tokenfilter>
+            </filterchain>
+        </copy>
+        <condition property="changelog.del.present">
+            <and>
+                <available file="${changelog}.del"
+                           filepath="${build.project.dir}" />
+                <length file="${build.project.dir}/${changelog}.del"
+                        when="gt"
+                        length="0" />
+            </and>
+        </condition>
+        <fileset id="fs.changelog.del" dir="${target.root.dir}">
+            <includesfile name="${build.project.dir}/${changelog}.del" />
+        </fileset>
+
+        <copy file="${build.project.dir}/${changelog}"
+              tofile="${build.project.dir}/${changelog}.put"
+              overwrite="true">
+            <filterchain>
+                <linecontainsregexp>
+                    <regexp pattern="^[AMR?]" />
+                    <!-- add, modify, replace, not under version control -->
+                </linecontainsregexp>
+                <tokenfilter>
+                    <replacestring from="\" to="/" />
+                    <!-- A new column (8th) was added to the svn status output in SVN client 1.6 -->
+                    <replaceregex pattern="^........${path.to.remove}(.*)$$"
+                                  replace="${path.to.add}\1" />
+                    <trim />
+                </tokenfilter>
+            </filterchain>
+        </copy>
+        <condition property="changelog.put.present">
+            <and>
+                <available file="${changelog}.put"
+                           filepath="${build.project.dir}" />
+                <length file="${build.project.dir}/${changelog}.put"
+                        when="gt"
+                        length="0" />
+            </and>
+        </condition>
+        <fileset id="fs.changelog.put"
+                 dir="${build.raw.dir}/${source.root.dir}">
+            <includesfile name="${build.project.dir}/${changelog}.put" />
+            <patternset refid="ps.source.raw" />
+        </fileset>
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <!-- XXXXXXXXXXXXXXXXXXXX erase below this line XXXXXXXXXXXXXXXXXXXXXXXX -->
+
+    <target name="init.subset.1" if="root.isset.subset.isset">
+        <echo>Info: both root and subset are set</echo>
+        <property name="subset.dir.on-the-left" value="${subset.dir}/" />
+        <property name="subset.path" value="${source.root.dir}/${subset.dir}" />
+        <property name="subset.path.on-the-right" value="/${subset.path}" />
+        <property name="subset.pattern" value="${subset.path}/**" />
+    </target>
+
+    <target name="init.subset.2" if="root.isnot.subset.isnot">
+        <echo>Info: both root and subset are not set</echo>
+        <property name="subset.dir.on-the-left" value="" />
+        <property name="subset.path" value="" />
+        <property name="subset.path.on-the-right" value="" />
+        <property name="subset.pattern" value="**" />
+    </target>
+
+    <target name="init.subset.3" if="root.isset.subset.isnot">
+        <echo>Info: root is set but subset is not</echo>
+        <property name="subset.dir.on-the-left" value="" />
+        <property name="subset.path" value="${source.root.dir}" />
+        <property name="subset.path.on-the-right" value="/${subset.path}" />
+        <property name="subset.pattern" value="${source.root.dir}/**" />
+    </target>
+
+    <target name="init.subset.4" if="root.isnot.subset.isset">
+        <echo>Info: root is not set but subset is</echo>
+        <property name="subset.dir.on-the-left" value="${subset.dir}/" />
+        <property name="subset.path" value="${subset.dir}" />
+        <property name="subset.path.on-the-right" value="/${subset.path}" />
+        <property name="subset.pattern" value="${subset.dir}/**" />
+    </target>
+
+    <target name="init.subset"
+            depends="init.subset.1,init.subset.2,init.subset.3,init.subset.4">
+        <echo>Subset-dependent properties defined</echo>
+        <available property="subset.path.exist"
+                   file="${subset.path}"
+                   type="dir" />
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="init.properties">
+        <condition property="subset.isset">
+            <and>
+                <isset property="subset.dir" />
+                <length string="${subset.dir}"
+                        trim="true"
+                        when="ne"
+                        length="0" />
+            </and>
+        </condition>
+
+        <!-- Are source.root.dir and subset.dir both set? -->
+        <condition property="root.isset.subset.isset">
+            <and>
+                <isset property="root.isset" />
+                <isset property="subset.isset" />
+            </and>
+        </condition>
+        <condition property="root.isnot.subset.isnot">
+            <and>
+                <not>
+                    <isset property="root.isset" />
+                </not>
+                <not>
+                    <isset property="subset.isset" />
+                </not>
+            </and>
+        </condition>
+        <condition property="root.isset.subset.isnot">
+            <and>
+                <isset property="root.isset" />
+                <not>
+                    <isset property="subset.isset" />
+                </not>
+            </and>
+        </condition>
+        <condition property="root.isnot.subset.isset">
+            <and>
+                <not>
+                    <isset property="root.isset" />
+                </not>
+                <isset property="subset.isset" />
+            </and>
+        </condition>
+
+    </target>
+
+    <target name="init.common"
+            depends="init.properties,init.patternset,init.subset">
+        <fail unless="subset.path.exist"
+              message="Unable to find directory ${subset.path}" />
+        <echo>Info: path [${subset.path}] exists</echo>
+    </target>
+
+    <!-- XXXXXXXXXXXXXXXXXXXX erase above this line XXXXXXXXXXXXXXXXXXXXXXXX -->
+
+    <!-- ======== Public tasks are the ones that have a description ======== -->
+
+    <target name="db.deploy.dev"
+            description="deploy database on DEV server"
+            depends="input.bypass.target.dev,init.properties">
+        <echo>Starting deploy database on DEV server</echo>
+        <exec dir="${bat.location}" executable="${bat.location}/${bat.file}">
+            <arg value="/c" />
+            <arg value="${DB_USERNAME}" />
+            <arg value="${DB_PASSWORD}" />
+            <arg value="${DB_ENCODING}" />
+            <arg value="${DB_HOST}" />
+            <arg value="${DB_DBNAME}" />
+            <arg value="-p" />
+        </exec>
+    </target>
+
+    <target name="db.deploy.test"
+            description="deploy database on TEST server"
+            depends="input.bypass.target.test,init.properties">
+        <echo>Starting deploy database on TEST server</echo>
+        <exec dir="${bat.location}" executable="${bat.location}/${bat.file}">
+            <arg value="/c" />
+            <arg value="${DB_USERNAME}" />
+            <arg value="${DB_PASSWORD}" />
+            <arg value="${DB_ENCODING}" />
+            <arg value="${target.host}" />
+            <arg value="${DB_DBNAME}" />
+            <arg value="-p" />
+        </exec>
+    </target>
+
+    <target name="db.deploy.prod"
+            description="deploy database on PROD server"
+            depends="input.bypass.target.prod,init.properties">
+        <echo>Starting deploy database on PROD server</echo>
+        <exec dir="${bat.location}" executable="${bat.location}/${bat.file}">
+            <arg value="/c" />
+            <arg value="${DB_USERNAME}" />
+            <arg value="${DB_PASSWORD}" />
+            <arg value="${DB_ENCODING}" />
+            <arg value="${target.host}" />
+            <arg value="${DB_DBNAME}" />
+            <arg value="-p" />
+        </exec>
+    </target>
+
+
+    <!-- ################################################################### -->
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <!-- See this ticket for files starting with an at sign (@): http://subversion.tigris.org/issues/show_bug.cgi?id=3416 -->
+
+    <target name="select.switch.new.is.tag" if="temp.new.is.tag">
+        <echo>Info: TO target is a tag</echo>
+        <property name="deploy.version" value="${rep.version.new}" />
+        <property name="svn.url.new"
+                  value="${svn.info.root}/${svn.config.tag}/${rep.version.new}" />
+        <property name="svn.url.new.path"
+                  value="${svn.info.root}/${svn.config.tag}/${rep.version.new}${subset.path.on-the-right}" />
+        <property name="svn.url.new.subset"
+                  value="${svn.info.root}/${svn.config.tag}/${rep.version.new}${subset.path.on-the-right}" />
+        <property name="rep.version.new.label" value="${rep.version.new}" />
+        <property name="rep.version.new.build"
+                  value="tags/${rep.version.new}" />
+        <property name="build.raw.dir"
+                  value="${build.project.dir}/${rep.version.new.build}" />
+        <condition property="select.by.diff">
+            <isset property="temp.old.is.set" />
+        </condition>
+    </target>
+
+    <target name="select.switch.new.is.rev" if="temp.new.is.rev">
+        <echo>Info: TO target is a revision</echo>
+        <property name="deploy.version" value="${rep.version.new}" />
+        <property name="svn.url.new"
+                  value="${svn.info.url}/${rep.version.new}" />
+        <property name="svn.url.new.path"
+                  value="${svn.info.url}${subset.path.on-the-right}" />
+        <property name="svn.url.new.subset"
+                  value="${svn.info.url}${subset.path.on-the-right}/${rep.version.new}" />
+        <propertyregex property="rep.version.new.revision"
+                       input="${rep.version.new}"
+                       regexp="@(.*)"
+                       select="\1"
+                       casesensitive="false" />
+        <echo>Info: TO target is the revision [${rep.version.new.revision}]</echo>
+        <property name="rep.version.new.label" value="${rep.version.new}" />
+        <property name="rep.version.new.build"
+                  value="current/${rep.version.new.revision}" />
+        <property name="build.raw.dir"
+                  value="${build.project.dir}/${rep.version.new.build}" />
+        <condition property="select.by.diff">
+            <isset property="temp.old.is.set" />
+        </condition>
+    </target>
+
+    <target name="select.switch.new.is.head" if="temp.new.is.head">
+        <propertyregex property="svn.info.revision"
+                       input="${svn.info}"
+                       regexp="Revision:\s*([0-9]*)${line.separator}"
+                       select="\1"
+                       casesensitive="false" />
+        <echo>Info: TO target is the head revision [${svn.info.revision}]</echo>
+
+        <property name="deploy.version" value="@${svn.info.revision}" />
+        <property name="svn.url.new"
+                  value="${svn.info.url}/${deploy.version}" />
+        <property name="svn.url.new.path"
+                  value="${svn.info.url}${subset.path.on-the-right}" />
+        <property name="svn.url.new.subset"
+                  value="${svn.info.url}${subset.path.on-the-right}/${deploy.version}" />
+        <property name="rep.version.new.label" value="head" />
+        <property name="rep.version.new.build"
+                  value="current/${svn.info.revision}" />
+        <property name="build.raw.dir"
+                  value="${build.project.dir}/${rep.version.new.build}" />
+        <condition property="select.by.diff">
+            <isset property="temp.old.is.set" />
+        </condition>
+    </target>
+
+    <target name="select.switch.new.is.work" if="temp.new.is.work">
+        <echo>Info: TO target is the working copy</echo>
+        <property name="deploy.version" value="${tstamp}" />
+        <property name="svn.url.new" value="" />
+        <property name="rep.version.new.label" value="work" />
+        <property name="rep.version.new.build" value="current/work" />
+        <property name="build.raw.dir"
+                  value="${build.project.dir}/${rep.version.new.build}" />
+        <condition property="select.by.status">
+            <isset property="temp.old.is.set" />
+        </condition>
+    </target>
+
+    <target name="select.switch.new"
+            depends="select.switch.new.is.work,select.switch.new.is.head,select.switch.new.is.rev,select.switch.new.is.tag" />
+
+    <target name="select.switch.old.is.tag" if="temp.old.is.tag">
+        <echo>Info: FROM target is a tag</echo>
+        <property name="svn.url.old"
+                  value="${svn.info.root}/${svn.config.tag}/${rep.version.old}" />
+        <property name="svn.url.old.path"
+                  value="${svn.info.root}/${svn.config.tag}" />
+        <property name="rep.version.old.label" value="${rep.version.old}" />
+    </target>
+
+    <target name="select.switch.old.is.rev" if="temp.old.is.rev">
+        <echo>Info: FROM target is a revision</echo>
+        <property name="svn.url.old"
+                  value="${svn.info.url}/${rep.version.old}" />
+        <property name="svn.url.old.path" value="${svn.info.url}" />
+        <property name="rep.version.old.label" value="${rep.version.old}" />
+    </target>
+
+    <target name="select.switch.old.is.head" if="temp.old.is.head">
+        <echo>Info: FROM target is the head revision</echo>
+        <property name="svn.url.old" value="${svn.info.url}" />
+        <property name="svn.url.old.path" value="${svn.info.url}" />
+        <property name="rep.version.old.label" value="head" />
+    </target>
+
+    <target name="select.switch.old"
+            depends="select.switch.old.is.head,select.switch.old.is.rev,select.switch.old.is.tag" />
+
+    <target name="select.switch.svn" unless="rep.access.none">
+        <!-- Get repository information along with head revision of current path -->
+        <java classname="org.tmatesoft.svn.cli.SVN"
+              outputproperty="svn.info"
+              failonerror="true">
+            <!-- 
+             The svn info command doesn't need any login/password. Unfortunately, 
+             the SVNkit connector all the same requires an authentication.
+             -->
+            <arg value="--username" />
+            <arg value="${svn.user}" />
+            <arg value="--password" />
+            <arg value="${svn.password}" />
+            <arg value="info" />
+            <arg value="--revision=HEAD" />
+        </java>
+        <!--
+         The Ant java task normalizes the output of the java program executed, replacing
+         the output line separator by the client OS one. But it seems propertyregex is not
+         able to properly interpret the $$ in that situation. As a consequence, we use 
+         the ${line.separator} as a $$ replacement.
+        -->
+        <propertyregex property="svn.info.root"
+                       input="${svn.info}"
+                       regexp="Repository Root:\s*(.*)${line.separator}"
+                       select="\1"
+                       casesensitive="false" />
+        <propertyregex property="svn.info.url"
+                       input="${svn.info}"
+                       regexp="URL:\s*(.*)${line.separator}"
+                       select="\1"
+                       casesensitive="false" />
+        <echo>Repository Root is [${svn.info.root}]</echo>
+        <echo>    Current URL is [${svn.info.url}]</echo>
+    </target>
+
+    <target name="select.switch"
+            depends="select.switch.svn,select.switch.old,select.switch.new" />
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <!-- Determine if any repository access will be necessary -->
+    <target name="select.validate.repository">
+        <condition property="rep.access.none">
+            <and>
+                <isset property="temp.new.is.work" />
+                <not>
+                    <isset property="temp.old.is.set" />
+                </not>
+            </and>
+        </condition>
+    </target>
+
+    <!-- authorized values for new: workspace, head, @rev, tag -->
+    <target name="select.validate.new" if="temp.new.is.set">
+        <condition property="temp.new.is.work">
+            <or>
+                <equals arg1="${rep.version.new}"
+                        arg2="workspace"
+                        casesensitive="false"
+                        trim="true" />
+                <equals arg1="${rep.version.new}"
+                        arg2="work"
+                        casesensitive="false"
+                        trim="true" />
+                <equals arg1="${rep.version.new}"
+                        arg2="w"
+                        casesensitive="false"
+                        trim="true" />
+            </or>
+        </condition>
+
+        <condition property="temp.new.is.head">
+            <or>
+                <equals arg1="${rep.version.new}"
+                        arg2="head"
+                        casesensitive="false"
+                        trim="true" />
+                <equals arg1="${rep.version.new}"
+                        arg2="h"
+                        casesensitive="false"
+                        trim="true" />
+            </or>
+        </condition>
+
+        <condition property="temp.new.is.rev">
+            <matches string="${rep.version.new}" pattern="^@[0-9]+$$" />
+        </condition>
+
+        <condition property="temp.new.is.tag">
+            <matches string="${rep.version.new}"
+                     pattern="^[0-9]+\.[0-9]+\.[0-9]+$$" />
+        </condition>
+    </target>
+
+    <!-- authorized values for old: head, @rev, tag -->
+    <target name="select.validate.old" if="temp.old.is.set">
+        <condition property="temp.old.is.head">
+            <or>
+                <equals arg1="${rep.version.old}"
+                        arg2="head"
+                        casesensitive="false"
+                        trim="true" />
+                <equals arg1="${rep.version.old}"
+                        arg2="h"
+                        casesensitive="false"
+                        trim="true" />
+            </or>
+        </condition>
+
+        <condition property="temp.old.is.rev">
+            <matches string="${rep.version.old}" pattern="^@[0-9]+$$" />
+        </condition>
+
+        <condition property="temp.old.is.tag">
+            <matches string="${rep.version.old}"
+                     pattern="^[0-9]+(\.[0-9]+)*$$" />
+        </condition>
+    </target>
+
+    <target name="select.validate"
+            depends="select.validate.old,select.validate.new,select.validate.repository">
+        <fail unless="temp.new.is.set"
+              message="The target to deploy is not defined" />
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="select.prepare">
+        <condition property="temp.old.is.set">
+            <and>
+                <isset property="rep.version.old" />
+                <length string="${rep.version.old}"
+                        trim="true"
+                        when="ne"
+                        length="0" />
+                <!-- workspace is forbidden here -->
+                <not>
+                    <equals arg1="${rep.version.old}"
+                            arg2="workspace"
+                            casesensitive="false"
+                            trim="true" />
+                </not>
+                <not>
+                    <equals arg1="${rep.version.old}"
+                            arg2="work"
+                            casesensitive="false"
+                            trim="true" />
+                </not>
+                <not>
+                    <equals arg1="${rep.version.old}"
+                            arg2="w"
+                            casesensitive="false"
+                            trim="true" />
+                </not>
+            </and>
+        </condition>
+
+        <condition property="temp.new.is.set">
+            <and>
+                <isset property="rep.version.new" />
+                <length string="${rep.version.new}"
+                        trim="true"
+                        when="ne"
+                        length="0" />
+            </and>
+        </condition>
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="select.input" unless="rep.version.new">
+        <input message="Previously deployed target${line.separator}- blank: no incremental deploy will be performed${line.separator}- 1.2.3: incremental deploy from this tag${line.separator}- @123: incremental deploy from this revision${line.separator}- head (or 'h' for short): incremental deploy from head revision"
+               addproperty="rep.version.old" />
+        <input message="Target to deploy${line.separator}- 1.2.3: deploy this tag${line.separator}- @123: deploy this revision${line.separator}- head (or 'h' for short): deploy head revision${line.separator}- work (or 'w' for short): deploy working copy"
+               addproperty="rep.version.new" />
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <!-- select files to deploy -->
+    <target name="select"
+            depends="select.input,select.prepare,select.validate,select.switch,select.delta">
+        <echo>Building from '${rep.version.old}' to '${rep.version.new}'</echo>
+        <fileset id="fs.build.raw" dir="${build.raw.dir}/${source.root.dir}">
+            <patternset refid="ps.source.raw" />
+        </fileset>
+    </target>
+
+    <!-- =================================================================== -->
+
+    <target name="init.patternset.filters" if="filters.isset">
+        <echo>Setting files to be filtered (${source.file.filters})</echo>
+        <patternset id="ps.source.raw">
+            <excludesfile name="${source.file.excludes}" />
+            <excludesfile name="${source.file.filters}" />
+        </patternset>
+    </target>
+
+    <target name="init.patternset.no-filters" unless="filters.isset">
+        <echo>Setting files to be filtered (&lt;none&gt;)</echo>
+        <patternset id="ps.source.raw">
+            <excludesfile name="${source.file.excludes}" />
+        </patternset>
+    </target>
+
+    <target name="init.patternset"
+            depends="init.patternset.filters,init.patternset.no-filters" />
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="init.properties.load.mix.target" if="remote.isset">
+        <property name="filter.properties.mix"
+                  value="${conf.dir}/customer/${target.customer}.${target.server}.properties" />
+    </target>
+
+    <target name="init.properties.load.mix.user" unless="remote.isset">
+        <property name="filter.properties.mix"
+                  value="${conf.dir}/customer/${target.customer}.${user.name}.properties" />
+    </target>
+
+    <target name="init.properties.load.mix"
+            depends="init.properties.load.mix.target,init.properties.load.mix.user">
+        <property file="${filter.properties.mix}" />
+        <echo>Loading mix properties (${filter.properties.mix})</echo>
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="init.properties.load.customer.exec">
+        <property name="filter.properties.customer"
+                  value="${conf.dir}/customer/${target.customer}.properties" />
+        <property file="${filter.properties.customer}" />
+        <echo>Loading customer dependent properties (${filter.properties.customer})</echo>
+    </target>
+
+    <target name="init.properties.load.customer.input" unless="target.customer">
+        <!-- List files -->
+        <fileset id="temp.customers.1"
+                 dir="${conf.dir}/customer"
+                 includes="*.properties" />
+
+        <!-- Transform fileset into property -->
+        <property name="temp.customers.2" refid="temp.customers.1" />
+
+        <!-- Remove file extension -->
+        <propertyregex property="temp.customers.3"
+                       input="${temp.customers.2}"
+                       regexp="\.properties"
+                       replace=""
+                       global="true" />
+
+        <!-- Change list separator to accomodate with input task -->
+        <propertyregex property="temp.customers.4"
+                       input="${temp.customers.3}"
+                       regexp=";"
+                       replace=","
+                       global="true" />
+
+        <input message="Please choose customer to deploy."
+               validargs="${temp.customers.4}"
+               addproperty="target.customer" />
+    </target>
+
+    <target name="init.properties.load.customer.hasdefault">
+        <!-- 
+         By convention, either a file named default.properties shall exist
+         in the customer directory (meaning the application is deployed 
+         without any customer specific properties), either xxx.properties 
+         files shall exist where xxx is the customer name.
+         -->
+        <available property="target.customer"
+                   value="default"
+                   file="${conf.dir}/customer/default.properties"
+                   type="file" />
+    </target>
+
+    <target name="init.properties.load.customer"
+            depends="init.properties.load.customer.hasdefault,init.properties.load.customer.input,init.properties.load.customer.exec">
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="init.properties.load.user">
+        <property name="filter.properties.user"
+                  value="${conf.dir}/user/${user.name}.properties" />
+        <property file="${filter.properties.user}" />
+        <echo>Loading user dependent properties (${filter.properties.user})</echo>
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="init.properties.load.app">
+        <property name="filter.properties.app"
+                  value="${conf.dir}/application.properties" />
+        <property file="${filter.properties.app}" />
+        <echo>Loading application dependent properties (${filter.properties.app})</echo>
+
+        <condition property="root.isset">
+            <and>
+                <isset property="source.root.dir" />
+                <length string="${source.root.dir}"
+                        trim="true"
+                        when="ne"
+                        length="0" />
+            </and>
+        </condition>
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="init.properties.load.os" if="os.family">
+        <property name="filter.properties.os"
+                  value="${conf.dir}/os/${os.family}.properties" />
+        <property file="${filter.properties.os}" />
+        <echo>Loading OS dependent properties (${filter.properties.os})</echo>
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="init.properties.load.server" if="target.server">
+        <property name="filter.properties.server"
+                  value="${conf.dir}/server/${target.server}.properties" />
+        <property file="${filter.properties.server}" />
+        <echo>Loading server dependent properties (${filter.properties.server})</echo>
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="init.properties.load"
+            depends="init.properties.load.server,init.properties.load.os,init.properties.load.app,init.properties.load.customer,init.properties.load.mix">
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <target name="init.properties.builtin">
+        <echo>Setting built-in properties (${ant.file})</echo>
+
+        <property name="ant.regexp.regexpimpl"
+                  value="org.apache.tools.ant.util.regexp.JakartaOroRegexp" />
+
+        <property name="conf.dir" value="./config" />
+        <property name="tests.dir" value="./tests" />
+        <property name="build.dir" value="./build" />
+
+        <!-- The build directory may not exist -->
+        <mkdir dir="${build.dir}" />
+
+        <property name="source.file.excludes"
+                  value="${conf.dir}/excludes.lst" />
+        <property name="source.file.filters" value="${conf.dir}/filters.lst" />
+        <condition property="filters.isset">
+            <and>
+                <available file="${source.file.filters}" />
+                <length file="${source.file.filters}" when="gt" length="0" />
+            </and>
+        </condition>
+        <property name="target.file.preserves"
+                  value="${conf.dir}/preserves.lst" />
+        <available property="preserves.exist"
+                   file="${target.file.preserves}"
+                   type="file" />
+
+        <!-- 
+         Even if two OS families may match, only the first one will be
+         considered as properties are immutable in Ant. On Mac platform,
+         Mac and Unix would match but only Mac will be set.
+         -->
+        <condition property="os.family" value="windows">
+            <os family="windows" />
+        </condition>
+
+        <condition property="os.family" value="mac">
+            <os family="mac" />
+        </condition>
+
+        <condition property="os.family" value="unix">
+            <os family="unix" />
+        </condition>
+    </target>
+
+    <target name="init"
+            depends="init.properties.builtin,init.properties.load,init.patternset" />
+
+    <!-- =================================================================== -->
+
+    <target name="input.bypass.version">
+        <echo>Setting old version (&lt;none&gt;)</echo>
+        <echo>Setting new version (work)</echo>
+        <property name="direct.isset" value="true" />
+        <property name="rep.version.old" value="" />
+        <property name="rep.version.new" value="work" />
+    </target>
+
+    <target name="input.bypass.target.prod">
+        <echo>Setting server (prod)</echo>
+        <property name="target.server" value="prod" />
+    </target>
+
+    <target name="input.bypass.target.test">
+        <echo>Setting server (test)</echo>
+        <property name="target.server" value="test" />
+    </target>
+
+    <target name="input.bypass.target.dev">
+        <echo>Setting server (dev)</echo>
+        <property name="target.server" value="dev" />
+    </target>
+
+    <!-- =================================================================== -->
+
+    <target name="prod"
+            description="build for PROD server"
+            depends="input.bypass.target.prod,init,select,checkout,configure,send">
+        <echo>Build complete</echo>
+    </target>
+
+    <target name="test"
+            description="build for TEST server"
+            depends="input.bypass.target.test,init,select,checkout,configure,send">
+        <echo>Build complete</echo>
+    </target>
+
+    <target name="dev"
+            description="build for DEV server"
+            depends="input.bypass.target.dev,init,select,checkout,configure,send">
+        <echo>Build complete</echo>
+    </target>
+
+    <target name="dev-direct"
+            description="build workspace for DEV server"
+            depends="input.bypass.version,dev">
+    </target>
+
+    <target name="php-codesniffer"
+            description="check coding standard with PHP code sniffer"
+            depends="init">
+        <echo>Checking ${source.root.dir} against ${phpcs.standard} coding standard</echo>
+        <exec executable="${phpcs.executable}"
+              output="${build.dir}/checkstyle.xml">
+            <arg line="--report=checkstyle
+                       --standard=${phpcs.standard}
+                       --warning-severity=1
+                       ${basedir}/${source.root.dir}" />
+        </exec>
+    </target>
+
+    <target name="phpunit"
+            description="run test suite with PHPUnit"
+            depends="input.bypass.version,dev">
+        <echo>Launching PHPUnit</echo>
+        <exec dir="${target.root.dir}"
+              executable="${phpunit.executable}"
+              failonerror="true">
+            <arg line="--configuration ${tests.dir}/phpunit.xml" />
+        </exec>
+    </target>
+
+    <target name="php-documentor"
+            description="build project documentation"
+            depends="init">
+        <echo>Building project documentation</echo>
+        <propertyregex property="temp.title"
+                       input="${basedir}"
+                       regexp="^.*[\\/]([^/]*)$$"
+                       select="\1"
+                       casesensitive="false" />
+        <exec executable="${phpdoc.executable}">
+            <arg line="--undocumentedelements on
+                       --title ${temp.title}
+                       --directory ${basedir}/${source.root.dir}
+                       --target ${basedir}/doc
+                       --output HTML:Smarty:PHP" />
+        </exec>
+    </target>
+</project>

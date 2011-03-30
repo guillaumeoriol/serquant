@@ -1,0 +1,7 @@
+.settings/
+build/
+config/
+doc/
+.*
+build.xml
+README.*

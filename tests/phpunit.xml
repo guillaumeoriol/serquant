@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="./Serquant/bootstrap.php" 
+         colors="false"
+         processisolation="false"
+         stoponfailure="false"
+         syntaxcheck="false">
+
+    <!-- Test suite to run -->
+    <testsuites>
+        <testsuite name="Serquant test suite">
+            <directory>./Serquant/</directory>
+        </testsuite>
+    </testsuites>
+
+    <!-- Including and excluding files for code coverage -->
+    <filter>
+        <whitelist>
+            <directory suffix=".php">../library/Serquant</directory>
+        </whitelist>
+    </filter>
+</phpunit>
