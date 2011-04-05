@@ -1,4 +1,10 @@
+.settings/
+build/
+doc/
+tests/library/
 .buildpath
 .project
-/.settings
-/doc
+
+# OS generated files
+.DS_Store
+Thumbs.db

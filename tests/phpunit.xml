@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <phpunit bootstrap="./Serquant/bootstrap.php" 
          colors="false"
          processisolation="false"
@@ -8,7 +9,7 @@
     <!-- Test suite to run -->
     <testsuites>
         <testsuite name="Serquant test suite">
-            <directory>./Serquant/</directory>
+            <directory>./Serquant</directory>
         </testsuite>
     </testsuites>
 
