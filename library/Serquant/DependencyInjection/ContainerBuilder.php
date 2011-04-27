@@ -17,7 +17,12 @@ use Symfony\Component\DependencyInjection\ContainerBuilder as BaseContainerBuild
 /**
  * Dependency injection container.
  *
- * Long description.
+ * This class extends Symfony dependency injection container to fit Zend
+ * Framework requirements. The integration has been described by B. Eberlei
+ * in {@link http://www.whitewashing.de/blog/tag/dependencyinjection two posts}
+ * related to Symfony 1. For Symfony 2 DI, a few magic methods must be added
+ * to comply with Zend_Application_Bootstrap_BootstrapAbstract container
+ * requirements: {@link __get()}, {@link __set()} and {@link __isset()}.
  *
  * @category Serquant
  * @package  DependencyInjection
