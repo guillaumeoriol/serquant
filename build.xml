@@ -20,6 +20,54 @@
  svn.url.new.subset      computed URL (with subset and optional revision) used in svn co command
  svn.url.new.path        computed URL (with subset but without revision) used to clean previous checkout
 -->
+<!--
+ant.file
+basedir
+user.name
+
+IB|SO|AU|CMG 
+==+==+==+===+======================+============================================
+ X|  |  |    build.dir
+  |  |  |  + build.filtered.dir     'filtered'
+  |  |  |  + build.raw.dir          'raw'
+ X|  |  |    conf.dir               Directory where configuration files reside
+  |  |  |  + deploy.version         Version of thie application to be deployed
+  |  |  |  + filter.properties.app
+  |  |  |  + filter.properties.customer
+  |  |  |  + filter.properties.mix
+  |  |  |  + filter.properties.os
+  |  |  |  + filter.properties.server
+  |  |  |  + filter.properties.user 
+  |  |  |  + os.family              mac, unix, windows
+  | X| X|    phpcs.executable
+  |X |  |    phpcs.standard         Coding standard to check code against
+  | X| X|    phpdoc.executable
+  | X| X|    phpunit.executable
+ X|  |  |    source.file.excludes   File containing the list of files to exclude from build process
+ X|  |  |    source.file.filters    File containing the list of files to filter during build process
+  |  |X |    source.root.dir        Root folder containing the web application
+  |  |  |  + rep.access.none        Flag to determine if a repository access will be necessary
+X |  |  |    rep.version.new        New version of the application to be deployed
+X |  |  |    rep.version.old        Old version of the application that is already deployed
+X |  |  |  + target.customer        Name of the customer to deploy for
+ X|  |  |    target.file.preserves  File containing the list of directories to preserve on target server
+X |  |  |    target.server          Name of the server to deploy on
+  |  |  | X  target.root.dir        Root folder to deploy the web application into
+  |  |  |    
+  |  |  |  + temp.*                 Temporary properties
+==+==+==+===+======================+============================================
+IB|SO|AU|CMG
+nu|eS|ps|uie
+pi|r |pe|sxn
+ul|v |lr|t e
+tt|e |i |o r
+ -|r |c |m a
+ i|  |a |e t
+ n|  |t |r e
+  |  |i |  d
+  |  |o |
+  |  |n |
+ -->
 <project name="default" default="dev" basedir=".">
     <!-- needed by the propertyregex task -->
     <taskdef resource="net/sf/antcontrib/antlib.xml" />
@@ -1314,8 +1362,7 @@
             description="run test suite with PHPUnit"
             depends="init">
         <echo>Launching PHPUnit</echo>
-        <exec executable="${phpunit.executable}"
-              failonerror="true">
+        <exec executable="${phpunit.executable}" failonerror="true">
             <arg line="--configuration ${tests.dir}/phpunit.xml" />
         </exec>
     </target>
@@ -1335,6 +1382,15 @@
                        --directory ${basedir}/${source.root.dir}
                        --target ${basedir}/doc
                        --output HTML:Smarty:PHP" />
+        </exec>
+    </target>
+
+    <target name="php-doctor"
+            description="build project documentation"
+            depends="init">
+        <echo>Building project documentation</echo>
+        <exec dir="${basedir}" executable="${php.executable}">
+            <arg line="${phpdoctor.executable} ${conf.dir}/phpdoctor.ini" />
         </exec>
     </target>
 </project>

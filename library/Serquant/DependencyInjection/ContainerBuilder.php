@@ -17,9 +17,10 @@ use Symfony\Component\DependencyInjection\ContainerBuilder as BaseContainerBuild
 /**
  * Dependency injection container.
  *
- * This class extends Symfony dependency injection container to fit Zend
- * Framework requirements. The integration has been described by B. Eberlei
- * in {@link http://www.whitewashing.de/blog/tag/dependencyinjection two posts}
+ * This class extends {@link http://symfony.com/ Symfony} dependency injection
+ * container to fit {@link http://framework.zend.com/ Zend Framework}
+ * requirements. The integration has been described by Benjamain Eberlei in
+ * {@link http://www.whitewashing.de/blog/tag/dependencyinjection two posts}
  * related to Symfony 1. For Symfony 2 DI, a few magic methods must be added
  * to comply with Zend_Application_Bootstrap_BootstrapAbstract container
  * requirements: {@link __get()}, {@link __set()} and {@link __isset()}.
@@ -41,7 +42,7 @@ class ContainerBuilder extends BaseContainerBuilder
      * of dependency (ie service) needed by a component.
      *
      * @param string $name
-     * @param object $value
+     * @param mixed $value
      */
     public function __set($name, $value)
     {
@@ -63,7 +64,7 @@ class ContainerBuilder extends BaseContainerBuilder
      * Get the specified service from the dependency injection container.
      *
      * @param string $name The service name
-     * @return object The named service
+     * @return mixed The named service
      *
      */
     public function __get($name)
