@@ -33,9 +33,6 @@ use Serquant\Service\Persistable,
  */
 class Doctrine implements Persistable
 {
-    const STATUS_SUCCESS = 0;
-    const STATUS_VALIDATION_ERROR = 1;
-
     /**
      * Entity class name that is managed by this service layer.
      * @var string
@@ -172,7 +169,7 @@ class Doctrine implements Persistable
                 'Unable to fetch entities matching given criteria.');
         }
 
-        return new Result(self::STATUS_SUCCESS, $collection);
+        return new Result(Result::STATUS_SUCCESS, $collection);
     }
 
     /**
@@ -192,7 +189,7 @@ class Doctrine implements Persistable
                 'Unable to fetch a single entity matching given criteria.');
         }
 
-        return new Result(self::STATUS_SUCCESS, $entity);
+        return new Result(Result::STATUS_SUCCESS, $entity);
     }
 
     /**
@@ -227,7 +224,7 @@ class Doctrine implements Persistable
                 'Unable to fetch paginated entities matching criteria.');
         }
 
-        return new Result(self::STATUS_SUCCESS, $paginator);
+        return new Result(Result::STATUS_SUCCESS, $paginator);
     }
 
     /**
@@ -246,7 +243,7 @@ class Doctrine implements Persistable
                 'Unable to get default value of the entity.');
         }
 
-        return new Result(self::STATUS_SUCCESS, $entity);
+        return new Result(Result::STATUS_SUCCESS, $entity);
     }
 
     /**
@@ -264,10 +261,10 @@ class Doctrine implements Persistable
                 $em = $this->getEntityManager();
                 $em->persist($entity);
                 $em->flush();
-                $status = self::STATUS_SUCCESS;
+                $status = Result::STATUS_SUCCESS;
                 $violations = null;
             } else {
-                $status = self::STATUS_VALIDATION_ERROR;
+                $status = Result::STATUS_VALIDATION_ERROR;
                 $entity = $inputFilter->getUnfilteredValues();
                 $violations = $inputFilter->getMessages();
             }
@@ -303,7 +300,7 @@ class Doctrine implements Persistable
                 "Unable to retrieve entity matching id $id.");
         }
 
-        return new Result(self::STATUS_SUCCESS, $entity);
+        return new Result(Result::STATUS_SUCCESS, $entity);
     }
 
     /**
@@ -325,10 +322,10 @@ class Doctrine implements Persistable
                 $entity = $em->find($this->entityClass, $id);
                 $entity->populate($inputFilter);
                 $em->flush();
-                $status = self::STATUS_SUCCESS;
+                $status = Result::STATUS_SUCCESS;
                 $violations = null;
             } else {
-                $status = self::STATUS_VALIDATION_ERROR;
+                $status = Result::STATUS_VALIDATION_ERROR;
                 $entity = $inputFilter->getUnfilteredValues();
                 $violations = $inputFilter->getMessages();
             }
@@ -366,6 +363,6 @@ class Doctrine implements Persistable
                 "Unable to delete entity matching id $id.");
         }
 
-        return new Result(self::STATUS_SUCCESS, $entity);
+        return new Result(Result::STATUS_SUCCESS, $entity);
     }
 }

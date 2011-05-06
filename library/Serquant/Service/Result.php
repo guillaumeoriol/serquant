@@ -25,6 +25,12 @@ use Serquant\Service\Exception\InvalidArgumentException;
  */
 class Result
 {
+    // Don't forget to update STATUS_MAX_VALUE when a new status is added.
+    // It's value should be equal to the greater status value.
+    const STATUS_SUCCESS = 0;
+    const STATUS_VALIDATION_ERROR = 1;
+    const STATUS_MAX_VALUE = 1;
+
     /**
      * Result status
      * @var int
@@ -73,9 +79,13 @@ class Result
      */
     public function setStatus($status)
     {
-        if (!is_int($status) || ($status < 0) || ($status > 255)) {
+        if (!is_int($status) ||
+            ($status < self::STATUS_SUCCESS) ||
+            ($status > self::STATUS_MAX_VALUE)
+        ) {
             throw new InvalidArgumentException(
-            	'Status (' . $status . ') out of range (0-255).');
+            	'Status (' . $status . ') out of range (' .
+                self::STATUS_SUCCESS . '-' . self::STATUS_MAX_VALUE .').');
         }
 
         $this->status = (int) $status;
