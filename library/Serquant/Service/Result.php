@@ -52,9 +52,9 @@ class Result
     /**
      * Constructor
      *
-     * @param int $status
-     * @param mixed $data
-     * @param array $errors
+     * @param int $status Status
+     * @param mixed $data Data
+     * @param array $errors Errors
      */
     public function __construct($status, $data, array $errors = null)
     {
@@ -72,20 +72,20 @@ class Result
      * Success is traditionally represented with the value 0.<br>
      * Failure is normally indicated with a non-zero value.
      *
-     * @param int $status
+     * @param int $status Status
      * @return void
-     * @throws InvalidArgumentException when the
-     * provided status is out of range.
+     * @throws InvalidArgumentException when the provided status is out of range.
      */
     public function setStatus($status)
     {
-        if (!is_int($status) ||
-            ($status < self::STATUS_SUCCESS) ||
-            ($status > self::STATUS_MAX_VALUE)
+        if (!is_int($status)
+            || ($status < self::STATUS_SUCCESS)
+            || ($status > self::STATUS_MAX_VALUE)
         ) {
             throw new InvalidArgumentException(
-            	'Status (' . $status . ') out of range (' .
-                self::STATUS_SUCCESS . '-' . self::STATUS_MAX_VALUE .').');
+                'Status (' . $status . ') out of range (' .
+                self::STATUS_SUCCESS . '-' . self::STATUS_MAX_VALUE .').'
+            );
         }
 
         $this->status = (int) $status;
@@ -104,7 +104,7 @@ class Result
     /**
      * Set result data.
      *
-     * @param mixed $data
+     * @param mixed $data Data
      * @return void
      */
     public function setData($data)
@@ -127,7 +127,7 @@ class Result
      *
      * The specified array associates a name to a corresponding message.
      *
-     * @param array $errors
+     * @param array $errors Errors
      * @return void
      */
     public function setErrors(array $errors)

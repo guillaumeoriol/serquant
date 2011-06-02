@@ -5,24 +5,22 @@
  * PHP version 5.3
  *
  * @category Serquant
- * @package  Controller
+ * @package  Persistence
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Controller\Exception;
-
-use Serquant\Controller\Exception;
+namespace Serquant\Persistence;
 
 /**
- * Exception thrown if an error occurs which can only be found at run time.
+ * Marker interface for exceptions found in this component.
  *
  * @category Serquant
- * @package  Controller
+ * @package  Persistence
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class RuntimeException extends \RuntimeException implements Exception
+interface Exception
 {
 }

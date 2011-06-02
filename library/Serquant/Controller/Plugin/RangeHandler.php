@@ -40,7 +40,10 @@ namespace Serquant\Controller\Plugin;
 class RangeHandler extends \Zend_Controller_Plugin_Abstract
 {
     /**
-     * @see \Zend_Controller_Plugin_Abstract#dispatchLoopStartup()
+     * Method executed at dispatch loop startup
+     *
+     * @param \Zend_Controller_Request_Abstract $request Request
+     * @return void
      */
     public function dispatchLoopStartup(\Zend_Controller_Request_Abstract $request)
     {

@@ -41,8 +41,9 @@ class ContainerBuilder extends BaseContainerBuilder
      * In dependency injection context, the value argument may be any kind
      * of dependency (ie service) needed by a component.
      *
-     * @param string $name
-     * @param mixed $value
+     * @param string $name Service name
+     * @param mixed $value Service
+     * @return void
      */
     public function __set($name, $value)
     {
@@ -52,7 +53,7 @@ class ContainerBuilder extends BaseContainerBuilder
     /**
      * Returns true if the given service is defined.
      *
-     * @param string $name
+     * @param string $name Service name
      * @return boolean true if the service is defined, false otherwise
      */
     public function __isset($name)
@@ -63,8 +64,8 @@ class ContainerBuilder extends BaseContainerBuilder
     /**
      * Get the specified service from the dependency injection container.
      *
-     * @param string $name The service name
-     * @return mixed The named service
+     * @param string $name Service name
+     * @return mixed Service
      *
      */
     public function __get($name)

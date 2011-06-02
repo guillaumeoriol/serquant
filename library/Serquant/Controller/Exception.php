@@ -22,4 +22,5 @@ namespace Serquant\Controller;
  * @link     http://www.serquant.com/
  */
 interface Exception
-{}
+{
+}

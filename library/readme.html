@@ -1,0 +1,302 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Design considerations</title>
+</head>
+<body>
+	<h1>Découpage en couches</h1>
+
+	<h2>Layers</h2>
+	<p>L'application est organisée en couches aussi découplées que
+		possible entre-elles :</p>
+	<ol>
+		<li>Controller</li>
+		<li>Service layer</li>
+		<li>Domain (business logic)</li>
+		<li>Persistence (or Data source)</li>
+	</ol>
+
+	<h2>Controller layer</h2>
+	<p>
+		Un contrôleur standard (Default, Rest) reçoit les données du client
+		(navigateur) sous la forme de couples nom/valeur (des chaînes de
+		caractères). <strong>Il n'effectue aucun mapping des noms</strong>
+		car, pour simplifier, il est convenu que les noms côté client sont
+		identiques aux noms du domaine (c'est-à-dire au propriétés des entités
+		du modèle objet). <strong>Il ne réalise aucun transtypage</strong> non
+		plus. Il ne s'occupe que de transformer la requête reçue pour qu'elle
+		soit conforme à l'API du service.
+	</p>
+
+	<h2>Service layer</h2>
+	<p>Le service effectue un transtypage grâce aux filtres de
+		l'inputFilter. L'inputFilter est pour l'instant un objet Zend_Form. Le
+		filtre transforme par exemple la représentation ISO8601 d'une date
+		("Y-m-d\TH:i:sO") en objet DateTime.</p>
+	<p>
+		<small> La conversion opposée est réalisée par le contrôleur,
+			via un script de vue, car c'est lui qui sait la forme attendue (JSON,
+			XML, plain text, etc.). <em>Curieux que le transtypage ne soit
+				pas réalisé dans les deux sens par le même layer. Peut-être
+				serait-il judicieux que ce soit le contrôleur qui réalise le
+				transtypage en entrée.</em> </small>
+	</p>
+	<p>En sortie de filtre, les données doivent être du type attendu
+		par le domaine (c'est-à-dire du type défini pour les propriétés de
+		l'entité).</p>
+
+	<h2>Domain</h2>
+	<h4>POJO</h4>
+	<p>
+		Le domaine est constitué d'objets métier, qui doivent rester aussi
+		simples que possible (principe de simplicité connu sous le nom de <a
+			href="http://www.martinfowler.com/bliki/POJO.html">POJO</a>). Domain
+		entities must declare their properties either protected or private to
+		conform with EJB 3 specification.<br /> Des getters/setters publics
+		doivent être écrits (sans quoi la fonction Crud#populate() lève une
+		exception).<br /> Les magic getters/setters sont à proscrire, comme
+		toutes les fonctions magiques d'une manière générale, du fait de la
+		difficulté de compréhension du code qu'elles introduisent et de la
+		dégradation de performance qu'elles provoquent.
+	</p>
+	<p>Les dates sont représentées par des classes \DateTime</p>
+
+	<h4>No infrastructure code in domain</h4>
+	<p>
+		Ces objets ne doivent comporter que des propriétés et méthodes liées
+		au métier et pas d'élément d'infrastructure.<br /> L'infrastructure
+		étant rejetée à l'extérieur, il est nécessaire d'ajouter à ces objets
+		des métadonnées qui en facilitent le traitement. Je choisis pour cela
+		le principe des annotations que l'on trouve en Java et qui sont
+		utilisées par Doctrine. Pour éviter de réécrire le code qui analyse
+		ces métadonnées, j'emploie celui de Doctrine. Cela m'oblige à utiliser
+		les annotations prévues par Doctrine pour lui-même, ce qui ne pose pas
+		de problème pour le mapping (la fonction étant identique), mais masque
+		une différence substantielle entre la notion de <em>entity
+			repository</em> chez Doctrine et celle de <em>table data gateway</em> chez
+		Zend puisque j'utilise l'attribut
+		<code>repositoryClass</code>
+		pour signifier la table gateway à utiliser.<br />
+	</p>
+
+	<p>
+		<small> Le fait d'utiliser certaines classes de Doctrine sans
+			passer par son <em>entity manager</em> n'est pas évident. Tous les
+			composants sont intimement liés dans Doctrine et tenter de les
+			séparer soulève des questions (utilisation des métadonnées sans
+			mécanisme de cache, récupération des options de configuration de
+			Doctrine ou de Zend pour déterminer la plateforme SGBD). D'un autre
+			côté, il semble aberrant d'instancier l'<em>entity manager</em> de
+			Doctrine simplement pour lire les métadonnées des modèles Zend et
+			réaliser le transtypage.<br /> Pour l'instant, je décide de ne pas
+			utiliser l'<em>entity manager</em> et d'obtenir la plateforme par une
+			table de correspondance entre l'adaptateur défini pour Zend et les
+			plateformes définies par Doctrine.</small>
+	</p>
+
+	<h2>Persistence layer</h2>
+
+	<p>Le persistence layer réalise la conversion entre les types de
+		l'entité et ceux nécessaires pour la base de données. Par exemple, une
+		date est de type \DateTime dans l'entité et doit être convertie dans
+		un format proche de l'ISO pour MySQL ("Y-m-d H:i:s).</p>
+	<p>
+		Ce transtypage est possible grâce aux métadonnées prévues par Doctrine
+		ou aux annotations des classes pour Zend. Pour le Zend persistence
+		layer, on doit utiliser des annotations
+		<code>@column</code>
+		semblables à celles définies par Doctrine, par exemple :
+		<code>/** @Column(name="title", type="string", length=100,
+			nullable=true) */</code>
+	</p>
+
+	<h2>Analyse comparative des fonctionnements de Doctrine et Zend</h2>
+	<h4>create</h4>
+	<p>Dans un create(), c'est la fonction Crud#populate() du service
+		layer qui alimente l'entité. Ensuite, chez Doctrine, l'entité créée
+		est passée à la fonction persist() de l'EntityManager. La suite se
+		déroule ainsi :</p>
+
+	<ol>
+		<li><code>EntityManager#persist($entity)</code>
+			<ul>
+				<li>la fonction appelle <code>UnitOfWork#persist($entity)</code>
+					qui renvoie à <code>UnitOfWork#doPersist($entity, $visited)</code>
+				</li>
+				<li>quand l'état est STATE_NEW, la fonction appelle <code>persistNew($class,
+						$entity)</code>
+				</li>
+				<li>la fonction invoque les événements liés au cycle de vie</li>
+				<li>la fonction génère, le cas échéant (assignation d'un
+					identifiant avant l'insertion), un identifiant et l'enregistre dans
+					les <em>entityIdentifiers</em>
+				</li>
+				<li>puis elle appelle <code>scheduleForInsert($entity)</code>
+				</li>
+				<li>If the entity already has an identifier, it will be added
+					to the <em>identity map</em>.</li>
+			</ul></li>
+		<li>Au moment du <code>EntityManager#flush()</code>, <code>UnitOfWork#commit()</code>
+			est appelée
+			<ul>
+				<li>Dans le cas d'une insertion, la fonction exécute <code>UnitOfWork#executeInserts($class)</code>
+				</li>
+				<li>La fonction invoque à son tour <code>Persister#executeInserts()</code>
+					qui réalise, grosso modo, les opérations suivantes :
+					<ul>
+						<li><code>$stmt =
+								$this->_conn->prepare($this->_getInsertSQL());</code></li>
+						<li><code>$insertData =
+								$this->_prepareInsertData($entity);</code>
+						</li>
+						<li><code>$stmt->bindValue($paramIndex++, $value,
+								$this->_columnTypes[$column])</code>
+						</li>
+						<li><code>$stmt->execute();</code>
+						</li>
+					</ul>
+				</li>
+				<li>Les identifiants retournés après insertion sont utilisés
+					pour mettre à jour l'entité et les <em>entityIdentifiers</em></li>
+			</ul></li>
+	</ol>
+
+	<p>Côté Zend, les choses sont différentes :</p>
+	<ol>
+		<li><code>Zend_Db_Table_Row_Abstract#setFromArray($data)</code>
+			reçoit un tableau associatif qui est parcouru et la fonction <code>Zend_Db_Table_Row_Abstract#__set($columnName,
+				$value)</code> est appelée pour chaque élément de ce tableau.</li>
+		<li>Dans la méthode <code>Zend_Db_Table_Row_Abstract#__set($columnName,
+				$value)</code> :
+			<ol>
+				<li>Le nom de la colonne est potentiellement infléchi (si la
+					méthode <code>Zend_Db_Table_Row_Abstract#_transformColumn()</code>
+					est surcharghée)</li>
+				<li>Puis la valeur transmise est assignée à la colonne <strong>sans
+						transtypage</strong>
+				</li>
+				<li>Enfin, un indicateur est positionné pour signaler que la
+					valeur de la colonne a été modifiée</li>
+			</ol>
+		</li>
+	</ol>
+
+	<h4>retrieve</h4>
+	<p>
+		Dans le cas de Doctrine:
+		<ul>
+			<li>le repository invoque la méthode <code>Persister#load()</code>
+				( <code>BasicEntityPersister</code> par exemple).</li>
+			<li>Cette fonction appelle à son tour <code>Persister#_createEntity($result,
+					$entity, $hints)</code> après avoir exécuté la requête SQL.</li>
+			<li><code>Persister#_createEntity()</code> commence par exécuter
+				<code>Persister#_processSQLResult($result)</code> qui réalise le
+				transtypage</li>
+			<li>Finalement, <code>Persister#_createEntity()</code> invoque <code>UnitOfWork()->createEntity($entityName,
+					$data, $hints)</code> .</li>
+			<li>C'est <code>UnitOfWork()->createEntity()</code> qui va
+				d'abord créer une nouvelle instance puis, grâce aux métadonnées,
+				définir les propriétés de l'entity avec les valeurs obtenues via la
+				méthode <code>ReflectionProperty#setValue()</code>.</li>
+		</ul>
+		Cela signifie que ce ne sont pas les setters de l'entité qui sont
+		utilisés et qu'aucun transtypage ne peut être réalisé par eux.
+	</p>
+
+	<h4>update</h4>
+	<p>
+		Dans le cas d'un update, le service commence par obtenir l'entité
+		depuis la base de données (si ce n'est pas déjà fait) puis modifie
+		cette entité. La classe
+		<code>Zend_Db_Table</code>
+		permet de faire une mise à jour directe, sans avoir préalablement lu
+		l'entité dans la base de données (
+		<code>$table->update($data, $where)</code>
+		). Cependant, cette méthode ne permet pas de connaître l'état
+		antérieur de cette entité et donc pas de réaliser un traitement
+		applicatif si une propriété change par exemple (pas de gestion
+		d'événement). Pour cette raison, je choisis d'utiliser la méthode
+		<code>Zend_Db_Table_Row#save()</code>
+		.
+	</p>
+
+	<p>
+		Logique de Zend_Db_Table_Row#_doUpdate() invoquée par
+		<code>Zend_Db_Table_Row#save()</code> :
+	</p>
+	<ul>
+		<li>construit la clause where qui identifie la ligne visée</li>
+		<li>invoque une méthode qui est un point d'extension pre-update</li>
+		<li>détermine les colonnes de données qui ont changé</li>
+		<li>détermine les colonnes de la clé qui ont changé</li>
+		<li>si la clé a changé, effectue des updates en cascade sur les
+			tables dépendantes</li>
+		<li>si les données ont changé, réalise la modification en
+			appelant <code>Zend_Db_Table#update()</code>
+		</li>
+		<li>invoque une méthode qui est un point d'extension post-update</li>
+		<li>renvoie la clé</li>
+	</ul>
+
+	<p>
+		J'envisage un instant de réaliser les mêmes opérations que
+		<code>Zend_Db_Table_Row#_doUpdate()</code>
+		dans
+		<code>Serquant\Persistence\Zend#update()</code>
+		, mais cela suppose de conserver l'état antérieur de l'entité, ce qui
+		ne fait que déplacer le problème.
+	</p>
+
+	<p>
+		Comment Doctrine conserve-t-il les entités en mémoire ? La classe
+		<code>UnitOfWork</code>
+		possède une identity map. Les entités y sont enregistrées sous une
+		référence constituée de la classe de l'entité et des composantes de sa
+		clé (
+		<code>$this->identityMap[$class->rootEntityName][$idHash]</code>
+		). <em>rootEntityName</em> est le nom de la classe racine dont
+		l'entité hérite. <em>idHash</em> est une chaîne composée de la clé ou
+		de la clé étrangère (si l'entité définit une association).
+	</p>
+
+	<h4>principe des metadata chez Doctrine</h4>
+	<ol>
+		<li>Tout commence par l'instanciation d'une factory : <code>new
+				$metadataFactoryClassName;</code></li>
+		<li>Puis, les métadonnées sont obtenues par <code>ClassMetadataFactory#getMetadataFor(ltrim($entityName,
+				'\\'))</code><br />qui appelle <code>ClassMetadataFactory#loadMetadata($className)</code>.<br />
+			Cette dernière réalise les opérations suivantes :
+			<ol>
+				<li>Un tableau de la hiérarchie des classes est constitué (le
+					premier élément est la classe racine). Pour chaque élément :
+					<ol>
+						<li><code>$class =
+								ClassMetadataFactory#newClassMetadataInstance($className)</code> (cette
+							méthode exécute seulement <code>new
+								ClassMetadata($className)</code>)</li>
+						<li>Si la classe a un ascendant, on y ajoute les métadonnées
+							du parent.</li>
+						<li>La méthode <code>Driver#loadMetadataForClass($className,
+								$class)</code> est appelée.
+							<ul>
+								<li>Le driver est ici de type <code>AnnotationDriver</code>
+								</li>
+								<li>Le driver est obtenu par cette méthode de <code>Doctrine\ORM\Configuration</code>
+									: <pre>
+    public function newDefaultAnnotationDriver($paths = array())
+    {
+        $reader = new \Doctrine\Common\Annotations\AnnotationReader();
+        $reader->setDefaultAnnotationNamespace('Doctrine\ORM\Mapping\\');
+        
+        return new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($reader, (array)$paths);
+    }								</pre> <em><code>$path</code> est le chemin où se trouvent
+										les entités</em></li>
+							</ul>
+						</li>
+					</ol></li>
+			</ol>
+		</li>
+	</ol>
+</body>
+</html>

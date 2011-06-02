@@ -22,4 +22,5 @@ namespace Serquant\Service;
  * @link     http://www.serquant.com/
  */
 interface Exception
-{}
+{
+}

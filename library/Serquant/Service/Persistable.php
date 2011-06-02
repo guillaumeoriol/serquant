@@ -16,8 +16,8 @@ namespace Serquant\Service;
  * Promises that a service layer should fulfill to manage persistent entities.
  *
  * Basic CRUD operations ({@link create()}, {@link retrieve()}, {@link update()}
- * and {@link delete()}), plus several flavors of the {@link fetch()} method
- * and a not usual {@link getDefault()} (for getting the entity default state)
+ * and {@link delete()}), plus several flavors of the fetch method and
+ * a not-usual {@link getDefault()} (for getting the entity default state)
  * make up the promises of this service layer.
  *
  * <i>Note: as we are in a service context and not in a REST context,
@@ -38,6 +38,24 @@ interface Persistable
      * Each query expression of the <var>expressions</var> parameter represents
      * an operator of the Resource Query Language as defined in the
      * {@link https://github.com/kriszyp/rql RQL specification}.
+     *
+     * <ul>
+     * <li>Simple filters are specified with <code>field=value</code> pairs.
+     *     For more complex filters, refer to the
+     *     {@link https://github.com/kriszyp/rql Resource Query Language
+     *     documentation}.</li>
+     * <li>Range is specified by the
+     *     <code>limit(&lt;start&gt;,&lt;count&gt;)</code> query parameter.
+     *     As an alternative, it may also be specified by the <code>Range</code>
+     *     request header (<code>Range: items=&lt;start&gt;-&lt;end&gt;</code>)
+     *     that is extracted from request headers by the {@link RangeHandler}
+     *     controller plugin and injected into the query (with
+     *     <code>count = end - start + 1</code>).</li>
+     * <li>Sort is specified by <code>sort(+field)</code> or
+     *     <code>sort(-field)</code> query parameter. Multiple property sorts
+     *     may be achieved with the following syntax:
+     *     <code>sort(+category,-price)</code>.</li>
+     * </ul>
      *
      * If there is no result, an empty collection is returned with a 0 status.
      *
@@ -96,10 +114,10 @@ interface Persistable
      * @param array $expressions Array of query expressions
      * @return Result
      * On success, Result#getStatus() returns 0 and Result#getData() returns
-     * the fetched collection.
+     * the fetched collection of entities.
      * @throws Exception on failure.
      */
-    public function fetch(array $expressions);
+    public function fetchAll(array $expressions);
 
     /**
      * Retrieve a single entity matching the specified query.
@@ -141,6 +159,7 @@ interface Persistable
      * @return Result
      * Result#getStatus() always returns 0 and Result#getData() returns the new
      * entity.
+     * @throws Exception on failure.
      */
     public function getDefault();
 
@@ -176,6 +195,7 @@ interface Persistable
      * @param mixed $id Entity identifier (the id may be of scalar type,
      * or a vector value when a compound key is used).
      * @param array $data Input data, in the form of name/value pairs.
+     * Names shall match entity field names.
      * @return Result
      * On success, Result#getStatus() returns 0 (no error) and Result#getData()
      * returns the updated entity.<br> When validation fails,

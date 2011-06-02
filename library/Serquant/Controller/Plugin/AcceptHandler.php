@@ -42,7 +42,10 @@ class AcceptHandler extends \Zend_Controller_Plugin_Abstract
     const CONTEXT_PARAM = '_format';
 
     /**
-     * @see Zend_Controller_Plugin_Abstract#dispatchLoopStartup()
+     * Method executed at dispatch loop startup
+     *
+     * @param \Zend_Controller_Request_Abstract $request Request
+     * @return void
      */
     public function dispatchLoopStartup(\Zend_Controller_Request_Abstract $request)
     {

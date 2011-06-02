@@ -72,7 +72,7 @@ class Params extends \Zend_Controller_Action_Helper_Abstract
     /**
      * Set body parameters
      *
-     * @param array $params
+     * @param array $params Parameters
      * @return \Serquant\Controller\Helper\Params
      */
     public function setBodyParams(array $params)
@@ -94,7 +94,7 @@ class Params extends \Zend_Controller_Action_Helper_Abstract
     /**
      * Get body parameter
      *
-     * @param string $name
+     * @param string $name Parameter name
      * @return mixed
      */
     public function getBodyParam($name)
@@ -108,7 +108,7 @@ class Params extends \Zend_Controller_Action_Helper_Abstract
     /**
      * Is the given body parameter set?
      *
-     * @param string $name
+     * @param string $name Parameter name
      * @return bool
      */
     public function hasBodyParam($name)

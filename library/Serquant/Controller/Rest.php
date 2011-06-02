@@ -17,8 +17,9 @@ use Serquant\Controller\Exception\RuntimeException;
 /**
  * Generic RESTful controller.
  *
- * Implements the basic {@link http://wikipedia.org/wiki/Representational_State_Transfer
- * REST} methods ({@link http://tools.ietf.org/html/rfc2616#section-9.3 GET},
+ * Implements the basic {@link
+ * http://wikipedia.org/wiki/Representational_State_Transfer REST} methods
+ * ({@link http://tools.ietf.org/html/rfc2616#section-9.3 GET},
  * {@link http://tools.ietf.org/html/rfc2616#section-9.5 POST},
  * {@link http://tools.ietf.org/html/rfc2616#section-9.6 PUT},
  * {@link http://tools.ietf.org/html/rfc2616#section-9.7 DELETE})
@@ -55,7 +56,7 @@ class Rest extends \Zend_Rest_Controller
      * Service layer
      * @var \Serquant\Service\Persistable
      */
-    private $service;
+    protected $service;
 
     /**
      * Get service layer.
@@ -69,10 +70,11 @@ class Rest extends \Zend_Rest_Controller
             $container = $front->getParam('bootstrap')->getContainer();
             $this->service = $container->{$this->serviceName};
             if (!($this->service instanceof \Serquant\Service\Persistable)) {
-                throw new RuntimeException('The provided service "' .
-                    $this->serviceName . '" must implement the ' .
-                    'Serquant\Service\Persistable interface (but ' .
-                    get_class($this->service) . ' does not).');
+                throw new RuntimeException(
+                    'The provided service "' . $this->serviceName . '" must ' .
+                    'implement the Serquant\Service\Persistable interface ' .
+                    '(but ' . get_class($this->service) . ' does not).'
+                );
             }
         }
         return $this->service;
@@ -86,25 +88,8 @@ class Rest extends \Zend_Rest_Controller
      * a collection of the requested resources.
      *
      * Filtering, ranging and sorting options may be specified in the query
-     * string as defined by the {@link Persistable#fetch()} methods of the
+     * string as defined by the {@link Persistable#fetchAll()} method of the
      * domain service layer.
-     * <ul>
-     * <li>Simple filters are specified with <code>field=value</code> pairs.
-     *     For more complex filters, refer to the
-     *     {@link http://www.persvr.org/draft-zyp-rql-00.html Resource Query
-     *     Language documentation}.</li>
-     * <li>Range is specified by the
-     *     <code>limit(&lt;start&gt;,&lt;count&gt;)</code> query parameter.
-     *     As an alternative, it may also be specified by the <code>Range</code>
-     *     request header (<code>Range: items=&lt;start&gt;-&lt;end&gt;</code>)
-     *     that is extracted from request headers by the {@link RangeHandler}
-     *     controller plugin and injected into the query (with
-     *     <code>count = end - start + 1</code>).</li>
-     * <li>Sort is specified by <code>sort(+field)</code> or
-     *     <code>sort(-field)</code> query parameter. Multiple property sorts
-     *     may be achieved with the following syntax:
-     *     <code>sort(+category,-price)</code>.</li>
-     * </ul>
      *
      * @return void The view script shall return HTTP 200 on success.
      */
@@ -147,7 +132,8 @@ class Rest extends \Zend_Rest_Controller
      * resource representation and persist the resource state. The resource data
      * is retrieved from the request body via the {@link Params} action helper.
      *
-     * According to {@link http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.5 RFC 2616 #9.5}:
+     * According to {@link
+     * http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.5 RFC 2616}:
      * "If a resource has been created on the origin server, the response
      * SHOULD be 201 (Created) and contain an entity which describes the
      * status of the request and refers to the new resource, and a Location
@@ -173,7 +159,8 @@ class Rest extends \Zend_Rest_Controller
      * It should update the server resource state of the resource identified by
      * the <var>id</var> value.
      *
-     * According to {@link http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6 RFC 2616 #9.6}:
+     * According to {@link
+     * http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6 RFC 2616}:
      * "If an existing resource is modified, either the 200 (OK) or 204
      * (No Content) response codes SHOULD be sent to indicate successful
      * completion of the request. If the resource could not be created
@@ -207,7 +194,8 @@ class Rest extends \Zend_Rest_Controller
      * It should update the server resource state of the resource identified by
      * the <var>id</var> value.
      *
-     * According to {@link http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.7 RFC 2616 #9.7}:
+     * According to {@link
+     * http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.7 RFC 2616}:
      * "A successful response SHOULD be 200 (OK) if the response includes an
      * entity describing the status, 202 (Accepted) if the action has not
      * yet been enacted, or 204 (No Content) if the action has been enacted

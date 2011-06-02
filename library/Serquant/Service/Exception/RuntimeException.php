@@ -24,4 +24,5 @@ use Serquant\Service\Exception;
  * @link     http://www.serquant.com/
  */
 class RuntimeException extends \RuntimeException implements Exception
-{}
+{
+}

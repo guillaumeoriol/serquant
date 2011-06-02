@@ -5,24 +5,25 @@
  * PHP version 5.3
  *
  * @category Serquant
- * @package  Controller
+ * @package  Persistence
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Controller\Exception;
+namespace Serquant\Persistence\Exception;
 
-use Serquant\Controller\Exception;
+use Serquant\Persistence\Exception;
 
 /**
- * Exception thrown if an error occurs which can only be found at run time.
+ * Exception thrown when an empty result set is returned while trying to
+ * retrieve a single item.
  *
  * @category Serquant
- * @package  Controller
+ * @package  Persistence
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class RuntimeException extends \RuntimeException implements Exception
+class NoResultException extends \RuntimeException implements Exception
 {
 }
