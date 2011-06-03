@@ -12,7 +12,8 @@
  */
 namespace Serquant\Controller;
 
-use Serquant\Controller\Exception\RuntimeException;
+use Serquant\Controller\Exception\RuntimeException,
+    Serquant\Service\Persistable;
 
 /**
  * Generic RESTful controller.
@@ -46,17 +47,17 @@ use Serquant\Controller\Exception\RuntimeException;
 class Rest extends \Zend_Rest_Controller
 {
     /**
+     * Service layer
+     * @var \Serquant\Service\Persistable
+     */
+    private $service;
+
+    /**
      * Service layer name (retrieved from dependency injection container)
      * to be defined in child classes.
      * @var string
      */
     protected $serviceName;
-
-    /**
-     * Service layer
-     * @var \Serquant\Service\Persistable
-     */
-    protected $service;
 
     /**
      * Get service layer.
@@ -69,9 +70,9 @@ class Rest extends \Zend_Rest_Controller
             $front = \Zend_Controller_Front::getInstance();
             $container = $front->getParam('bootstrap')->getContainer();
             $this->service = $container->{$this->serviceName};
-            if (!($this->service instanceof \Serquant\Service\Persistable)) {
+            if (!($this->service instanceof Persistable)) {
                 throw new RuntimeException(
-                    'The provided service "' . $this->serviceName . '" must ' .
+                    "The provided service '{$this->serviceName}' must " .
                     'implement the Serquant\Service\Persistable interface ' .
                     '(but ' . get_class($this->service) . ' does not).'
                 );
