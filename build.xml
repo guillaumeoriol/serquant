@@ -1367,24 +1367,6 @@ tt|e |i |o r
         </exec>
     </target>
 
-    <target name="php-documentor"
-            description="build project documentation"
-            depends="init">
-        <echo>Building project documentation</echo>
-        <propertyregex property="temp.title"
-                       input="${basedir}"
-                       regexp="^.*[\\/]([^/]*)$$"
-                       select="\1"
-                       casesensitive="false" />
-        <exec executable="${phpdoc.executable}">
-            <arg line="--undocumentedelements on
-                       --title ${temp.title}
-                       --directory ${basedir}/${source.root.dir}
-                       --target ${basedir}/doc
-                       --output HTML:Smarty:PHP" />
-        </exec>
-    </target>
-
     <target name="php-doctor"
             description="build project documentation"
             depends="init">

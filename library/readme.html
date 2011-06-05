@@ -5,7 +5,9 @@
 <title>Design considerations</title>
 </head>
 <body>
-	<h1>Découpage en couches</h1>
+
+	<p>Library designed to build PHP applications based on Zend or
+		Symfony frameworks.</p>
 
 	<h2>Layers</h2>
 	<p>L'application est organisée en couches aussi découplées que
@@ -30,10 +32,14 @@
 	</p>
 
 	<h2>Service layer</h2>
-	<p>Le service effectue un transtypage grâce aux filtres de
-		l'inputFilter. L'inputFilter est pour l'instant un objet Zend_Form. Le
-		filtre transforme par exemple la représentation ISO8601 d'une date
-		("Y-m-d\TH:i:sO") en objet DateTime.</p>
+	<p>
+		Le service effectue un transtypage grâce aux filtres de l'inputFilter.
+		L'inputFilter est pour l'instant un objet Zend_Form. Le filtre
+		transforme par exemple la représentation ISO8601 d'une date
+		(<code>Y-m-d\TH:i:sO</code>) en objet
+		<code>\DateTime</code>
+		.
+	</p>
 	<p>
 		<small> La conversion opposée est réalisée par le contrôleur,
 			via un script de vue, car c'est lui qui sait la forme attendue (JSON,
@@ -60,9 +66,12 @@
 		difficulté de compréhension du code qu'elles introduisent et de la
 		dégradation de performance qu'elles provoquent.
 	</p>
-	<p>Les dates sont représentées par des classes \DateTime</p>
+	<p>
+		Les dates sont représentées par des classes
+		<code>\DateTime</code>
+	</p>
 
-	<h4>No infrastructure code in domain</h4>
+	<h4>No infrastructure code in domain for persisting</h4>
 	<p>
 		Ces objets ne doivent comporter que des propriétés et méthodes liées
 		au métier et pas d'élément d'infrastructure.<br /> L'infrastructure
@@ -71,15 +80,47 @@
 		le principe des annotations que l'on trouve en Java et qui sont
 		utilisées par Doctrine. Pour éviter de réécrire le code qui analyse
 		ces métadonnées, j'emploie celui de Doctrine. Cela m'oblige à utiliser
-		les annotations prévues par Doctrine pour lui-même, ce qui ne pose pas
-		de problème pour le mapping (la fonction étant identique), mais masque
-		une différence substantielle entre la notion de <em>entity
-			repository</em> chez Doctrine et celle de <em>table data gateway</em> chez
-		Zend puisque j'utilise l'attribut
-		<code>repositoryClass</code>
-		pour signifier la table gateway à utiliser.<br />
+		les annotations prévues par Doctrine pour lui-même.<br />Plusieurs
+		annotations doivent être utilisées :
 	</p>
+	<ul>
+		<li><code>@Entity(repositoryClass="...")</code> sur la classe
+			pour définir la <em>table data gateway</em></li>
+		<li><code>@Column</code> sur les propriétés de la classe pour
+			définir leur mapping</li>
+		<li><code>@Id</code> et <code>@GeneratedValue</code> sur la clé
+			pour définir la stratégie d'assignation de l'identifiant</li>
+	</ul>
+	<p>
+		L'utilisation des annotation prévues pour Doctrine ne pose pas de
+		problème pour le mapping (la fonction étant identique), mais en pose
+		avec la <em>table data gateway</em> (qui masque une différence
+		substantielle entre la notion de <em>entity repository</em> chez
+		Doctrine et celle de <em>table data gateway</em> chez Zend puisque
+		j'utilise l'attribut
+		<code>repositoryClass</code>
+		pour signifier la <em>table data gateway</em> à utiliser).
+	</p>
+	<pre>
+&#47;&#42;&#42;
+ &#42; Customer entity
+ &#42;
+ &#42; &#64;Entity(repositoryClass="MyDbTable")
+ &#42;&#47;
+class Customer
+{
+    &#47;&#42;&#42;
+     &#42; &#64;Id
+     &#42; &#64;Column(name="id", type="integer")
+     &#42; &#64;GeneratedValue(strategy="AUTO")
+     &#42;&#47;
+    protected $id;
 
+    &#47;&#42;&#42; &#64;Column(name="action", type="string", length=40, unique=true) &#42;&#47;
+    protected $action;
+    // ...
+}
+</pre>
 	<p>
 		<small> Le fait d'utiliser certaines classes de Doctrine sans
 			passer par son <em>entity manager</em> n'est pas évident. Tous les
@@ -95,12 +136,42 @@
 			plateformes définies par Doctrine.</small>
 	</p>
 
+	<h4>No infrastructure code in domain for rendering</h4>
+	<p>
+		Pour des raisons de performance, le formatage des résultats (en JSON
+		par exemple) n'est pas basé sur la présence de l'annotation
+		<code>@Entity</code>
+		dans le commentaire de la classe à représenter (cela supposerait un
+		effort d'introspection sur l'ensemble des objets) mais sur la
+		détection d'un marqueur : l'interface
+		<code>Serquant\Entity\Formattable</code>
+		. Ainsi, toute entité devant être formattée spécialement doit
+		implémenter cette interface :
+	</p>
+	<pre>
+use Serquant\Entity\Formattable;
+	
+&#47;&#42;&#42;
+ &#42; Customer entity
+ &#42;
+ &#42; &#64;Entity(repositoryClass="MyDbTable")
+ &#42;&#47;
+class Customer implements Formattable
+{
+    // ...
+}
+</pre>
+
 	<h2>Persistence layer</h2>
 
-	<p>Le persistence layer réalise la conversion entre les types de
-		l'entité et ceux nécessaires pour la base de données. Par exemple, une
-		date est de type \DateTime dans l'entité et doit être convertie dans
-		un format proche de l'ISO pour MySQL ("Y-m-d H:i:s).</p>
+	<p>
+		Le persistence layer réalise la conversion entre les types de l'entité
+		et ceux nécessaires pour la base de données. Par exemple, une date est
+		de type
+		<code>\DateTime</code>
+		dans l'entité et doit être convertie dans un format spécifique
+		pour MySQL (<code>Y-m-d H:i:s</code>).
+	</p>
 	<p>
 		Ce transtypage est possible grâce aux métadonnées prévues par Doctrine
 		ou aux annotations des classes pour Zend. Pour le Zend persistence
@@ -223,7 +294,8 @@
 
 	<p>
 		Logique de Zend_Db_Table_Row#_doUpdate() invoquée par
-		<code>Zend_Db_Table_Row#save()</code> :
+		<code>Zend_Db_Table_Row#save()</code>
+		:
 	</p>
 	<ul>
 		<li>construit la clause where qui identifie la ligne visée</li>
