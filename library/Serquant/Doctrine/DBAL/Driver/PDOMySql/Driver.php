@@ -24,6 +24,11 @@ namespace Serquant\Doctrine\DBAL\Driver\PDOMySql;
  */
 class Driver extends \Doctrine\DBAL\Driver\PDOMySql\Driver
 {
+    /**
+     * Get database platform
+     *
+     * @return \Serquant\Doctrine\DBAL\Platforms\MySqlPlatform
+     */
     public function getDatabasePlatform()
     {
         return new \Serquant\Doctrine\DBAL\Platforms\MySqlPlatform();

@@ -32,11 +32,28 @@
 	</p>
 
 	<h2>Service layer</h2>
+	<h4>Form</h4>
+	<p>
+		Le nom des champs du formulaire doit correspondre au nom des
+		propriétés des entités (objets métier). Ce choix conceptuel permet
+		d'éviter un mapping supplémentaire entre les noms externes (utilisés
+		pour l'interface) et les noms internes (domaine). Pour cette raison,
+		il n'est pas possible de rencontrer deux champs portant le même nom au
+		sein d'un formulaire (un formulaire représente un objet métier). Il
+		n'est donc pas besoin d'utiliser l'array notation. Il est même
+		interdit de le faire dans la mesure où les fonctions
+		<code>Serquant\Service\Crud#populate</code>
+		(côté serveur) et
+		<code>technema.grid.Editable#formToObject</code>
+		(côté client) n'implémentent pas la logique pour traiter cette
+		notation.
+	</p>
 	<p>
 		Le service effectue un transtypage grâce aux filtres de l'inputFilter.
 		L'inputFilter est pour l'instant un objet Zend_Form. Le filtre
-		transforme par exemple la représentation ISO8601 d'une date
-		(<code>Y-m-d\TH:i:sO</code>) en objet
+		transforme par exemple la représentation ISO8601 d'une date (
+		<code>Y-m-d\TH:i:sO</code>
+		) en objet
 		<code>\DateTime</code>
 		.
 	</p>
@@ -85,7 +102,8 @@
 	</p>
 	<ul>
 		<li><code>@Entity(repositoryClass="...")</code> sur la classe
-			pour définir la <em>table data gateway</em></li>
+			pour définir la <em>table data gateway</em>
+		</li>
 		<li><code>@Column</code> sur les propriétés de la classe pour
 			définir leur mapping</li>
 		<li><code>@Id</code> et <code>@GeneratedValue</code> sur la clé
@@ -169,8 +187,10 @@ class Customer implements Formattable
 		et ceux nécessaires pour la base de données. Par exemple, une date est
 		de type
 		<code>\DateTime</code>
-		dans l'entité et doit être convertie dans un format spécifique
-		pour MySQL (<code>Y-m-d H:i:s</code>).
+		dans l'entité et doit être convertie dans un format spécifique pour
+		MySQL (
+		<code>Y-m-d H:i:s</code>
+		).
 	</p>
 	<p>
 		Ce transtypage est possible grâce aux métadonnées prévues par Doctrine
@@ -196,18 +216,16 @@ class Customer implements Formattable
 					qui renvoie à <code>UnitOfWork#doPersist($entity, $visited)</code>
 				</li>
 				<li>quand l'état est STATE_NEW, la fonction appelle <code>persistNew($class,
-						$entity)</code>
-				</li>
+						$entity)</code></li>
 				<li>la fonction invoque les événements liés au cycle de vie</li>
 				<li>la fonction génère, le cas échéant (assignation d'un
 					identifiant avant l'insertion), un identifiant et l'enregistre dans
-					les <em>entityIdentifiers</em>
-				</li>
-				<li>puis elle appelle <code>scheduleForInsert($entity)</code>
-				</li>
+					les <em>entityIdentifiers</em></li>
+				<li>puis elle appelle <code>scheduleForInsert($entity)</code></li>
 				<li>If the entity already has an identifier, it will be added
 					to the <em>identity map</em>.</li>
-			</ul></li>
+			</ul>
+		</li>
 		<li>Au moment du <code>EntityManager#flush()</code>, <code>UnitOfWork#commit()</code>
 			est appelée
 			<ul>
@@ -217,20 +235,19 @@ class Customer implements Formattable
 					qui réalise, grosso modo, les opérations suivantes :
 					<ul>
 						<li><code>$stmt =
-								$this->_conn->prepare($this->_getInsertSQL());</code></li>
+								$this->_conn->prepare($this->_getInsertSQL());</code>
+						</li>
 						<li><code>$insertData =
-								$this->_prepareInsertData($entity);</code>
-						</li>
+								$this->_prepareInsertData($entity);</code></li>
 						<li><code>$stmt->bindValue($paramIndex++, $value,
-								$this->_columnTypes[$column])</code>
-						</li>
-						<li><code>$stmt->execute();</code>
-						</li>
-					</ul>
-				</li>
+								$this->_columnTypes[$column])</code></li>
+						<li><code>$stmt->execute();</code></li>
+					</ul></li>
 				<li>Les identifiants retournés après insertion sont utilisés
-					pour mettre à jour l'entité et les <em>entityIdentifiers</em></li>
-			</ul></li>
+					pour mettre à jour l'entité et les <em>entityIdentifiers</em>
+				</li>
+			</ul>
+		</li>
 	</ol>
 
 	<p>Côté Zend, les choses sont différentes :</p>
@@ -245,34 +262,31 @@ class Customer implements Formattable
 					méthode <code>Zend_Db_Table_Row_Abstract#_transformColumn()</code>
 					est surcharghée)</li>
 				<li>Puis la valeur transmise est assignée à la colonne <strong>sans
-						transtypage</strong>
-				</li>
+						transtypage</strong></li>
 				<li>Enfin, un indicateur est positionné pour signaler que la
 					valeur de la colonne a été modifiée</li>
-			</ol>
-		</li>
+			</ol></li>
 	</ol>
 
 	<h4>retrieve</h4>
-	<p>
-		Dans le cas de Doctrine:
-		<ul>
-			<li>le repository invoque la méthode <code>Persister#load()</code>
-				( <code>BasicEntityPersister</code> par exemple).</li>
-			<li>Cette fonction appelle à son tour <code>Persister#_createEntity($result,
-					$entity, $hints)</code> après avoir exécuté la requête SQL.</li>
-			<li><code>Persister#_createEntity()</code> commence par exécuter
-				<code>Persister#_processSQLResult($result)</code> qui réalise le
-				transtypage</li>
-			<li>Finalement, <code>Persister#_createEntity()</code> invoque <code>UnitOfWork()->createEntity($entityName,
-					$data, $hints)</code> .</li>
-			<li>C'est <code>UnitOfWork()->createEntity()</code> qui va
-				d'abord créer une nouvelle instance puis, grâce aux métadonnées,
-				définir les propriétés de l'entity avec les valeurs obtenues via la
-				méthode <code>ReflectionProperty#setValue()</code>.</li>
-		</ul>
-		Cela signifie que ce ne sont pas les setters de l'entité qui sont
-		utilisés et qu'aucun transtypage ne peut être réalisé par eux.
+	<p>Dans le cas de Doctrine:</p>
+	<ul>
+		<li>le repository invoque la méthode <code>Persister#load()</code>
+			( <code>BasicEntityPersister</code> par exemple).</li>
+		<li>Cette fonction appelle à son tour <code>Persister#_createEntity($result,
+				$entity, $hints)</code> après avoir exécuté la requête SQL.</li>
+		<li><code>Persister#_createEntity()</code> commence par exécuter
+			<code>Persister#_processSQLResult($result)</code> qui réalise le
+			transtypage</li>
+		<li>Finalement, <code>Persister#_createEntity()</code> invoque <code>UnitOfWork#createEntity($entityName,
+				$data, $hints)</code> .</li>
+		<li>C'est <code>UnitOfWork#createEntity()</code> qui va
+			d'abord créer une nouvelle instance puis, grâce aux métadonnées,
+			définir les propriétés de l'entity avec les valeurs obtenues via la
+			méthode <code>ReflectionProperty#setValue()</code>.</li>
+	</ul>
+	<p>Cela signifie que ce ne sont pas les setters de l'entité qui sont
+	utilisés et qu'aucun transtypage ne peut être réalisé par eux.
 	</p>
 
 	<h4>update</h4>
@@ -283,7 +297,7 @@ class Customer implements Formattable
 		<code>Zend_Db_Table</code>
 		permet de faire une mise à jour directe, sans avoir préalablement lu
 		l'entité dans la base de données (
-		<code>$table->update($data, $where)</code>
+		<code>$table#update($data, $where)</code>
 		). Cependant, cette méthode ne permet pas de connaître l'état
 		antérieur de cette entité et donc pas de réaliser un traitement
 		applicatif si une propriété change par exemple (pas de gestion
@@ -305,8 +319,7 @@ class Customer implements Formattable
 		<li>si la clé a changé, effectue des updates en cascade sur les
 			tables dépendantes</li>
 		<li>si les données ont changé, réalise la modification en
-			appelant <code>Zend_Db_Table#update()</code>
-		</li>
+			appelant <code>Zend_Db_Table#update()</code></li>
 		<li>invoque une méthode qui est un point d'extension post-update</li>
 		<li>renvoie la clé</li>
 	</ul>
@@ -335,7 +348,8 @@ class Customer implements Formattable
 	<h4>principe des metadata chez Doctrine</h4>
 	<ol>
 		<li>Tout commence par l'instanciation d'une factory : <code>new
-				$metadataFactoryClassName;</code></li>
+				$metadataFactoryClassName;</code>
+		</li>
 		<li>Puis, les métadonnées sont obtenues par <code>ClassMetadataFactory#getMetadataFor(ltrim($entityName,
 				'\\'))</code><br />qui appelle <code>ClassMetadataFactory#loadMetadata($className)</code>.<br />
 			Cette dernière réalise les opérations suivantes :
@@ -363,12 +377,12 @@ class Customer implements Formattable
         
         return new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($reader, (array)$paths);
     }								</pre> <em><code>$path</code> est le chemin où se trouvent
-										les entités</em></li>
-							</ul>
-						</li>
-					</ol></li>
-			</ol>
-		</li>
+										les entités</em>
+								</li>
+							</ul></li>
+					</ol>
+				</li>
+			</ol></li>
 	</ol>
 </body>
 </html>

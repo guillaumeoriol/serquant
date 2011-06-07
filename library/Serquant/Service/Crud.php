@@ -189,19 +189,31 @@ class Crud implements Persistable
      */
     protected function populate($entity, \Zend_Form $inputFilter)
     {
-        $values = $inputFilter->getValues();
-        foreach ($values as $fieldName => $value) {
-            $method = 'set' . ucfirst($fieldName);
-            if (method_exists($entity, $method)) {
-                call_user_func(array($entity, $method), $value);
-            } else if (property_exists($entity, $fieldName)) {
-                $entity->{$fieldName} = $value;
-            } else {
-                throw new RuntimeException(
-                    'No setter method defined for field \'' . $fieldName
-                    . '\' of entity ' . get_class($entity)
-                );
+        if ($inputFilter->isArray()) {
+            throw new RuntimeException(
+                'Form \'' . get_class($inputFilter) . '\' shall not use the ' .
+                'array notation (ie call setElementsBelongTo() method) as ' .
+                'this service does not implement the logic for this notation.'
+            );
+        }
+
+        foreach ($inputFilter->getElements() as $name => $element) {
+            if (!$element->getIgnore()) {
+                $method = 'set' . ucfirst($name);
+                if (method_exists($entity, $method)) {
+                    $value = $element->getValue();
+                    call_user_func(array($entity, $method), $value);
+                } else {
+                    throw new RuntimeException(
+                        'No setter method defined for field \'' . $name
+                        . '\' of entity ' . get_class($entity)
+                    );
+                }
             }
+        }
+
+        foreach ($inputFilter->getSubForms() as $name => $subForm) {
+            $this->populate($entity, $subForm);
         }
     }
 

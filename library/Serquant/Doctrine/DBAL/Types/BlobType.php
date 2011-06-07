@@ -12,7 +12,7 @@
  */
 namespace Serquant\Doctrine\DBAL\Types;
 
-use Doctrine\DBAL\Types\Type,
+use Doctrine\DBAL\DBALException,
     Doctrine\DBAL\Platforms\AbstractPlatform;
 
 /**
@@ -24,7 +24,7 @@ use Doctrine\DBAL\Types\Type,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class BlobType extends Type
+class BlobType extends \Doctrine\DBAL\Types\Type
 {
     /**
      * Name of the Doctrine type, to be used in the "type" attribute of the
@@ -38,6 +38,7 @@ class BlobType extends Type
      *
      * @param array $fieldDeclaration The field declaration.
      * @param AbstractPlatform $platform The currently used database platform.
+     * @return string
      */
     public function getSqlDeclaration(array $fieldDeclaration, AbstractPlatform $platform)
     {
