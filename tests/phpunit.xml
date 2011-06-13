@@ -6,6 +6,15 @@
          stoponfailure="false"
          syntaxcheck="false">
 
+    <php>
+      <const name="UNIT_TESTS_DB_ADAPTER" value="PDO_MYSQL"/>
+      <const name="UNIT_TESTS_DB_HOST" value="localhost" />
+      <const name="UNIT_TESTS_DB_USERNAME" value="user" />
+      <const name="UNIT_TESTS_DB_PASSWORD" value="password" />
+      <const name="UNIT_TESTS_DB_DBNAME" value="database" />
+      <const name="UNIT_TESTS_DB_PORT" value="3306"/>
+    </php>
+  
     <!-- Test suite to run -->
     <testsuites>
         <testsuite name="Serquant test suite">

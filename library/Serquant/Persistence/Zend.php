@@ -110,7 +110,7 @@ class Zend implements Storable
      * in the identity map
      * @return bool TRUE when the entity is in a managed state; otherwise FALSE.
      */
-    protected function isInManagedState($entity)
+    public function isInManagedState($entity)
     {
         if (!is_string($entity)) {
             $idHash = $this->getIdentityHash($entity);

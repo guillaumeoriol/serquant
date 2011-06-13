@@ -113,15 +113,26 @@ class Table extends \Zend_Db_Table_Abstract
      */
     public function translate(array $expressions)
     {
-        $class = $this->getEntityMetadata();
-        $platform = $this->getDatabasePlatform();
-        $orderBy = array();
-        $limitStart = $limitCount = null;
         $pageNumber = $pageSize = null;
+        if (count($expressions) === 0) {
+            return array($this->select(), $pageNumber, $pageSize);
+        }
 
         $select = $this->select();
+        $columns = array();
+        $orderBy = array();
+        $limitStart = $limitCount = null;
+
+        $class = $this->getEntityMetadata();
+        $platform = $this->getDatabasePlatform();
+
         foreach ($expressions as $key => $value) {
-            if (preg_match('/^sort\((.*)\)$/', $key, $matches)) {
+            if (preg_match('/^select\((.*)\)$/', $key, $matches)) {
+                $fields = explode(',', $matches[1]);
+                foreach ($fields as $field) {
+                    $columns[] = $class->columnNames[$field];
+                }
+            } else if (preg_match('/^sort\((.*)\)$/', $key, $matches)) {
                 $fields = explode(',', $matches[1]);
                 foreach ($fields as $field) {
                     $column = $class->columnNames[substr($field, 1)];
@@ -145,6 +156,9 @@ class Table extends \Zend_Db_Table_Abstract
             }
         }
 
+        if (count($columns) > 0) {
+            $select->from($this->_name, $columns);
+        }
         if (count($orderBy) > 0) {
             $select->order($orderBy);
         }

@@ -12,7 +12,8 @@
  */
 namespace Serquant\Persistence;
 
-use Doctrine\ORM\UnitOfWork,
+use Doctrine\ORM\EntityManager,
+    Doctrine\ORM\UnitOfWork,
     DoctrineExtensions\Paginate\PaginationAdapter,
     Serquant\Persistence\Storable,
     Serquant\Persistence\Exception\NoResultException,
@@ -34,14 +35,25 @@ class Doctrine implements Storable
      * Entity manager
      * @var \Doctrine\ORM\EntityManager
      */
-    protected $entityManager;
+    private $entityManager;
+
+    /**
+     * Set the entity manager.
+     *
+     * @param \Doctrine\ORM\EntityManager $em Doctrine entity manager
+     * @return void
+     */
+    public function setEntityManager(EntityManager $em)
+    {
+        $this->entityManager = $em;
+    }
 
     /**
      * Get the entity manager.
      *
      * @return \Doctrine\ORM\EntityManager
      */
-    protected function getEntityManager()
+    public function getEntityManager()
     {
         if ($this->entityManager === null) {
             $front = \Zend_Controller_Front::getInstance();
@@ -70,19 +82,30 @@ class Doctrine implements Storable
      */
     protected function translate($entityName, array $expressions)
     {
-        $dql = "select e from $entityName e";
+        $pageNumber = $pageSize = null;
+        if (count($expressions) === 0) {
+            return array("select e from $entityName e", $pageNumber, $pageSize);
+        }
+
+        $select = array();
         $where = array();
         $orderBy = array();
         $parameters = array();
         $limitStart = $limitCount = null;
-        $pageNumber = $pageSize = null;
 
         $em = $this->getEntityManager();
         $factory = $em->getMetadataFactory();
         $entityMetadata = $factory->getMetadataFor($entityName);
 
         foreach ($expressions as $key => $value) {
-            if (preg_match('/^sort\((.*)\)$/', $key, $matches)) {
+            if (preg_match('/^select\((.*)\)$/', $key, $matches)) {
+                $fields = explode(',', $matches[1]);
+                foreach ($fields as $field) {
+                    if ($entityMetadata->hasField($field)) {
+                        $select[] = 'e.' . $field;
+                    }
+                }
+            } else if (preg_match('/^sort\((.*)\)$/', $key, $matches)) {
                 $fields = explode(',', $matches[1]);
                 foreach ($fields as $field) {
                     if ('-' === substr($field, 0, 1)) {
@@ -109,6 +132,12 @@ class Doctrine implements Storable
             }
         }
 
+        if (count($select) > 0) {
+            $dql = 'select ' . implode(',', $select);
+        } else {
+            $dql = 'select e';
+        }
+        $dql .= " from $entityName e";
         if (count($where) > 0) {
             $dql .= ' where ' . implode(' and ', $where);
         }
