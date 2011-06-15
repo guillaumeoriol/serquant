@@ -10,16 +10,16 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Test\Model\Doctrine;
+namespace Serquant\Resource\Persistence\Zend;
 
 /**
- * @Entity
- * @Table(name="users")
+ * @Entity(repositoryClass="\Serquant\Resource\Persistence\Zend\Db\Table\User")
  */
 class User
 {
     /**
-     * @Id @Column(type="integer")
+     * @Id
+     * @Column(type="integer")
      * @GeneratedValue
      */
     public $id;
@@ -55,4 +55,3 @@ class User
         return $this->name;
     }
 }
-

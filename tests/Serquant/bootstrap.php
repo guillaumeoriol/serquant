@@ -12,7 +12,7 @@ set_include_path(implode(PATH_SEPARATOR, array(
 require_once TEST_PATH . '/library/Symfony/Component/ClassLoader/UniversalClassLoader.php';
 $loader = new \Symfony\Component\ClassLoader\UniversalClassLoader();
 $loader->registerNamespaces(array(
-    'Serquant\\Test' => TEST_PATH, // For test entities, etc.
+    'Serquant\\Resource' => TEST_PATH, // Test resources (entities, etc.)
     'Serquant' => APPLICATION_ROOT . '/library',
     'Doctrine' => TEST_PATH . '/library',
     'Symfony' => TEST_PATH . '/library'

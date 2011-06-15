@@ -35,10 +35,30 @@ interface Persistable
      * Retrieve a collection of entities matching the specified query
      * expressions.
      *
-     * Each query expression of the <var>expressions</var> parameter represents
-     * an operator of the Resource Query Language as defined in the
-     * {@link https://github.com/kriszyp/rql RQL specification}.
+     * Each query expression of the <var>expressions</var> array represents
+     * either an operator or a comparison (following the alternate comparison
+     * syntax) as defined in the {@link https://github.com/kriszyp/rql Resource
+     * Query Language specification}.<br/>
+     * With an operator, the operator name followed by its arguments must
+     * appear on the value side of the array.<br/>
+     * In the comparison syntax, the property name must be on the key side
+     * and the property value on the value side of the array.<br/>
+     * As stated in the specification, <q>Ampersand delimited operators may be
+     * grouped by placing them within parenthesis. Pipe delimited operators
+     * may also be placed within parenthesis-enclosed groups</q>
+     * (<code>foo=3&(bar=text|bar=string)</code>).
+     * Unfortunately, PHP would split this URL on first equal sign, resulting
+     * in the following array:
+     * <pre>
+     * $_GET:Array
+     * (
+     * &nbsp;&nbsp;[foo] => 3
+     * &nbsp;&nbsp;[(bar] => text|bar=string)
+     * )
+     * </pre>
+     * As a consequence, the parenthesis-enclosed group syntax must be avoided.
      *
+     * <b>Expressions</b>
      * <ul>
      * <li>Simple filters are specified with <code>field=value</code> pairs.
      *     For more complex filters, refer to the
@@ -55,6 +75,8 @@ interface Persistable
      *     <code>sort(-field)</code> query parameter. Multiple property sorts
      *     may be achieved with the following syntax:
      *     <code>sort(+category,-price)</code>.</li>
+     * <li>Select is specified by <code>select(field1,field2)</code> operator
+     *     where fields must match property names of the entity.</li>
      * </ul>
      *
      * If there is no result, an empty collection is returned with a 0 status.
@@ -81,7 +103,8 @@ interface Persistable
      * <li>FIQL (pronounced "fickle") is a simple but flexible, URI-friendly
      *     syntax for expressing filters across the entries in a syndicated
      *     feed. FIQL does not specify how to represent sort and range.
-     *     Cf. {@link http://tools.ietf.org/html/draft-nottingham-atompub-fiql-00}</li>
+     *     Cf. {@link http://tools.ietf.org/html/draft-nottingham-atompub-fiql-00}.
+     *     Feed Item Query Language is a subset of RQL valid.</li>
      * <li>Jaql is a query language designed for JSON. Jaql is primarily used
      *     to analyze large-scale semi-structured data. Core features include
      *     user extensibility and parallelism. In addition to modeling semi-
@@ -125,6 +148,8 @@ interface Persistable
      * Each query expression of the <var>expressions</var> parameter represents
      * an operator of the Resource Query Language as defined in the
      * {@link https://github.com/kriszyp/rql RQL specification}.
+     * For a detailed explanation of the <var>expressions</var> parameter,
+     * cf. {@link Persistable#fetchAll}.
      *
      * @param array $expressions Array of query expressions.
      * @return Result
@@ -141,6 +166,8 @@ interface Persistable
      * Each query expression of the <var>expressions</var> parameter represents
      * an operator of the Resource Query Language as defined in the
      * {@link https://github.com/kriszyp/rql RQL specification}.
+     * For a detailed explanation of the <var>expressions</var> parameter,
+     * cf. {@link Persistable#fetchAll}.
      *
      * @param array $expressions Array of query expressions.
      * @return Result
@@ -149,6 +176,26 @@ interface Persistable
      * @throws Exception on failure.
      */
     public function fetchPage(array $expressions);
+
+    /**
+     * Retrieve a collection of key/value pairs matching the specified query
+     * expressions.
+     *
+     * Each query expression of the <var>expressions</var> parameter represents
+     * an operator of the Resource Query Language as defined in the
+     * {@link https://github.com/kriszyp/rql RQL specification}.
+     * For a detailed explanation of the <var>expressions</var> parameter,
+     * cf. {@link Persistable#fetchAll}.
+     *
+     * @param string $idProperty Property name representing the identifier.
+     * @param string $labelProperty Property name representing the label.
+     * @param array $expressions Array of query expressions.
+     * @return Result
+     * On success, Result#getStatus() returns 0 and Result#getData() returns
+     * an array consisting of id/label pairs.
+     * @throws Exception on failure.
+     */
+    public function fetchPairs($idProperty, $labelProperty, array $expressions);
 
     /**
      * Get a new entity in its initial state.

@@ -110,6 +110,8 @@ class Table extends \Zend_Db_Table_Abstract
      *
      * @param array $expressions RQL query
      * @return Zend_Db_Select Output query
+     * @throws RuntimeException If non-implemented operator is used, if the sort
+     * order is not specified or if a parenthesis-enclosed group syntax is used.
      */
     public function translate(array $expressions)
     {
@@ -127,26 +129,48 @@ class Table extends \Zend_Db_Table_Abstract
         $platform = $this->getDatabasePlatform();
 
         foreach ($expressions as $key => $value) {
-            if (preg_match('/^select\((.*)\)$/', $key, $matches)) {
-                $fields = explode(',', $matches[1]);
-                foreach ($fields as $field) {
-                    $columns[] = $class->columnNames[$field];
-                }
-            } else if (preg_match('/^sort\((.*)\)$/', $key, $matches)) {
-                $fields = explode(',', $matches[1]);
-                foreach ($fields as $field) {
-                    $column = $class->columnNames[substr($field, 1)];
-                    if ('-' === substr($field, 0, 1)) {
-                        $orderBy[] = $column . ' DESC';
-                    } else {
-                        $orderBy[] = $column . ' ASC';
+            if (is_int($key)) {
+                // Regular operator syntax
+                if (preg_match('/^select\((.*)\)$/', $value, $matches)) {
+                    $fields = explode(',', $matches[1]);
+                    foreach ($fields as $field) {
+                        $columns[] = $class->columnNames[$field];
                     }
+                } else if (preg_match('/^sort\((.*)\)$/', $value, $matches)) {
+                    $fields = explode(',', $matches[1]);
+                    foreach ($fields as $field) {
+                        $column = $class->columnNames[substr($field, 1)];
+                        if ('-' === substr($field, 0, 1)) {
+                            $orderBy[] = $column . ' DESC';
+                        } else if ('+' === substr($field, 0, 1)) {
+                            $orderBy[] = $column . ' ASC';
+                        } else {
+                            throw new RuntimeException(
+                                'Sort order not specified for property \'' .
+                                $field . '\'. It must be preceded by either' .
+                                '+ or - sign.'
+                            );
+                        }
+                    }
+                } else if (preg_match(
+                    '/^limit\(([0-9]+),([0-9]+)\)$/', $value, $matches
+                )) {
+                    $limitStart = (int) $matches[1];
+                    $limitCount = (int) $matches[2];
+                } else {
+                    throw new RuntimeException(
+                        "Operator $value not implemented yet."
+                    );
                 }
-            } else if (preg_match('/^limit\(([0-9]+),([0-9]+)\)$/', $key, $matches)) {
-                $limitStart = (int) $matches[1];
-                $limitCount = (int) $matches[2];
             } else {
-                // Consider all other query string parameters as filters
+                // Alternate comparison syntax
+                if ('(' === substr($key, 0, 1)) {
+                    throw new RuntimeException(
+                        'Parenthesis-enclosed group syntax not supported. ' .
+                        'Use regular operator syntax instead: ' .
+                        'or(operator,operator,...)'
+                    );
+                }
                 $column = $class->columnNames[$key];
                 if (false === strpos($value, '*')) {
                     $select->where("$column = ?", $value);

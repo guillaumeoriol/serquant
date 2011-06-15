@@ -14,6 +14,7 @@ namespace Serquant\Service;
 
 use Serquant\Persistence\Storable,
     Serquant\Service\Persistable,
+    Serquant\Service\Exception\InvalidArgumentException,
     Serquant\Service\Exception\RuntimeException,
     Serquant\Service\Result;
 
@@ -154,6 +155,46 @@ class Crud implements Persistable
         }
 
         return new Result(Result::STATUS_SUCCESS, $paginator);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param string $idProperty Property name representing the identifier.
+     * @param string $labelProperty Property name representing the label.
+     * @param array $expressions Array of query expressions.
+     * @return Result
+     * On success, Result#getStatus() returns 0 and Result#getData() returns
+     * an array consisting of id/label pairs.
+     * @throws RuntimeException If an error occurs in the persistence layer.
+     */
+    public function fetchPairs($idProperty = 'id', $labelProperty = 'name',
+        array $expressions = array()
+    ) {
+        foreach ($expressions as $key => $value) {
+            if (is_int($key) && (preg_match('/^select\((.*)\)$/', $value))) {
+                throw new InvalidArgumentException(
+                    'The specified array of expressions already has a '
+                    . "'select' operator: '" . print_r($value, true) . "'"
+                );
+            }
+        }
+        $expressions[] = "select($idProperty,$labelProperty)";
+
+        $persister = $this->getPersister();
+        try {
+            $data = $persister->fetchPairs(
+                $this->entityName, $idProperty, $labelProperty, $expressions
+            );
+        } catch (\Exception $e) {
+            // Sanitize for exception shielding
+            throw new RuntimeException(
+                $this->getSanitizedException($e) .
+                'Unable to fetch key/value pairs matching given criteria.'
+            );
+        }
+
+        return new Result(Result::STATUS_SUCCESS, $data);
     }
 
     /**
@@ -382,17 +423,22 @@ class Crud implements Persistable
      */
     protected function getSanitizedException(\Exception $exception)
     {
-        $id = uniqid('shield-', true);
+        $id = '';
+        $message = $exception->getMessage() . PHP_EOL
+                 . $exception->getTraceAsString();
 
         $front = \Zend_Controller_Front::getInstance();
-        $container = $front->getParam('bootstrap')->getContainer();
-        if ($log = $container->log) {
-            $log->err(
-                "[errorId:$id] " . $exception->getMessage() . PHP_EOL
-                . $exception->getTraceAsString()
-            );
+        if ($bootstrap = $front->getParam('bootstrap')) {
+            if ($container = $bootstrap->getContainer()) {
+                if ($log = $container->log) {
+                    $id = '[errorId:' . uniqid('shield-', true) . ']';
+                    $log->err($id . PHP_EOL . $message);
+                    $message = '(details may be found in the application log)';
+                }
+            }
         }
 
-        return "An error has occurred while running service [errorId:$id]. ";
+        return 'An error has occurred while running service '
+            . $id . PHP_EOL . $message . ":\n";
     }
 }

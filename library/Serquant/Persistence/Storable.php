@@ -76,6 +76,29 @@ interface Storable
     public function fetchPage($entityName, array $expressions);
 
     /**
+     * Fetch key/value pairs of the named entity matching the specified
+     * criteria.
+     *
+     * Filtering, ranging and sorting criteria may be specified through the
+     * expression array as defined by the {@link Persistable#fetchAll()} method
+     * of the domain service layer.
+     * At least two properties of the entity must be selected with the
+     * RQL 'select' operator: the ones specified in function arguments.
+     *
+     * @param string $entityName Entity class name.
+     * @param string $idProperty Property name representing the identifier.
+     * @param string $labelProperty Property name representing the label.
+     * @param array $expressions Fetch criteria.
+     * @return array Array consisting of id/label pairs.
+     */
+    public function fetchPairs(
+        $entityName,
+        $idProperty,
+        $labelProperty,
+        array $expressions
+    );
+
+    /**
      * Create the new entity into the persistence system.
      *
      * If the given entity has no identity and the identity is assigned by the

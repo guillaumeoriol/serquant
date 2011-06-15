@@ -155,7 +155,7 @@ class Zend implements Storable
     public function fetchAll($entityName, array $expressions)
     {
         $table = $this->getTable($entityName);
-        list($select, $pageNumber, $pageSize) = $table->translate($expressions);
+        list ($select) = $table->translate($expressions);
         $data = $select->query()->fetchAll(\Zend_Db::FETCH_ASSOC);
 
         return $table->getEntities($data);
@@ -175,7 +175,7 @@ class Zend implements Storable
     public function fetchOne($entityName, array $expressions)
     {
         $table = $this->getTable($entityName);
-        list($select, $pageNumber, $pageSize) = $table->translate($expressions);
+        list ($select) = $table->translate($expressions);
         $data = $select->query()->fetchAll(\Zend_Db::FETCH_ASSOC);
 
         $count = count($data);
@@ -203,7 +203,7 @@ class Zend implements Storable
     public function fetchPage($entityName, array $expressions)
     {
         $table = $this->getTable($entityName);
-        list($select, $pageNumber, $pageSize) = $table->translate($expressions);
+        list ($select) = $table->translate($expressions);
         $adapter = new DbSelect($select);
         $paginator = new \Zend_Paginator($adapter);
         if (($pageNumber !== null) && ($pageSize !== null)) {
@@ -211,6 +211,26 @@ class Zend implements Storable
                 ->setItemCountPerPage($pageSize);
         }
         return $paginator;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param string $entityName Entity class name.
+     * @param string $idProperty Property name representing the identifier.
+     * @param string $labelProperty Property name representing the label.
+     * @param array $expressions Fetch criteria.
+     * @return array Array consisting of id/label pairs.
+     */
+    public function fetchPairs(
+        $entityName,
+        $idProperty,
+        $labelProperty,
+        array $expressions
+    ) {
+        $table = $this->getTable($entityName);
+        list ($select) = $table->translate($expressions);
+        return $table->getAdapter()->fetchPairs($select);
     }
 
     /**

@@ -75,6 +75,8 @@ class Doctrine implements Storable
      * @param string $entityName Class name of the entity
      * @param array $expressions RQL query
      * @return \Doctrine\ORM\Query Output Doctrine query
+     * @throws RuntimeException If non-implemented operator is used, if the sort
+     * order is not specified or if a parenthesis-enclosed group syntax is used.
      * @todo This function could be built on a ABNF parser that would use
      * its callbacks to produce the target language. We may also translate
      * to PHP the JavaScript parser written by Kris Zyp (see
@@ -98,29 +100,51 @@ class Doctrine implements Storable
         $entityMetadata = $factory->getMetadataFor($entityName);
 
         foreach ($expressions as $key => $value) {
-            if (preg_match('/^select\((.*)\)$/', $key, $matches)) {
-                $fields = explode(',', $matches[1]);
-                foreach ($fields as $field) {
-                    if ($entityMetadata->hasField($field)) {
-                        $select[] = 'e.' . $field;
+            if (is_int($key)) {
+                // Regular operator syntax
+                if (preg_match('/^select\((.*)\)$/', $value, $matches)) {
+                    $fields = explode(',', $matches[1]);
+                    foreach ($fields as $field) {
+                        if ($entityMetadata->hasField($field)) {
+                            $select[] = 'e.' . $field;
+                        }
                     }
-                }
-            } else if (preg_match('/^sort\((.*)\)$/', $key, $matches)) {
-                $fields = explode(',', $matches[1]);
-                foreach ($fields as $field) {
-                    if ('-' === substr($field, 0, 1)) {
-                        $orderBy[] = 'e.' . substr($field, 1) . ' DESC';
-                    } else {
-                        $orderBy[] = 'e.' . substr($field, 1) . ' ASC';
+                } else if (preg_match('/^sort\((.*)\)$/', $value, $matches)) {
+                    $fields = explode(',', $matches[1]);
+                    foreach ($fields as $field) {
+                        if ('-' === substr($field, 0, 1)) {
+                            $orderBy[] = 'e.' . substr($field, 1) . ' DESC';
+                        } else if ('+' === substr($field, 0, 1)) {
+                            $orderBy[] = 'e.' . substr($field, 1) . ' ASC';
+                        } else {
+                            throw new RuntimeException(
+                                'Sort order not specified for property \'' .
+                                $field . '\'. It must be preceded by either' .
+                                '+ or - sign.'
+                            );
+                        }
                     }
+                } else if (preg_match(
+                    '/^limit\(([0-9]+),([0-9]+)\)$/', $value, $matches
+                )) {
+                    $limitStart = (int) $matches[1];
+                    $limitCount = (int) $matches[2];
+                } else {
+                    throw new RuntimeException(
+                        "Operator $value not implemented yet."
+                    );
                 }
-            } else if (preg_match('/^limit\(([0-9]+),([0-9]+)\)$/', $key, $matches)) {
-                $limitStart = (int) $matches[1];
-                $limitCount = (int) $matches[2];
             } else {
-                // Consider all other query string parameters as filters.
-                // Check if the parameter is actually an entity property.
+                // Alternate comparison syntax
+                if ('(' === substr($key, 0, 1)) {
+                    throw new RuntimeException(
+                        'Parenthesis-enclosed group syntax not supported. ' .
+                        'Use regular operator syntax instead: ' .
+                        'or(operator,operator,...)'
+                    );
+                }
                 if ($entityMetadata->hasField($key)) {
+                    // Check if the parameter is actually an entity property.
                     if (false === strpos($value, '*')) {
                         $where[] = "e.$key = :$key";
                         $parameters[$key] = $value;
@@ -178,8 +202,7 @@ class Doctrine implements Storable
      */
     public function fetchAll($entityName, array $expressions)
     {
-        list($query, $pageNumber, $pageSize)
-            = $this->translate($entityName, $expressions);
+        list ($query) = $this->translate($entityName, $expressions);
 
         $entities = $query->getResult();
         return $entities;
@@ -198,8 +221,7 @@ class Doctrine implements Storable
      */
     public function fetchOne($entityName, array $expressions)
     {
-        list($query, $pageNumber, $pageSize)
-            = $this->translate($entityName, $expressions);
+        list ($query) = $this->translate($entityName, $expressions);
 
         try {
             $entity = $query->getSingleResult();
@@ -227,7 +249,7 @@ class Doctrine implements Storable
      */
     public function fetchPage($entityName, array $expressions)
     {
-        list($query, $pageNumber, $pageSize)
+        list ($query, $pageNumber, $pageSize)
             = $this->translate($entityName, $expressions);
 
         $adapter = new PaginationAdapter($query);
@@ -237,6 +259,31 @@ class Doctrine implements Storable
                 ->setItemCountPerPage($pageSize);
         }
         return $paginator;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param string $entityName Entity class name.
+     * @param string $idProperty Property name representing the identifier.
+     * @param string $labelProperty Property name representing the label.
+     * @param array $expressions Fetch criteria.
+     * @return array Array consisting of id/label pairs.
+     */
+    public function fetchPairs(
+        $entityName,
+        $idProperty,
+        $labelProperty,
+        array $expressions
+    ) {
+        list ($query) = $this->translate($entityName, $expressions);
+        $data = $query->getArrayResult();
+
+        $pairs = array();
+        foreach ($data as $row) {
+            $pairs[$row[$idProperty]] = $row[$labelProperty];
+        }
+        return $pairs;
     }
 
     /**

@@ -57,7 +57,7 @@ class RangeHandler extends \Zend_Controller_Plugin_Abstract
 
         // Expected format is: 'items=0-9'
         $range = explode('=', $range);
-        list($start, $end) = explode('-', $range[1]);
+        list ($start, $end) = explode('-', $range[1]);
         $count = $end - $start + 1;
         $request->setQuery("limit($start,$count)", '');
     }

@@ -10,26 +10,19 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Test\Model\Zend\Db\Table;
+namespace Serquant\Resource\Persistence\Zend\Db\Table;
 
-class User extends \Serquant\Persistence\Zend\Db\Table
+class Role extends \Serquant\Persistence\Zend\Db\Table
 {
     /**
      * Table name
      * @var string
      */
-    protected $_name = 'users';
+    protected $_name = 'roles';
 
     /**
      * Primary key
      * @var string
      */
     protected $_primary = 'id';
-
-    /**
-     * Optional sequence.
-     * When false, the table has a natural key. Default is true.
-     * @var boolean | string
-     */
-    protected $_sequence = true;
 }
