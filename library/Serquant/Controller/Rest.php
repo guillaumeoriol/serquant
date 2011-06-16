@@ -82,6 +82,27 @@ class Rest extends \Zend_Rest_Controller
     }
 
     /**
+     * Sanitize the RQL query to swap operators from the key side of the array
+     * to the value side.
+     *
+     * @param array $query The query as it is exploded by PHP engine (ie $_GET)
+     * @return array The sanitized RQL
+     */
+    protected function sanitizeRql($query)
+    {
+        $rql = array();
+        foreach ($query as $key => $value) {
+            if (!is_int($key) && empty($value)) {
+                $rql[] = $key;
+            } else {
+                $rql[$key] = $value;
+            }
+        }
+
+        return $rql;
+    }
+
+    /**
      * GET is the REST method to retrieve a collection of resources when no
      * identifier is present.
      *
@@ -97,7 +118,8 @@ class Rest extends \Zend_Rest_Controller
     public function indexAction()
     {
         $service = $this->getService();
-        $result = $service->fetchPage($this->_request->getQuery());
+        $rql = $this->sanitizeRql($this->_request->getQuery());
+        $result = $service->fetchPage($rql);
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
