@@ -15,7 +15,7 @@ namespace Serquant\Persistence;
 use Doctrine\ORM\EntityManager,
     Doctrine\ORM\UnitOfWork,
     DoctrineExtensions\Paginate\PaginationAdapter,
-    Serquant\Persistence\Storable,
+    Serquant\Persistence\Persistence,
     Serquant\Persistence\Exception\NoResultException,
     Serquant\Persistence\Exception\NonUniqueResultException,
     Serquant\Persistence\Exception\RuntimeException;
@@ -29,7 +29,7 @@ use Doctrine\ORM\EntityManager,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class Doctrine implements Storable
+class Doctrine implements Persistence
 {
     /**
      * Entity manager

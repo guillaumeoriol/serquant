@@ -73,15 +73,15 @@
 	<h4>POJO</h4>
 	<p>
 		Le domaine est constitué d'objets métier, qui doivent rester aussi
-		simples que possible (principe de simplicité connu sous le nom de <a
-			href="http://www.martinfowler.com/bliki/POJO.html">POJO</a>). Domain
-		entities must declare their properties either protected or private to
-		conform with EJB 3 specification.<br /> Des getters/setters publics
-		doivent être écrits (sans quoi la fonction Crud#populate() lève une
-		exception).<br /> Les magic getters/setters sont à proscrire, comme
-		toutes les fonctions magiques d'une manière générale, du fait de la
-		difficulté de compréhension du code qu'elles introduisent et de la
-		dégradation de performance qu'elles provoquent.
+		simples que possible (principe de simplicité nommé par Martin Fowler <a
+			href="http://www.martinfowler.com/bliki/POJO.html">POJO</a>).<br />
+		Domain entities must declare their properties either protected or
+		private to conform with EJB 3 specification.<br /> Des
+		getters/setters publics doivent être écrits (sans quoi la fonction
+		Crud#populate() lève une exception).<br /> Les magic getters/setters
+		sont à proscrire, comme toutes les fonctions magiques d'une manière
+		générale, du fait de la difficulté de compréhension du code qu'elles
+		introduisent et de la dégradation de performance qu'elles provoquent.
 	</p>
 	<p>
 		Les dates sont représentées par des classes
@@ -93,31 +93,31 @@
 		Ces objets ne doivent comporter que des propriétés et méthodes liées
 		au métier et pas d'élément d'infrastructure.<br /> L'infrastructure
 		étant rejetée à l'extérieur, il est nécessaire d'ajouter à ces objets
-		des métadonnées qui en facilitent le traitement. Je choisis pour cela
-		le principe des annotations que l'on trouve en Java et qui sont
-		utilisées par Doctrine. Pour éviter de réécrire le code qui analyse
-		ces métadonnées, j'emploie celui de Doctrine. Cela m'oblige à utiliser
-		les annotations prévues par Doctrine pour lui-même.<br />Plusieurs
-		annotations doivent être utilisées :
+		des métadonnées qui en définissent la persistence. La correspondance
+		entre le modèle objet du domaine et le modèle relationnel des bases de
+		données a été formalisée par la communauté Java dans la spécification
+		<a href="http://www.jcp.org/en/jsr/detail?id=317">Java Persistence
+			API</a> (actuellement Version 2.0) qui est la partie persistence de
+		données de la norme EJB3 (JSR 220). Elle a donné lieu à une
+		implémentation de référence : Hibernate. Les frameworks qui réalisent
+		la persistence sont appelés ORM. Dans le monde PHP, les principaux ORM
+		sont Doctrine et Propel.<br /> Pour implémenter la couche de
+		persistence, je choisis d'adopter ces métadonnées (pas forcément sous
+		la forme d'annotations d'ailleurs). Et pour éviter de réécrire le code
+		qui gère ces métadonnées, j'emploie celui de Doctrine.
 	</p>
-	<ul>
-		<li><code>@Entity(repositoryClass="...")</code> sur la classe
-			pour définir la <em>table data gateway</em>
-		</li>
-		<li><code>@Column</code> sur les propriétés de la classe pour
-			définir leur mapping</li>
-		<li><code>@Id</code> et <code>@GeneratedValue</code> sur la clé
-			pour définir la stratégie d'assignation de l'identifiant</li>
-	</ul>
 	<p>
-		L'utilisation des annotation prévues pour Doctrine ne pose pas de
+		L'implémentation des métadonnées réalisée par Doctrine ne pose pas de
 		problème pour le mapping (la fonction étant identique), mais en pose
-		avec la <em>table data gateway</em> (qui masque une différence
-		substantielle entre la notion de <em>entity repository</em> chez
-		Doctrine et celle de <em>table data gateway</em> chez Zend puisque
-		j'utilise l'attribut
+		un avec la notion de <em>table data gateway</em> qui est nécessaire
+		pour le persister Zend. Dans ce cas, j'utilise l'attribut
 		<code>repositoryClass</code>
-		pour signifier la <em>table data gateway</em> à utiliser).
+		(
+		<code>@Entity(repositoryClass="...")</code>
+		) pour signifier la <em>table data gateway</em> à utiliser. Mais cette
+		utilisation abusive masque une différence substantielle entre la
+		notion de <em>entity repository</em> chez Doctrine et celle de <em>table
+			data gateway</em> chez Zend.
 	</p>
 	<pre>
 &#47;&#42;&#42;
@@ -140,6 +140,18 @@ class Customer
 }
 </pre>
 	<p>
+		L'<em>entity manager</em> passe par
+		<code>ClassMetadataFactory#getMetadataFor()</code>
+		pour toutes ses opérations qui concernent les métadonnées. (On peut
+		changer la <em>factory</em> dans la configuration.) Au moment où il
+		instancie cette la <em>factory</em>, il lui passe successivement deux
+		objets : l'<em>entity manager</em> et le <em>cache driver</em>. The
+		ClassMetadataFactory is therefore tightly coupled with the
+		EntityManager. The EntityManager is used to retrieve the metadata
+		driver from the configuration, the database platform from the db
+		connection and the event manager.
+	</p>
+	<p>
 		<small> Le fait d'utiliser certaines classes de Doctrine sans
 			passer par son <em>entity manager</em> n'est pas évident. Tous les
 			composants sont intimement liés dans Doctrine et tenter de les
@@ -155,6 +167,18 @@ class Customer
 	</p>
 
 	<h4>No infrastructure code in domain for rendering</h4>
+
+	<p>
+		While doing some experiments on PHP 5.4 Traits, Benjamin Eberlei
+		prototyped <a href="https://gist.github.com/1034079">a few classes</a>
+		to serialize a Doctrine entity into several formats (JSON, XML). After
+		having analyzed those classes, I concluded two external objects would
+		be necessary to serialize an entity: a class metadata factory and an
+		identity map of entities (with Doctrine, this identity map is embedded
+		in UnitOfWork). The metadata are necessary to get persistent fields
+		and the identity map is used to retrieve the identifier of
+		single-valued associations.
+	</p>
 	<p>
 		Pour des raisons de performance, le formatage des résultats (en JSON
 		par exemple) n'est pas basé sur la présence de l'annotation
@@ -180,27 +204,59 @@ class Customer implements Formattable
 }
 </pre>
 
-	<h2>Persistence layer</h2>
+	<h2>Persistence Layer or Data Mapper</h2>
 
 	<p>
-		Le persistence layer réalise la conversion entre les types de l'entité
-		et ceux nécessaires pour la base de données. Par exemple, une date est
-		de type
-		<code>\DateTime</code>
-		dans l'entité et doit être convertie dans un format spécifique pour
-		MySQL (
+		The role of a Persistence Layer is to map the objects of the <a
+			href="http://martinfowler.com/eaaCatalog/domainModel.html">Domain
+			Model</a> to the structure used by the storage system. For instance, a
+		date is an instance of the PHP
+		<code>DateTime</code>
+		class in the Domain Model and must be converted to a string with a
+		specific representation (
 		<code>Y-m-d H:i:s</code>
-		).
+		) to be stored in a MySQL database.
 	</p>
 	<p>
-		Ce transtypage est possible grâce aux métadonnées prévues par Doctrine
-		ou aux annotations des classes pour Zend. Pour le Zend persistence
-		layer, on doit utiliser des annotations
-		<code>@column</code>
-		semblables à celles définies par Doctrine, par exemple :
+		The mapper does the mapping through <a
+			href="http://martinfowler.com/eaaCatalog/metadataMapping.html">Metadata
+			Mapping</a>. However, in his PoEAA book, Fowler explains that <q>The
+			simplest, and often best, way to do this is with explicit code, which
+			requires a mapper class for each domain object.</q>. For this reason, it
+		is always possible to use explicit code by implementing the
+		Persistable interface of the Persistence package for a particular
+		entity. Then, just pass to the Crud constructor the specific
+		mapper:<br />
+		<code>$service = new Crud('Customer', 'CustomerForm', $mapper);</code>
+	</p>
+	<p>
+		To avoid reinventing the wheel, we use Doctrine implementation of the
+		Metadata Mapping. When the annotations are used, one can find this
+		kind of comments in entities:<br />
 		<code>/** @Column(name="title", type="string", length=100,
 			nullable=true) */</code>
 	</p>
+	<p>By nature, persistence layer includes a Data Mapper as the
+		domain model is an object model and the storage is a different model.
+		It may be an ORM (Object/Relational Mapper) when the storage is a
+		RDBMS. It may also be an ODM (Object/Document Mapper) when the storage
+		is a document-oriented database. We can even imagine an OSM
+		(Object/Service Mapper) in which data would be managed by an external
+		service.</p>
+	<p>
+		To load an entity from the database, the client calls a <em>find</em>
+		method of the <a
+			href="http://martinfowler.com/eaaCatalog/dataMapper.html">Data
+			Mapper</a>. The Data Mapper uses an <a
+			href="http://martinfowler.com/eaaCatalog/identityMap.html">Identity
+			Map</a> to check if the entity is already loaded. But, as stated by
+		Fowler, <q>Since objects are very interconnected, you usually have
+			to stop pulling the data back at some point. Otherwise, you're likely
+			to pull back the entire database with a request.</q> To deal with this,
+		mapping layers use <a
+			href="http://martinfowler.com/eaaCatalog/lazyLoad.html">Lazy Load</a>.
+	</p>
+	<p>Doctrine uses many of the patterns described by Martin Fowler.</p>
 
 	<h2>Analyse comparative des fonctionnements de Doctrine et Zend</h2>
 	<h4>create</h4>
@@ -216,16 +272,18 @@ class Customer implements Formattable
 					qui renvoie à <code>UnitOfWork#doPersist($entity, $visited)</code>
 				</li>
 				<li>quand l'état est STATE_NEW, la fonction appelle <code>persistNew($class,
-						$entity)</code></li>
+						$entity)</code>
+				</li>
 				<li>la fonction invoque les événements liés au cycle de vie</li>
 				<li>la fonction génère, le cas échéant (assignation d'un
 					identifiant avant l'insertion), un identifiant et l'enregistre dans
-					les <em>entityIdentifiers</em></li>
-				<li>puis elle appelle <code>scheduleForInsert($entity)</code></li>
+					les <em>entityIdentifiers</em>
+				</li>
+				<li>puis elle appelle <code>scheduleForInsert($entity)</code>
+				</li>
 				<li>If the entity already has an identifier, it will be added
 					to the <em>identity map</em>.</li>
-			</ul>
-		</li>
+			</ul></li>
 		<li>Au moment du <code>EntityManager#flush()</code>, <code>UnitOfWork#commit()</code>
 			est appelée
 			<ul>
@@ -235,19 +293,20 @@ class Customer implements Formattable
 					qui réalise, grosso modo, les opérations suivantes :
 					<ul>
 						<li><code>$stmt =
-								$this->_conn->prepare($this->_getInsertSQL());</code>
-						</li>
+								$this->_conn->prepare($this->_getInsertSQL());</code></li>
 						<li><code>$insertData =
-								$this->_prepareInsertData($entity);</code></li>
+								$this->_prepareInsertData($entity);</code>
+						</li>
 						<li><code>$stmt->bindValue($paramIndex++, $value,
-								$this->_columnTypes[$column])</code></li>
-						<li><code>$stmt->execute();</code></li>
-					</ul></li>
-				<li>Les identifiants retournés après insertion sont utilisés
-					pour mettre à jour l'entité et les <em>entityIdentifiers</em>
+								$this->_columnTypes[$column])</code>
+						</li>
+						<li><code>$stmt->execute();</code>
+						</li>
+					</ul>
 				</li>
-			</ul>
-		</li>
+				<li>Les identifiants retournés après insertion sont utilisés
+					pour mettre à jour l'entité et les <em>entityIdentifiers</em></li>
+			</ul></li>
 	</ol>
 
 	<p>Côté Zend, les choses sont différentes :</p>
@@ -262,10 +321,12 @@ class Customer implements Formattable
 					méthode <code>Zend_Db_Table_Row_Abstract#_transformColumn()</code>
 					est surcharghée)</li>
 				<li>Puis la valeur transmise est assignée à la colonne <strong>sans
-						transtypage</strong></li>
+						transtypage</strong>
+				</li>
 				<li>Enfin, un indicateur est positionné pour signaler que la
 					valeur de la colonne a été modifiée</li>
-			</ol></li>
+			</ol>
+		</li>
 	</ol>
 
 	<h4>retrieve</h4>
@@ -280,14 +341,12 @@ class Customer implements Formattable
 			transtypage</li>
 		<li>Finalement, <code>Persister#_createEntity()</code> invoque <code>UnitOfWork#createEntity($entityName,
 				$data, $hints)</code> .</li>
-		<li>C'est <code>UnitOfWork#createEntity()</code> qui va
-			d'abord créer une nouvelle instance puis, grâce aux métadonnées,
-			définir les propriétés de l'entity avec les valeurs obtenues via la
-			méthode <code>ReflectionProperty#setValue()</code>.</li>
+		<li>C'est <code>UnitOfWork#createEntity()</code> qui va d'abord
+			créer une nouvelle instance puis, grâce aux métadonnées, définir les
+			propriétés de l'entity avec les valeurs obtenues via la méthode <code>ReflectionProperty#setValue()</code>.</li>
 	</ul>
-	<p>Cela signifie que ce ne sont pas les setters de l'entité qui sont
-	utilisés et qu'aucun transtypage ne peut être réalisé par eux.
-	</p>
+	<p>Cela signifie que ce ne sont pas les setters de l'entité qui
+		sont utilisés et qu'aucun transtypage ne peut être réalisé par eux.</p>
 
 	<h4>update</h4>
 	<p>
@@ -319,7 +378,8 @@ class Customer implements Formattable
 		<li>si la clé a changé, effectue des updates en cascade sur les
 			tables dépendantes</li>
 		<li>si les données ont changé, réalise la modification en
-			appelant <code>Zend_Db_Table#update()</code></li>
+			appelant <code>Zend_Db_Table#update()</code>
+		</li>
 		<li>invoque une méthode qui est un point d'extension post-update</li>
 		<li>renvoie la clé</li>
 	</ul>
@@ -348,8 +408,7 @@ class Customer implements Formattable
 	<h4>principe des metadata chez Doctrine</h4>
 	<ol>
 		<li>Tout commence par l'instanciation d'une factory : <code>new
-				$metadataFactoryClassName;</code>
-		</li>
+				$metadataFactoryClassName;</code></li>
 		<li>Puis, les métadonnées sont obtenues par <code>ClassMetadataFactory#getMetadataFor(ltrim($entityName,
 				'\\'))</code><br />qui appelle <code>ClassMetadataFactory#loadMetadata($className)</code>.<br />
 			Cette dernière réalise les opérations suivantes :
@@ -377,12 +436,12 @@ class Customer implements Formattable
         
         return new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($reader, (array)$paths);
     }								</pre> <em><code>$path</code> est le chemin où se trouvent
-										les entités</em>
-								</li>
-							</ul></li>
-					</ol>
-				</li>
-			</ol></li>
+										les entités</em></li>
+							</ul>
+						</li>
+					</ol></li>
+			</ol>
+		</li>
 	</ol>
 </body>
 </html>

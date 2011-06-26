@@ -21,7 +21,7 @@ namespace Serquant\Persistence;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-interface Storable
+interface Persistence
 {
     /**
      * Determine if the entity is in a managed state or not.

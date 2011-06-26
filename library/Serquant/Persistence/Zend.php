@@ -16,7 +16,7 @@ use Doctrine\Common\Annotations\AnnotationReader,
     Doctrine\ORM\Mapping\ClassMetadata,
     Doctrine\ORM\Mapping\Driver\AnnotationDriver,
     Serquant\Paginator\Adapter\DbSelect,
-    Serquant\Persistence\Storable,
+    Serquant\Persistence\Persistence,
     Serquant\Persistence\Exception\InvalidArgumentException,
     Serquant\Persistence\Exception\NoResultException,
     Serquant\Persistence\Exception\NonUniqueResultException,
@@ -36,7 +36,7 @@ use Doctrine\Common\Annotations\AnnotationReader,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class Zend implements Storable
+class Zend implements Persistence
 {
     /**
      * Table gateway

@@ -12,7 +12,7 @@
  */
 namespace Serquant\Service;
 
-use Serquant\Persistence\Storable,
+use Serquant\Persistence\Persistence,
     Serquant\Service\Persistable,
     Serquant\Service\Exception\InvalidArgumentException,
     Serquant\Service\Exception\RuntimeException,
@@ -37,7 +37,7 @@ class Crud implements Persistable
 {
     /**
      * Persistence layer
-     * @var \Serquant\Persistence\Storable
+     * @var \Serquant\Persistence\Persistence
      */
     private $persister;
 
@@ -58,9 +58,9 @@ class Crud implements Persistable
      *
      * @param string $entityName Entity class name
      * @param string $inputFilterName Input filter class name
-     * @param Storable $persister Persistence layer
+     * @param Persistence $persister Persistence layer
      */
-    public function __construct($entityName, $inputFilterName, Storable $persister)
+    public function __construct($entityName, $inputFilterName, Persistence $persister)
     {
         $this->entityName = $entityName;
         $this->inputFilterName = $inputFilterName;
@@ -70,7 +70,7 @@ class Crud implements Persistable
     /**
      * Get the persistence layer manager.
      *
-     * @return Storable
+     * @return Persistence
      */
     protected function getPersister()
     {
