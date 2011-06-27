@@ -13,7 +13,7 @@
 namespace Serquant\Service;
 
 use Serquant\Persistence\Persistence,
-    Serquant\Service\Persistable,
+    Serquant\Service\Service,
     Serquant\Service\Exception\InvalidArgumentException,
     Serquant\Service\Exception\RuntimeException,
     Serquant\Service\Result;
@@ -33,7 +33,7 @@ use Serquant\Persistence\Persistence,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class Crud implements Persistable
+class Crud implements Service
 {
     /**
      * Persistence layer

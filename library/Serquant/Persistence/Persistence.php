@@ -36,7 +36,7 @@ interface Persistence
      * Fetch all entities matching the specified criteria.
      *
      * Filtering, ranging and sorting criteria may be specified through the
-     * expression array as defined by the {@link Persistable#fetchAll()} method
+     * expression array as defined by the {@link Service#fetchAll()} method
      * of the domain service layer.
      *
      * @param string $entityName Entity class name
@@ -49,7 +49,7 @@ interface Persistence
      * Fetch the single entity matching the specified criteria.
      *
      * Filtering, ranging and sorting criteria may be specified through the
-     * expression array as defined by the {@link Persistable#fetchAll()} method
+     * expression array as defined by the {@link Service#fetchAll()} method
      * of the domain service layer.
      *
      * @param string $entityName Entity class name
@@ -66,7 +66,7 @@ interface Persistence
      * Get a paginator for the entities matching the specified criteria.
      *
      * Filtering, ranging and sorting criteria may be specified through the
-     * expression array as defined by the {@link Persistable#fetchAll()} method
+     * expression array as defined by the {@link Service#fetchAll()} method
      * of the domain service layer.
      *
      * @param string $entityName Entity class name
@@ -80,7 +80,7 @@ interface Persistence
      * criteria.
      *
      * Filtering, ranging and sorting criteria may be specified through the
-     * expression array as defined by the {@link Persistable#fetchAll()} method
+     * expression array as defined by the {@link Service#fetchAll()} method
      * of the domain service layer.
      * At least two properties of the entity must be selected with the
      * RQL 'select' operator: the ones specified in function arguments.

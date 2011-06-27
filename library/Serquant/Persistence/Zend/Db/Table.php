@@ -105,7 +105,7 @@ class Table extends \Zend_Db_Table_Abstract
      * query.
      *
      * Filtering, ranging and sorting criteria may be specified through the
-     * expression array as defined by the {@link Persistable#fetchAll()} method
+     * expression array as defined by the {@link Service#fetchAll()} method
      * of the domain service layer.
      *
      * @param array $expressions RQL query

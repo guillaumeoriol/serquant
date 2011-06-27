@@ -13,7 +13,7 @@
 namespace Serquant\Controller;
 
 use Serquant\Controller\Exception\RuntimeException,
-    Serquant\Service\Persistable;
+    Serquant\Service\Service;
 
 /**
  * Regular Zend_Controller_Action controller enclosing a service layer.
@@ -28,7 +28,7 @@ class Action extends \Zend_Controller_Action
 {
     /**
      * Service layer
-     * @var \Serquant\Service\Persistable
+     * @var \Serquant\Service\Service
      */
     private $service;
 
@@ -42,7 +42,7 @@ class Action extends \Zend_Controller_Action
     /**
      * Get service layer.
      *
-     * @return \Serquant\Service\Persistable
+     * @return \Serquant\Service\Service
      */
     protected function getService()
     {
@@ -50,10 +50,10 @@ class Action extends \Zend_Controller_Action
             $front = \Zend_Controller_Front::getInstance();
             $container = $front->getParam('bootstrap')->getContainer();
             $this->service = $container->{$this->serviceName};
-            if (!($this->service instanceof Persistable)) {
+            if (!($this->service instanceof Service)) {
                 throw new RuntimeException(
                     "The provided service '{$this->serviceName}' must " .
-                    'implement the Serquant\Service\Persistable interface ' .
+                    'implement the Serquant\Service\Service interface ' .
                     '(but ' . get_class($this->service) . ' does not).'
                 );
             }

@@ -13,7 +13,7 @@
 namespace Serquant\Controller;
 
 use Serquant\Controller\Exception\RuntimeException,
-    Serquant\Service\Persistable;
+    Serquant\Service\Service;
 
 /**
  * Generic RESTful controller.
@@ -48,7 +48,7 @@ class Rest extends \Zend_Rest_Controller
 {
     /**
      * Service layer
-     * @var \Serquant\Service\Persistable
+     * @var \Serquant\Service\Service
      */
     private $service;
 
@@ -62,7 +62,7 @@ class Rest extends \Zend_Rest_Controller
     /**
      * Get service layer.
      *
-     * @return \Serquant\Service\Persistable
+     * @return \Serquant\Service\Service
      */
     protected function getService()
     {
@@ -70,10 +70,10 @@ class Rest extends \Zend_Rest_Controller
             $front = \Zend_Controller_Front::getInstance();
             $container = $front->getParam('bootstrap')->getContainer();
             $this->service = $container->{$this->serviceName};
-            if (!($this->service instanceof Persistable)) {
+            if (!($this->service instanceof Service)) {
                 throw new RuntimeException(
                     "The provided service '{$this->serviceName}' must " .
-                    'implement the Serquant\Service\Persistable interface ' .
+                    'implement the Serquant\Service\Service interface ' .
                     '(but ' . get_class($this->service) . ' does not).'
                 );
             }
@@ -110,7 +110,7 @@ class Rest extends \Zend_Rest_Controller
      * a collection of the requested resources.
      *
      * Filtering, ranging and sorting options may be specified in the query
-     * string as defined by the {@link Persistable#fetchAll()} method of the
+     * string as defined by the {@link Service#fetchAll()} method of the
      * domain service layer.
      *
      * @return void The view script shall return HTTP 200 on success.

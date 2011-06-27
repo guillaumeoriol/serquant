@@ -13,7 +13,7 @@
 namespace Serquant\Service;
 
 /**
- * Promises that a service layer should fulfill to manage persistent entities.
+ * Promises that a service layer should fulfill to manage entities.
  *
  * Basic CRUD operations ({@link create()}, {@link retrieve()}, {@link update()}
  * and {@link delete()}), plus several flavors of the fetch method and
@@ -29,7 +29,7 @@ namespace Serquant\Service;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-interface Persistable
+interface Service
 {
     /**
      * Retrieve a collection of entities matching the specified query
@@ -149,7 +149,7 @@ interface Persistable
      * an operator of the Resource Query Language as defined in the
      * {@link https://github.com/kriszyp/rql RQL specification}.
      * For a detailed explanation of the <var>expressions</var> parameter,
-     * cf. {@link Persistable#fetchAll}.
+     * cf. {@link Service#fetchAll}.
      *
      * @param array $expressions Array of query expressions.
      * @return Result
@@ -167,7 +167,7 @@ interface Persistable
      * an operator of the Resource Query Language as defined in the
      * {@link https://github.com/kriszyp/rql RQL specification}.
      * For a detailed explanation of the <var>expressions</var> parameter,
-     * cf. {@link Persistable#fetchAll}.
+     * cf. {@link Service#fetchAll}.
      *
      * @param array $expressions Array of query expressions.
      * @return Result
@@ -185,7 +185,7 @@ interface Persistable
      * an operator of the Resource Query Language as defined in the
      * {@link https://github.com/kriszyp/rql RQL specification}.
      * For a detailed explanation of the <var>expressions</var> parameter,
-     * cf. {@link Persistable#fetchAll}.
+     * cf. {@link Service#fetchAll}.
      *
      * @param string $idProperty Property name representing the identifier.
      * @param string $labelProperty Property name representing the label.
