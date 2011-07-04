@@ -13,13 +13,18 @@
 	<p>L'application est organisée en couches aussi découplées que
 		possible entre-elles :</p>
 	<ol>
-		<li>Controller</li>
-		<li>Service layer</li>
-		<li>Domain (business logic)</li>
-		<li>Persistence (or Data source)</li>
+		<li><a href="#controller">Controller</a>
+		</li>
+		<li><a href="#service">Service</a>
+		</li>
+		<li><a href="#domain">Domain (business logic)</a>
+		</li>
+		<li><a href="#persistence">Persistence (or Data source)</a></li>
 	</ol>
 
-	<h2>Controller layer</h2>
+	<h2>
+		<a name="controller">Controller layer</a>
+	</h2>
 	<p>
 		Un contrôleur standard (Default, Rest) reçoit les données du client
 		(navigateur) sous la forme de couples nom/valeur (des chaînes de
@@ -31,7 +36,9 @@
 		soit conforme à l'API du service.
 	</p>
 
-	<h2>Service layer</h2>
+	<h2>
+		<a name="service">Service layer</a>
+	</h2>
 	<h4>Form</h4>
 	<p>
 		Le nom des champs du formulaire doit correspondre au nom des
@@ -69,7 +76,9 @@
 		par le domaine (c'est-à-dire du type défini pour les propriétés de
 		l'entité).</p>
 
-	<h2>Domain</h2>
+	<h2>
+		<a name="domain">Domain</a>
+	</h2>
 	<h4>POJO</h4>
 	<p>
 		Le domaine est constitué d'objets métier, qui doivent rester aussi
@@ -140,17 +149,45 @@ class Customer
 }
 </pre>
 	<p>
-		L'<em>entity manager</em> passe par
+		The entity manager uses
 		<code>ClassMetadataFactory#getMetadataFor()</code>
-		pour toutes ses opérations qui concernent les métadonnées. (On peut
-		changer la <em>factory</em> dans la configuration.) Au moment où il
-		instancie cette la <em>factory</em>, il lui passe successivement deux
-		objets : l'<em>entity manager</em> et le <em>cache driver</em>. The
-		ClassMetadataFactory is therefore tightly coupled with the
-		EntityManager. The EntityManager is used to retrieve the metadata
-		driver from the configuration, the database platform from the db
-		connection and the event manager.
+		function for all of the operations related to metadata. (We may change
+		the factory from Doctrine configuration.) Once the factory is
+		instantiated, two of its properties are set successively: the entity
+		manager and a cache driver. The ClassMetadataFactory is therefore
+		tightly coupled with the entity manager. But, let's examine the class
+		in more depth. First, the <strong>cache driver</strong> is not
+		required but only recommended. Second, inside
+		<code>ClassMetadataFactory#initialize()</code>
+		the entity manager is used:
 	</p>
+	<ul>
+		<li>To retrieve the <strong>metadata driver</strong> from the
+			configuration:<br /> <code>$this-&gt;em-&gt;getConfiguration()-&gt;getMetadataDriverImpl()</code><br />
+			<em>There is no setter to do it otherwise.</em></li>
+		<li>To retrieve the <strong>database platform</strong> from the
+			database connection:<br /> <code>$this-&gt;em-&gt;getConnection()-&gt;getDatabasePlatform()</code><br />The
+			database platform is only needed to complete the ID generator
+			mapping.<br /> <em>There is no setter to do it otherwise.</em></li>
+		<li>To get the <strong>event manager</strong>:<br /> <code>$this-&gt;em-&gt;getEventManager()</code><br />The
+			event manager is used to trigger a listener if one is registered for
+			metadata loading.<br /> <em>There is no setter to do it
+				otherwise.</em><br />At first, I thought it would be impossible to
+			handle this event as it would conduct to reimplement an event manager
+			independent from Doctrine. But the event manager is <em>already</em>
+			independent from Doctrine, beeing in its <code>Common</code> namespace.</li>
+		<li>Later, the entity manager is used to get the <strong>entity
+				namespace</strong> from Doctrine configuration (if namespace notation is
+			used):<br /> <code>$this-&gt;em-&gt;getConfiguration()-&gt;getEntityNamespace($namespaceAlias)</code>
+		</li>
+		<li>Finally, as an argument to the <code>LoadClassMetadataEventArgs#__construct()</code>
+			(again for the event manager):<br /> <code>new
+				\Doctrine\ORM\Event\LoadClassMetadataEventArgs($class, $this-&gt;em)</code>
+		</li>
+	</ul>
+	<p>If we overwrite ClassMetadataFactory, some configuration options
+		will be required: the metadata driver, the metadata cache, the
+		namespace and the database platform.</p>
 	<p>
 		<small> Le fait d'utiliser certaines classes de Doctrine sans
 			passer par son <em>entity manager</em> n'est pas évident. Tous les
@@ -204,10 +241,14 @@ class Customer implements Formattable
 }
 </pre>
 
-	<h2>Persistence Layer or Data Mapper</h2>
+	<h2>
+		<a name="persistence">Persistence Layer or Data Mapper</a>
+	</h2>
 
 	<p>
-		The role of a Persistence Layer is to map the objects of the <a
+		The role of a Persistence Layer (aka <a
+			href="http://martinfowler.com/eaaCatalog/dataMapper.html">Data
+			Mapper</a>) is to map the objects of the <a
 			href="http://martinfowler.com/eaaCatalog/domainModel.html">Domain
 			Model</a> to the structure used by the storage system. For instance, a
 		date is an instance of the PHP
@@ -218,15 +259,15 @@ class Customer implements Formattable
 		) to be stored in a MySQL database.
 	</p>
 	<p>
-		The mapper does the mapping through <a
+		The mapper usually does the mapping through <a
 			href="http://martinfowler.com/eaaCatalog/metadataMapping.html">Metadata
 			Mapping</a>. However, in his PoEAA book, Fowler explains that <q>The
 			simplest, and often best, way to do this is with explicit code, which
 			requires a mapper class for each domain object.</q>. For this reason, it
 		is always possible to use explicit code by implementing the
-		Persistable interface of the Persistence package for a particular
-		entity. Then, just pass to the Crud constructor the specific
-		mapper:<br />
+		<code>Persistence</code>
+		interface of the Persistence package for a particular entity. To do
+		so, just pass the specific mapper to the Crud constructor:<br />
 		<code>$service = new Crud('Customer', 'CustomerForm', $mapper);</code>
 	</p>
 	<p>
@@ -244,10 +285,8 @@ class Customer implements Formattable
 		(Object/Service Mapper) in which data would be managed by an external
 		service.</p>
 	<p>
-		To load an entity from the database, the client calls a <em>find</em>
-		method of the <a
-			href="http://martinfowler.com/eaaCatalog/dataMapper.html">Data
-			Mapper</a>. The Data Mapper uses an <a
+		To load an entity from the database, the client calls a <em>retrieve</em>
+		method of the Data Mapper. The Data Mapper uses an <a
 			href="http://martinfowler.com/eaaCatalog/identityMap.html">Identity
 			Map</a> to check if the entity is already loaded. But, as stated by
 		Fowler, <q>Since objects are very interconnected, you usually have
@@ -255,6 +294,13 @@ class Customer implements Formattable
 			to pull back the entire database with a request.</q> To deal with this,
 		mapping layers use <a
 			href="http://martinfowler.com/eaaCatalog/lazyLoad.html">Lazy Load</a>.
+	</p>
+	<p>
+		The Identity Map is not used by the <em>create</em> function but is
+		used by all of the others (<em>fetch</em>, <em>retrieve</em>, <em>update</em>
+		and <em>delete</em>). Entities may be retrieved by their identifier or
+		by the object as well (an entity may have no identifier until it is
+		persisted).
 	</p>
 	<p>Doctrine uses many of the patterns described by Martin Fowler.</p>
 
@@ -272,18 +318,16 @@ class Customer implements Formattable
 					qui renvoie à <code>UnitOfWork#doPersist($entity, $visited)</code>
 				</li>
 				<li>quand l'état est STATE_NEW, la fonction appelle <code>persistNew($class,
-						$entity)</code>
-				</li>
+						$entity)</code></li>
 				<li>la fonction invoque les événements liés au cycle de vie</li>
 				<li>la fonction génère, le cas échéant (assignation d'un
 					identifiant avant l'insertion), un identifiant et l'enregistre dans
-					les <em>entityIdentifiers</em>
-				</li>
-				<li>puis elle appelle <code>scheduleForInsert($entity)</code>
-				</li>
+					les <em>entityIdentifiers</em></li>
+				<li>puis elle appelle <code>scheduleForInsert($entity)</code></li>
 				<li>If the entity already has an identifier, it will be added
 					to the <em>identity map</em>.</li>
-			</ul></li>
+			</ul>
+		</li>
 		<li>Au moment du <code>EntityManager#flush()</code>, <code>UnitOfWork#commit()</code>
 			est appelée
 			<ul>
@@ -293,20 +337,19 @@ class Customer implements Formattable
 					qui réalise, grosso modo, les opérations suivantes :
 					<ul>
 						<li><code>$stmt =
-								$this->_conn->prepare($this->_getInsertSQL());</code></li>
+								$this->_conn->prepare($this->_getInsertSQL());</code>
+						</li>
 						<li><code>$insertData =
-								$this->_prepareInsertData($entity);</code>
-						</li>
+								$this->_prepareInsertData($entity);</code></li>
 						<li><code>$stmt->bindValue($paramIndex++, $value,
-								$this->_columnTypes[$column])</code>
-						</li>
-						<li><code>$stmt->execute();</code>
-						</li>
-					</ul>
-				</li>
+								$this->_columnTypes[$column])</code></li>
+						<li><code>$stmt->execute();</code></li>
+					</ul></li>
 				<li>Les identifiants retournés après insertion sont utilisés
-					pour mettre à jour l'entité et les <em>entityIdentifiers</em></li>
-			</ul></li>
+					pour mettre à jour l'entité et les <em>entityIdentifiers</em>
+				</li>
+			</ul>
+		</li>
 	</ol>
 
 	<p>Côté Zend, les choses sont différentes :</p>
@@ -321,12 +364,10 @@ class Customer implements Formattable
 					méthode <code>Zend_Db_Table_Row_Abstract#_transformColumn()</code>
 					est surcharghée)</li>
 				<li>Puis la valeur transmise est assignée à la colonne <strong>sans
-						transtypage</strong>
-				</li>
+						transtypage</strong></li>
 				<li>Enfin, un indicateur est positionné pour signaler que la
 					valeur de la colonne a été modifiée</li>
-			</ol>
-		</li>
+			</ol></li>
 	</ol>
 
 	<h4>retrieve</h4>
@@ -378,8 +419,7 @@ class Customer implements Formattable
 		<li>si la clé a changé, effectue des updates en cascade sur les
 			tables dépendantes</li>
 		<li>si les données ont changé, réalise la modification en
-			appelant <code>Zend_Db_Table#update()</code>
-		</li>
+			appelant <code>Zend_Db_Table#update()</code></li>
 		<li>invoque une méthode qui est un point d'extension post-update</li>
 		<li>renvoie la clé</li>
 	</ul>
@@ -408,7 +448,8 @@ class Customer implements Formattable
 	<h4>principe des metadata chez Doctrine</h4>
 	<ol>
 		<li>Tout commence par l'instanciation d'une factory : <code>new
-				$metadataFactoryClassName;</code></li>
+				$metadataFactoryClassName;</code>
+		</li>
 		<li>Puis, les métadonnées sont obtenues par <code>ClassMetadataFactory#getMetadataFor(ltrim($entityName,
 				'\\'))</code><br />qui appelle <code>ClassMetadataFactory#loadMetadata($className)</code>.<br />
 			Cette dernière réalise les opérations suivantes :
@@ -436,12 +477,12 @@ class Customer implements Formattable
         
         return new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($reader, (array)$paths);
     }								</pre> <em><code>$path</code> est le chemin où se trouvent
-										les entités</em></li>
-							</ul>
-						</li>
-					</ol></li>
-			</ol>
-		</li>
+										les entités</em>
+								</li>
+							</ul></li>
+					</ol>
+				</li>
+			</ol></li>
 	</ol>
 </body>
 </html>

@@ -78,7 +78,7 @@ class Zend implements Persistence
      * @throws InvalidArgumentException If the table gateway is not defined
      * in the entity annotations.
      */
-    protected function getTable($entityName)
+    protected function getTableGateway($entityName)
     {
         if ($this->table === null) {
             $entityMetadata = $this->getClassMetadata($entityName);
@@ -154,7 +154,7 @@ class Zend implements Persistence
      */
     public function fetchAll($entityName, array $expressions)
     {
-        $table = $this->getTable($entityName);
+        $table = $this->getTableGateway($entityName);
         list ($select) = $table->translate($expressions);
         $data = $select->query()->fetchAll(\Zend_Db::FETCH_ASSOC);
 
@@ -174,7 +174,7 @@ class Zend implements Persistence
      */
     public function fetchOne($entityName, array $expressions)
     {
-        $table = $this->getTable($entityName);
+        $table = $this->getTableGateway($entityName);
         list ($select) = $table->translate($expressions);
         $data = $select->query()->fetchAll(\Zend_Db::FETCH_ASSOC);
 
@@ -202,8 +202,8 @@ class Zend implements Persistence
      */
     public function fetchPage($entityName, array $expressions)
     {
-        $table = $this->getTable($entityName);
-        list ($select) = $table->translate($expressions);
+        $table = $this->getTableGateway($entityName);
+        list ($select, $pageNumber, $pageSize) = $table->translate($expressions);
         $adapter = new DbSelect($select);
         $paginator = new \Zend_Paginator($adapter);
         if (($pageNumber !== null) && ($pageSize !== null)) {
@@ -228,7 +228,7 @@ class Zend implements Persistence
         $labelProperty,
         array $expressions
     ) {
-        $table = $this->getTable($entityName);
+        $table = $this->getTableGateway($entityName);
         list ($select) = $table->translate($expressions);
         return $table->getAdapter()->fetchPairs($select);
     }
@@ -241,7 +241,7 @@ class Zend implements Persistence
      */
     public function create($entity)
     {
-        $table = $this->getTable($entity);
+        $table = $this->getTableGateway($entity);
         $table->create($entity);
     }
 
@@ -257,7 +257,7 @@ class Zend implements Persistence
      */
     public function retrieve($entityName, $id)
     {
-        $table = $this->getTable($entityName);
+        $table = $this->getTableGateway($entityName);
         $rowset = $table->find($id);
 
         $count = count($rowset);
@@ -302,7 +302,7 @@ class Zend implements Persistence
             );
         }
 
-        $table = $this->getTable($entity);
+        $table = $this->getTableGateway($entity);
 
         $row = $this->identityMap[$idHash];
         $row->setFromArray($table->convertToDatabaseValues($entity));
