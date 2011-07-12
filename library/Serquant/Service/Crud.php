@@ -60,26 +60,14 @@ class Crud implements Service
      * @param string $inputFilterName Input filter class name
      * @param Persistence $persister Persistence layer
      */
-    public function __construct($entityName, $inputFilterName, Persistence $persister)
-    {
+    public function __construct(
+        $entityName,
+        $inputFilterName,
+        Persistence $persister
+    ) {
         $this->entityName = $entityName;
         $this->inputFilterName = $inputFilterName;
         $this->persister = $persister;
-    }
-
-    /**
-     * Get the persistence layer manager.
-     *
-     * @return Persistence
-     */
-    protected function getPersister()
-    {
-        if ($this->persister === null) {
-            $front = \Zend_Controller_Front::getInstance();
-            $container = $front->getParam('bootstrap')->getContainer();
-            $this->persister = $container->doctrine;
-        }
-        return $this->persister;
     }
 
     /**
@@ -93,9 +81,8 @@ class Crud implements Service
      */
     public function fetchAll(array $expressions = array())
     {
-        $persister = $this->getPersister();
         try {
-            $entities = $persister->fetchAll($this->entityName, $expressions);
+            $entities = $this->persister->fetchAll($this->entityName, $expressions);
         } catch (\Exception $e) {
             // Sanitize for exception shielding
             throw new RuntimeException(
@@ -118,9 +105,8 @@ class Crud implements Service
      */
     public function fetchOne(array $expressions = array())
     {
-        $persister = $this->getPersister();
         try {
-            $entity = $persister->fetchOne($this->entityName, $expressions);
+            $entity = $this->persister->fetchOne($this->entityName, $expressions);
         } catch (\Exception $e) {
             // Sanitize for exception shielding
             throw new RuntimeException(
@@ -143,9 +129,9 @@ class Crud implements Service
      */
     public function fetchPage(array $expressions = array())
     {
-        $persister = $this->getPersister();
         try {
-            $paginator = $persister->fetchPage($this->entityName, $expressions);
+            $paginator
+                = $this->persister->fetchPage($this->entityName, $expressions);
         } catch (\Exception $e) {
             // Sanitize for exception shielding
             throw new RuntimeException(
@@ -181,9 +167,8 @@ class Crud implements Service
         }
         $expressions[] = "select($idProperty,$labelProperty)";
 
-        $persister = $this->getPersister();
         try {
-            $data = $persister->fetchPairs(
+            $data = $this->persister->fetchPairs(
                 $this->entityName, $idProperty, $labelProperty, $expressions
             );
         } catch (\Exception $e) {
@@ -272,13 +257,12 @@ class Crud implements Service
      */
     public function create(array $data)
     {
-        $persister = $this->getPersister();
         try {
             $inputFilter = new $this->inputFilterName;
             if ($inputFilter->isValid($data)) {
                 $entity = new $this->entityName;
                 $this->populate($entity, $inputFilter);
-                $persister->create($entity);
+                $this->persister->create($entity);
                 $status = Result::STATUS_SUCCESS;
                 $violations = null;
             } else {
@@ -315,9 +299,8 @@ class Crud implements Service
             );
         }
 
-        $persister = $this->getPersister();
         try {
-            $entity = $persister->retrieve($this->entityName, $id);
+            $entity = $this->persister->retrieve($this->entityName, $id);
         } catch (\Exception $e) {
             // Sanitize for exception shielding
             throw new RuntimeException(
@@ -353,13 +336,12 @@ class Crud implements Service
             );
         }
 
-        $persister = $this->getPersister();
         try {
             $inputFilter = new $this->inputFilterName;
             if ($inputFilter->isValid($data)) {
-                $entity = $persister->retrieve($this->entityName, $id);
+                $entity = $this->persister->retrieve($this->entityName, $id);
                 $this->populate($entity, $inputFilter);
-                $persister->update($entity);
+                $this->persister->update($entity);
                 $status = Result::STATUS_SUCCESS;
                 $violations = null;
             } else {
@@ -397,10 +379,9 @@ class Crud implements Service
             );
         }
 
-        $persister = $this->getPersister();
         try {
-            $entity = $persister->retrieve($this->entityName, $id);
-            $persister->delete($entity);
+            $entity = $this->persister->retrieve($this->entityName, $id);
+            $this->persister->delete($entity);
         } catch (\Exception $e) {
             // Sanitize for exception shielding
             throw new RuntimeException(

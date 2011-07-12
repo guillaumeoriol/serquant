@@ -19,9 +19,12 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
 
+    private $em;
+
     protected function setUp()
     {
         $this->db = $this->getTestAdapter();
+        $this->em = $this->getTestEntityManager();
     }
 
 
@@ -30,7 +33,7 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
         $this->setExpectedException('InvalidArgumentException');
 
         $entityName = $inputFilterName = null;
-        $persister = new Zend();
+        $persister = new Zend($this->em);
         $service = new Crud($entityName, $inputFilterName, $persister);
         $service->fetchPairs('id', 'name', array('select(id,name)'));
     }
@@ -40,7 +43,7 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entityName = '\Serquant\Resource\Persistence\Zend\Role';
         $inputFilterName = null;
 
-        $persister = new Zend();
+        $persister = new Zend($this->em);
         \Zend_Db_Table::setDefaultAdapter($this->db);
 
         $service = new Crud($entityName, $inputFilterName, $persister);

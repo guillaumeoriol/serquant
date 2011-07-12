@@ -24,15 +24,6 @@ namespace Serquant\Persistence;
 interface Persistence
 {
     /**
-     * Determine if the entity is in a managed state or not.
-     *
-     * @param string|object $entity The argument may be the entity or its id
-     * in the identity map
-     * @return bool TRUE when the entity is in a managed state; otherwise FALSE.
-     */
-    public function isInManagedState($entity);
-
-    /**
      * Fetch all entities matching the specified criteria.
      *
      * Filtering, ranging and sorting criteria may be specified through the

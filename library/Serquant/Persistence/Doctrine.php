@@ -182,20 +182,6 @@ class Doctrine implements Persistence
     /**
      * {@inheritDoc}
      *
-     * @param string|object $entity The argument may be the entity or its id
-     * in the identity map
-     * @return bool TRUE when the entity is in a managed state; otherwise FALSE.
-     */
-    public function isInManagedState($entity)
-    {
-        $em = $this->getEntityManager();
-        $uow = $em->getUnitOfWork();
-        return ($uow->getEntityState($entity) === UnitOfWork::STATE_MANAGED);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
      * @param string $entityName Entity class name
      * @param array $expressions Fetch criteria
      * @return array Array of entities
@@ -326,13 +312,6 @@ class Doctrine implements Persistence
     public function update($entity)
     {
         $em = $this->getEntityManager();
-        if (!$this->isInManagedState($entity)) {
-            throw new RuntimeException(
-                'No managed entity of class ' . get_class($entity)
-                . ' could be found. Update failed.'
-            );
-        }
-
         $em->flush();
     }
 
@@ -346,13 +325,6 @@ class Doctrine implements Persistence
     public function delete($entity)
     {
         $em = $this->getEntityManager();
-        if (!$this->isInManagedState($entity)) {
-            throw new RuntimeException(
-                'No managed entity of class ' . get_class($entity)
-                . ' could be found. Update failed.'
-            );
-        }
-
         $em->remove($entity);
         $em->flush();
     }

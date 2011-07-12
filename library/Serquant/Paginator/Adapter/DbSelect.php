@@ -12,6 +12,8 @@
  */
 namespace Serquant\Paginator\Adapter;
 
+use Serquant\Persistence\Persistence;
+
 /**
  * Paginator adapter used to get entities instead of an associative array of
  * column names/values.
@@ -25,6 +27,35 @@ namespace Serquant\Paginator\Adapter;
 class DbSelect extends \Zend_Paginator_Adapter_DbSelect
 {
     /**
+     * Persistence layer
+     * @var Persistence
+     */
+    private $persister;
+
+    /**
+     * Class name of the entities
+     * @var string
+     */
+    private $entityName;
+
+    /**
+     * Constructor.
+     *
+     * @param \Zend_Db_Select $select The select query
+     * @param Persistence $persister Persister
+     * @param string $entityName Class name of the entities to be paginated
+     */
+    public function __construct(
+        \Zend_Db_Select $select,
+        Persistence $persister,
+        $entityName
+    ) {
+        $this->_select = $select;
+        $this->persister = $persister;
+        $this->entityName = $entityName;
+    }
+
+    /**
      * Returns an array of entities for a page.
      *
      * @param integer $offset Page offset
@@ -37,7 +68,6 @@ class DbSelect extends \Zend_Paginator_Adapter_DbSelect
         $select->limit($itemCountPerPage, $offset);
         $data = $select->query()->fetchAll(\Zend_Db::FETCH_ASSOC);
 
-        $model = $select->getTable();
-        return $model->getEntities($data);
+        return $this->persister->loadEntities($this->entityName, $data);
     }
 }

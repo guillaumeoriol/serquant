@@ -1363,7 +1363,8 @@ tt|e |i |o r
             depends="init">
         <echo>Launching PHPUnit</echo>
         <exec executable="${phpunit.executable}" failonerror="true">
-            <arg line="--configuration ${tests.dir}/phpunit.xml.dist" />
+            <arg line="--configuration ${tests.dir}/phpunit.xml.dist
+                       --verbose" />
         </exec>
     </target>
 

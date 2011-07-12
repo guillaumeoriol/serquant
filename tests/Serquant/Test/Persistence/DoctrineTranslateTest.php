@@ -14,7 +14,7 @@ namespace Serquant\Test\Persistence;
 
 use Serquant\Persistence\Doctrine;
 
-class DoctrineTest extends \Doctrine\Tests\OrmTestCase
+class DoctrineTranslateTest extends \Doctrine\Tests\OrmTestCase
 {
     private $em;
 

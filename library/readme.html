@@ -153,7 +153,7 @@ class Customer
 		<code>ClassMetadataFactory#getMetadataFor()</code>
 		function for all of the operations related to metadata. (We may change
 		the factory from Doctrine configuration.) Once the factory is
-		instantiated, two of its properties are set successively: the entity
+		instantiated, two of its properties are successively set: the entity
 		manager and a cache driver. The ClassMetadataFactory is therefore
 		tightly coupled with the entity manager. But, let's examine the class
 		in more depth. First, the <strong>cache driver</strong> is not
@@ -185,8 +185,8 @@ class Customer
 				\Doctrine\ORM\Event\LoadClassMetadataEventArgs($class, $this-&gt;em)</code>
 		</li>
 	</ul>
-	<p>If we overwrite ClassMetadataFactory, some configuration options
-		will be required: the metadata driver, the metadata cache, the
+	<p>If we were about to overwrite ClassMetadataFactory, some configuration options
+		would be required: the metadata driver, the metadata cache, the
 		namespace and the database platform.</p>
 	<p>
 		<small> Le fait d'utiliser certaines classes de Doctrine sans
@@ -266,9 +266,9 @@ class Customer implements Formattable
 			requires a mapper class for each domain object.</q>. For this reason, it
 		is always possible to use explicit code by implementing the
 		<code>Persistence</code>
-		interface of the Persistence package for a particular entity. To do
-		so, just pass the specific mapper to the Crud constructor:<br />
-		<code>$service = new Crud('Customer', 'CustomerForm', $mapper);</code>
+		interface of the Persistence package for a particular entity, and
+		pass that specific persister to the Crud constructor:<br />
+		<code>$service = new Crud('Customer', 'CustomerForm', $persister);</code>
 	</p>
 	<p>
 		To avoid reinventing the wheel, we use Doctrine implementation of the
@@ -277,7 +277,7 @@ class Customer implements Formattable
 		<code>/** @Column(name="title", type="string", length=100,
 			nullable=true) */</code>
 	</p>
-	<p>By nature, persistence layer includes a Data Mapper as the
+	<p>By nature, the persistence layer is a Data Mapper as the
 		domain model is an object model and the storage is a different model.
 		It may be an ORM (Object/Relational Mapper) when the storage is a
 		RDBMS. It may also be an ODM (Object/Document Mapper) when the storage
@@ -294,13 +294,6 @@ class Customer implements Formattable
 			to pull back the entire database with a request.</q> To deal with this,
 		mapping layers use <a
 			href="http://martinfowler.com/eaaCatalog/lazyLoad.html">Lazy Load</a>.
-	</p>
-	<p>
-		The Identity Map is not used by the <em>create</em> function but is
-		used by all of the others (<em>fetch</em>, <em>retrieve</em>, <em>update</em>
-		and <em>delete</em>). Entities may be retrieved by their identifier or
-		by the object as well (an entity may have no identifier until it is
-		persisted).
 	</p>
 	<p>Doctrine uses many of the patterns described by Martin Fowler.</p>
 
