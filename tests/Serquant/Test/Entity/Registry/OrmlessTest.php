@@ -12,9 +12,9 @@
  */
 namespace Serquant\Test\Persistence\Zend;
 
-use Serquant\Persistence\Zend\EntityRegistry;
+use Serquant\Entity\Registry\Ormless;
 
-class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
+class OrmlessTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $em;
 
@@ -34,7 +34,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->name = 'Washington';
 
         $this->setExpectedException('InvalidArgumentException');
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $result = $registry->put($entity);
     }
 
@@ -46,7 +46,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->username = 'gw';
         $entity->name = 'Washington';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $this->assertTrue($registry->put($entity));
     }
 
@@ -58,7 +58,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->username = 'gw';
         $entity->name = 'Washington';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->assertFalse($registry->put($entity));
     }
@@ -75,7 +75,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity2->key = 'error';
         $entity2->message = 'Une erreur est survenue';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $this->assertTrue($registry->put($entity1));
         $this->assertTrue($registry->put($entity2));
     }
@@ -87,7 +87,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity1->key = 'error';
         $entity1->message = 'An error has occurred';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity1);
         $this->assertFalse($registry->put($entity1));
     }
@@ -102,7 +102,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity2->id = 1;
         $entity2->name = 'dummy';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity1);
         $this->assertTrue($registry->put($entity2));
     }
@@ -117,7 +117,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity2->id = 1;
         $entity2->name = 'dummy';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity1);
         $this->assertTrue($registry->put($entity2));
     }
@@ -134,7 +134,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity2->firstName = 'John';
         $entity2->lastName = 'Adams';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity1);
         $this->assertFalse($registry->put($entity2));
     }
@@ -151,7 +151,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->username = 'gw';
         $entity->name = 'Washington';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->assertFalse($registry->tryGetById($className, 2));
     }
@@ -165,7 +165,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->username = 'gw';
         $entity->name = 'Washington';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->assertTrue($entity === $registry->tryGetById($className, 1));
     }
@@ -178,7 +178,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->key = 'error';
         $entity->message = 'An error has occurred';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->assertTrue($entity === $registry->tryGetById($className, array('en', 'error')));
     }
@@ -190,7 +190,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->id = 1;
         $entity->name = 'dummy';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->assertTrue($entity === $registry->tryGetById($className, 1));
     }
@@ -209,7 +209,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity2->firstName = 'John';
         $entity2->lastName = 'Adams';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity1);
         $registry->put($entity2);
         $this->assertTrue($entity1 === $registry->tryGetById($className1, 1));
@@ -228,7 +228,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->username = 'gw';
         $entity->name = 'Washington';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->setExpectedException('InvalidArgumentException');
         $registry->tryGetByRow($className, array('status' => 'deprecated'));
@@ -242,7 +242,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->key = 'error';
         $entity->message = 'An error has occurred';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->setExpectedException('InvalidArgumentException');
         $registry->tryGetByRow($className, array('key' => 'error', 'message' => 'An error has occurred'));
@@ -256,7 +256,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->key = 'error';
         $entity->message = 'An error has occurred';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->setExpectedException('InvalidArgumentException');
         $registry->tryGetByRow($className, array('language' => 'en', 'message' => 'An error has occurred'));
@@ -271,7 +271,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->username = 'gw';
         $entity->name = 'Washington';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->assertFalse($registry->tryGetByRow($className, array('id' => 2)));
     }
@@ -285,7 +285,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->username = 'gw';
         $entity->name = 'Washington';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->assertTrue($entity === $registry->tryGetByRow($className, array('id' => 1)));
     }
@@ -298,7 +298,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->key = 'error';
         $entity->message = 'An error has occurred';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->assertTrue($entity === $registry->tryGetByRow($className, array('message' => 'An error has occurred', 'language' => 'en', 'key' => 'error')));
     }
@@ -310,7 +310,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->id = 1;
         $entity->name = 'dummy';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
         $this->assertTrue($entity === $registry->tryGetByRow($className, array('name' => 'dummy', 'id' => 1)));
     }
@@ -329,7 +329,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity2->firstName = 'John';
         $entity2->lastName = 'Adams';
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity1);
         $registry->put($entity2);
         $this->assertTrue($entity1 === $registry->tryGetByRow($className1, array('id' => 1)));
@@ -346,7 +346,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->name = 'Washington';
 
         $platform = $this->em->getConnection()->getDatabasePlatform();
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $result = $registry->put($entity);
 
         $entity->id = null;
@@ -374,7 +374,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->setSavedAt($orgDate);
 
         $platform = $this->em->getConnection()->getDatabasePlatform();
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $result = $registry->put($entity);
 
         $orgDate->setDate('2011', '01', '02');
@@ -396,7 +396,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->id = 1;
         $oid = spl_object_hash($entity);
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
 
         // When the entity is registered, a copy of it is registered too
@@ -428,7 +428,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity = new \Serquant\Resource\Persistence\Zend\User();
         $entity->id = 1;
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $this->assertFalse($registry->remove($entity));
     }
 
@@ -441,7 +441,7 @@ class EntityRegistryTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity->lastName = 'Washington';
         $oid = spl_object_hash($entity);
 
-        $registry = new EntityRegistry($this->em->getMetadataFactory());
+        $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity);
 
         $this->assertTrue($registry->remove($entity));

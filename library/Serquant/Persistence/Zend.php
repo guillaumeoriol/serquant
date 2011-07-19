@@ -19,12 +19,13 @@ use Doctrine\Common\Annotations\AnnotationReader,
     Doctrine\ORM\Mapping\ClassMetadata,
     Doctrine\ORM\Mapping\Driver\AnnotationDriver,
     Serquant\Paginator\Adapter\DbSelect,
+    Serquant\Entity\Registry\Ormless,
     Serquant\Persistence\Persistence,
+    Serquant\Persistence\Serializable,
     Serquant\Persistence\Exception\InvalidArgumentException,
     Serquant\Persistence\Exception\NoResultException,
     Serquant\Persistence\Exception\NonUniqueResultException,
-    Serquant\Persistence\Exception\RuntimeException,
-    Serquant\Persistence\Zend\EntityRegistry;
+    Serquant\Persistence\Exception\RuntimeException;
 
 /**
  * Persistence layer using Zend_Db package to persist entities.
@@ -39,7 +40,7 @@ use Doctrine\Common\Annotations\AnnotationReader,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class Zend implements Persistence
+class Zend implements Persistence, Serializable
 {
     /**
      * Entity manager
@@ -55,7 +56,7 @@ class Zend implements Persistence
 
     /**
      * Registry of the loaded entities
-     * @var EntityRegistry
+     * @var Ormless
      */
     private $loadedEntities;
 
@@ -67,7 +68,27 @@ class Zend implements Persistence
     public function __construct(EntityManager $em)
     {
         $this->em = $em;
-        $this->loadedEntities = new EntityRegistry($em->getMetadataFactory());
+        $this->loadedEntities = new Ormless($em->getMetadataFactory());
+    }
+
+    /**
+     * Get metadata factory
+     *
+     * @return ClassMetadataFactory Metadata factory
+     */
+    public function getMetadataFactory()
+    {
+        return $this->em->getMetadataFactory();
+    }
+
+    /**
+     * Get registry of loaded entities.
+     *
+     * @return \Serquant\Entity\Registry\Registrable Entity registry
+     */
+    public function getEntityRegistry()
+    {
+        return $this->loadedEntities;
     }
 
     /**

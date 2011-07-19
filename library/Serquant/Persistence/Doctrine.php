@@ -15,7 +15,9 @@ namespace Serquant\Persistence;
 use Doctrine\ORM\EntityManager,
     Doctrine\ORM\UnitOfWork,
     DoctrineExtensions\Paginate\PaginationAdapter,
+    Serquant\Entity\Registry\DoctrineGateway,
     Serquant\Persistence\Persistence,
+    Serquant\Persistence\Serializable,
     Serquant\Persistence\Exception\NoResultException,
     Serquant\Persistence\Exception\NonUniqueResultException,
     Serquant\Persistence\Exception\RuntimeException;
@@ -29,13 +31,19 @@ use Doctrine\ORM\EntityManager,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class Doctrine implements Persistence
+class Doctrine implements Persistence, Serializable
 {
     /**
      * Entity manager
      * @var \Doctrine\ORM\EntityManager
      */
     private $entityManager;
+
+    /**
+     * Registry of the loaded entities
+     * @var DoctrineGateway
+     */
+    private $loadedEntities;
 
     /**
      * Set the entity manager.
@@ -61,6 +69,31 @@ class Doctrine implements Persistence
             $this->entityManager = $container->doctrine;
         }
         return $this->entityManager;
+    }
+
+    /**
+     * Get metadata factory
+     *
+     * @return ClassMetadataFactory Metadata factory
+     */
+    public function getMetadataFactory()
+    {
+        return $this->getEntityManager()->getMetadataFactory();
+    }
+
+    /**
+     * Get registry of loaded entities.
+     *
+     * @return \Serquant\Entity\Registry\Registrable Entity registry
+     */
+    public function getEntityRegistry()
+    {
+        if ($this->loadedEntities === null) {
+            $this->loadedEntities = new DoctrineGateway(
+                $this->getEntityManager()->getUnitOfWork()
+            );
+        }
+        return $this->loadedEntities;
     }
 
     /**

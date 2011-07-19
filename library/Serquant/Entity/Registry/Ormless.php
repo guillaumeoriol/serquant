@@ -5,20 +5,21 @@
  * PHP version 5.3
  *
  * @category Serquant
- * @package  Persistence
+ * @package  Entity
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Persistence\Zend;
+namespace Serquant\Entity\Registry;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform,
     Doctrine\DBAL\Types\Type,
     Doctrine\ORM\Mapping\ClassMetadataFactory,
-    Serquant\Doctrine\Exception\InvalidArgumentException;
+    Serquant\Doctrine\Exception\InvalidArgumentException,
+    Serquant\Entity\Registry\Registrable;
 
 /**
- * Registry of all loaded entities.
+ * Registry of all loaded entities for non-ORM persistence layer.
  *
  * This class implements an
  * <a href="http://martinfowler.com/eaaCatalog/identityMap.html">Identity
@@ -26,20 +27,20 @@ use Doctrine\DBAL\Platforms\AbstractPlatform,
  *
  * Entities may have no identifier at all at some point of their lifecycle
  * (ie before they are persisted). But only persisted entities may be registered
- * in this Identity Map. Consequently, they all have an identifier. Therefore,
+ * in this Identity Map. Once persisted, they all get an identifier. Therefore,
  * entities are registered under their identifier (combined with their class
- * name).
+ * name for uniqueness).
  * Under certain circumstances, only their identifier is known and no entity
  * object is available to get its hash from. Thus, we need two different ways
- * to get entities from the registry: by their hash and by their id.
+ * to get entities from the registry: by their hash and by their identifier.
  *
  * @category Serquant
- * @package  Persistence
+ * @package  Entity
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class EntityRegistry
+class Ormless implements Registrable
 {
     /**
      * Factory used to retrieve metadata of entity classes.
@@ -192,6 +193,22 @@ class EntityRegistry
     }
 
     /**
+     * Gets the identifier of an entity.
+     *
+     * The returned value is always an array of identifier values. If the
+     * entity has a composite identifier then the identifier values are
+     * in the same order as the identifier field names as returned by
+     * ClassMetadata#getIdentifierFieldNames().
+     *
+     * @param object $entity Entity to get identifier from
+     * @return array The identifier value
+     */
+    public function getEntityIdentifier($entity)
+    {
+        return $this->hashToIdMap[spl_object_hash($entity)];
+    }
+
+    /**
      * Checks if the given entity is registered or not.
      *
      * @param object $entity The entity to check.
@@ -237,9 +254,10 @@ class EntityRegistry
     /**
      * Commit changes to the entity, replacing its old value by the new one.
      *
-     * Following this function call, {@link EntityRegistry#computeChangeSet}
-     * would return an empty array. The only purpose of this function is to
-     * be able to restore the old value of an entity in case of update failure.
+     * Following this function call, {@link computeChangeSet()} returns an empty
+     * array. The only purpose of this function is to implement a two-phase
+     * commit to be able to restore the old value of an entity in case of update
+     * failure.
      *
      * @param object $entity Entity to be committed
      * @return void

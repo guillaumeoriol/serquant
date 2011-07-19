@@ -12,7 +12,9 @@
  */
 namespace Serquant\Service;
 
-use Serquant\Persistence\Persistence,
+use Serquant\Entity\Serializer,
+    Serquant\Persistence\Persistence,
+    Serquant\Persistence\Serializable,
     Serquant\Service\Service,
     Serquant\Service\Exception\InvalidArgumentException,
     Serquant\Service\Exception\RuntimeException,
@@ -37,9 +39,15 @@ class Crud implements Service
 {
     /**
      * Persistence layer
-     * @var \Serquant\Persistence\Persistence
+     * @var Persistence
      */
     private $persister;
+
+    /**
+     * Entity serializer.
+     * @var Serializer
+     */
+    private $serializer;
 
     /**
      * Entity class name that is managed by this service layer.
@@ -68,6 +76,30 @@ class Crud implements Service
         $this->entityName = $entityName;
         $this->inputFilterName = $inputFilterName;
         $this->persister = $persister;
+    }
+
+    /**
+     * Get entity serializer.
+     *
+     * @return Serializer Entity serializer
+     */
+    public function getSerializer()
+    {
+        if ($this->serializer === null) {
+            if (!($this->persister instanceof Serializable)) {
+                throw new RuntimeException(
+                    'Unable to get a serializer from a '
+                    . get_class($this->persister) . ' persister as it does not '
+                    . 'implement the Serquant\Persistence\Serializable '
+                    . 'interface'
+                );
+            }
+            $this->serializer = new Serializer(
+                $this->persister->getMetadataFactory(),
+                $this->persister->getEntityRegistry()
+            );
+        }
+        return $this->serializer;
     }
 
     /**

@@ -10,16 +10,12 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Entity;
+namespace Serquant\Entity\Exception;
+
+use Serquant\Entity\Exception;
 
 /**
- * This interface is a marker for entities that require a specific formatting
- * process.
- *
- * For instance, when rendering an entity with a {@link
- * http://php.net/manual/en/class.reflectionclass.php ReflectionClass},
- * only annotated properties should be output.<br>
- * See {@link Encoder Serquant\Json\Encoder}.
+ * Exception thrown if an error occurs which can only be found at run time.
  *
  * @category Serquant
  * @package  Entity
@@ -27,6 +23,6 @@ namespace Serquant\Entity;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-interface Formattable
+class RuntimeException extends \RuntimeException implements Exception
 {
 }

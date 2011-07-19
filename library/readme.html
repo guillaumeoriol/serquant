@@ -216,30 +216,6 @@ class Customer
 		and the identity map is used to retrieve the identifier of
 		single-valued associations.
 	</p>
-	<p>
-		Pour des raisons de performance, le formatage des résultats (en JSON
-		par exemple) n'est pas basé sur la présence de l'annotation
-		<code>@Entity</code>
-		dans le commentaire de la classe à représenter (cela supposerait un
-		effort d'introspection sur l'ensemble des objets) mais sur la
-		détection d'un marqueur : l'interface
-		<code>Serquant\Entity\Formattable</code>
-		. Ainsi, toute entité devant être formattée spécialement doit
-		implémenter cette interface :
-	</p>
-	<pre>
-use Serquant\Entity\Formattable;
-	
-&#47;&#42;&#42;
- &#42; Customer entity
- &#42;
- &#42; &#64;Entity(repositoryClass="MyDbTable")
- &#42;&#47;
-class Customer implements Formattable
-{
-    // ...
-}
-</pre>
 
 	<h2>
 		<a name="persistence">Persistence Layer or Data Mapper</a>

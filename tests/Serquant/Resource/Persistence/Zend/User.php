@@ -36,6 +36,8 @@ class User
      */
     public $name;
 
+    public $transientProperty;
+
     public function __construct() {
     }
 
@@ -54,4 +56,9 @@ class User
     public function getName() {
         return $this->name;
     }
+
+    public function getTransientProperty() {
+        return $this->transientProperty;
+    }
+
 }

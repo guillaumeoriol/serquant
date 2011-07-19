@@ -123,6 +123,7 @@ class Rest extends \Zend_Rest_Controller
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
+        $this->view->serializer = $service->getSerializer();
     }
 
     /**
@@ -146,6 +147,7 @@ class Rest extends \Zend_Rest_Controller
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
+        $this->view->serializer = $service->getSerializer();
     }
 
     /**
@@ -171,6 +173,7 @@ class Rest extends \Zend_Rest_Controller
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
+        $this->view->serializer = $service->getSerializer();
     }
 
     /**
@@ -207,6 +210,7 @@ class Rest extends \Zend_Rest_Controller
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
+        $this->view->serializer = $service->getSerializer();
     }
 
     /**
@@ -258,6 +262,7 @@ class Rest extends \Zend_Rest_Controller
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
+        $this->view->serializer = $service->getSerializer();
     }
 
     /**

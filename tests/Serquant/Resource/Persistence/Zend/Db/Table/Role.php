@@ -12,7 +12,7 @@
  */
 namespace Serquant\Resource\Persistence\Zend\Db\Table;
 
-class Role extends \Serquant\Persistence\Zend\Db\Table
+class Role extends \Zend_Db_Table_Abstract
 {
     /**
      * Table name
