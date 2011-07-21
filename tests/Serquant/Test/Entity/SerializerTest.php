@@ -108,9 +108,9 @@ class SerializerTest extends \Serquant\Resource\Persistence\ZendTestCase
         $expected = array(
             'id' => 1,
             'name' => 'Washington',
-            'saved_at' => '2011-01-01T00:00:00+01:00',
-            'saved_by' => null,
-        	'specific_to_a' => 'A',
+            'savedAt' => '2011-01-01T00:00:00+01:00',
+            'savedBy' => null,
+        	'specificToA' => 'A',
         );
         $this->assertEquals(
             $expected,
@@ -118,7 +118,39 @@ class SerializerTest extends \Serquant\Resource\Persistence\ZendTestCase
         );
     }
 
-    public function testOneToOneAssociationToArray()
+    public function testOneToOneAssociationWithoutValue()
+    {
+        $issue = new \Serquant\Resource\Persistence\Zend\Issue();
+        $issue->id = 2;
+        $issue->title = 'Issue title';
+        $issue->reporter = null;
+        $this->registry->put($issue);
+
+        $expected = array(
+			'id' => 2,
+            'reporter' => null,
+            'title' => 'Issue title'
+        );
+        $this->assertEquals(
+            $expected,
+            $this->serializer->toArray($issue)
+        );
+
+        $this->assertEquals(
+            '{"id":2,"title":"Issue title","reporter":null}',
+            $this->serializer->toJson($issue)
+        );
+
+        $expected = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL
+                  . '<issue><id>2</id><title>Issue title</title><reporter/></issue>'
+                  . PHP_EOL;
+        $this->assertEquals(
+            $expected,
+            $this->serializer->toXml($issue)
+        );
+    }
+
+    public function testOneToOneAssociation()
     {
         $person = new \Serquant\Resource\Persistence\Zend\Person();
         $person->id = 1;

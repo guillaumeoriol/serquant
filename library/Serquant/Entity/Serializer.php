@@ -80,7 +80,6 @@ class Serializer
             $class = $this->metadataFactory->getMetadataFor($className);
             foreach ($class->fieldMappings as $field => $mapping) {
                 $value = $class->reflFields[$field]->getValue($entity);
-                $field = Inflector::tableize($field);
                 if ($value instanceof \DateTime) {
                     $data[$field] = $value->format(\DateTime::ATOM);
                 } else if (is_object($value)) {
@@ -90,26 +89,24 @@ class Serializer
                 }
             }
             foreach ($class->associationMappings as $field => $mapping) {
-                $key = Inflector::tableize($field);
-                if ($mapping['isCascadeDetach']) {
-                    $data[$key] = $this->convertToArray(
-                        $class->reflFields[$field]->getValue($entity)
-                    );
+                $value = $class->reflFields[$field]->getValue($entity);
+                if ($value === null) {
+                    $data[$field] = null;
+                } else if ($mapping['isCascadeDetach']) {
+                    $data[$field] = $this->convertToArray($value);
                 } else if ($mapping['isOwningSide']
                     && $mapping['type'] & ClassMetadata::TO_ONE
                 ) {
                     // If it's not detached to but there is an owning side
                     // to one entity at least, reflect the identifier.
-                    $id = $this->entityRegistry->getEntityIdentifier(
-                        $class->reflFields[$field]->getValue($entity)
-                    );
+                    $id = $this->entityRegistry->getEntityIdentifier($value);
                     if (count($id) > 1) {
                         throw new RuntimeException(
                             'Referencing may only work with scalar identifiers '
                             . var_dump($id, true)
                         );
                     }
-                    $data[$key] = array('$ref' => current($id));
+                    $data[$field] = array('$ref' => current($id));
                 }
             }
         }
@@ -168,7 +165,6 @@ class Serializer
             $node->appendChild($child);
             foreach ($class->fieldMappings as $field => $mapping) {
                 $value = $class->reflFields[$field]->getValue($entity);
-                $field = Inflector::tableize($field);
                 $property = $doc->createElement($field);
                 $child->appendChild($property);
                 if ($value instanceof \DateTime) {
@@ -181,22 +177,19 @@ class Serializer
                 $property->appendChild($doc->createTextNode($v));
             }
             foreach ($class->associationMappings as $field => $mapping) {
-                $key = Inflector::tableize($field);
-                $association = $doc->createElement($key);
+                $value = $class->reflFields[$field]->getValue($entity);
+                $association = $doc->createElement($field);
                 $child->appendChild($association);
-                if ($mapping['isCascadeDetach']) {
-                    $this->convertToDom(
-                        $association,
-                        $class->reflFields[$field]->getValue($entity)
-                    );
+                if ($value === null) {
+                    continue;
+                } else if ($mapping['isCascadeDetach']) {
+                    $this->convertToDom($association, $value);
                 } else if ($mapping['isOwningSide']
                     && $mapping['type'] & ClassMetadata::TO_ONE
                 ) {
                     // If it's not detached to but there is an owning side
                     // to one entity, at least reflect the identifier.
-                    $id = $this->entityRegistry->getEntityIdentifier(
-                        $class->reflFields[$field]->getValue($entity)
-                    );
+                    $id = $this->entityRegistry->getEntityIdentifier($value);
                     if (count($id) > 1) {
                         throw new RuntimeException(
                             'Referencing may only work with scalar identifiers '
