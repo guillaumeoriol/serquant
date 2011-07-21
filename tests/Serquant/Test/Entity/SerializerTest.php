@@ -142,7 +142,7 @@ class SerializerTest extends \Serquant\Resource\Persistence\ZendTestCase
         );
 
         $expected = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL
-                  . '<issue><id>2</id><title>Issue title</title><reporter/></issue>'
+                  . '<Issue><id>2</id><title>Issue title</title><reporter/></Issue>'
                   . PHP_EOL;
         $this->assertEquals(
             $expected,
@@ -180,7 +180,7 @@ class SerializerTest extends \Serquant\Resource\Persistence\ZendTestCase
         );
 
         $expected = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL
-                  . '<issue><id>2</id><title>Issue title</title><reporter>1</reporter></issue>'
+                  . '<Issue><id>2</id><title>Issue title</title><reporter>1</reporter></Issue>'
                   . PHP_EOL;
         $this->assertEquals(
             $expected,

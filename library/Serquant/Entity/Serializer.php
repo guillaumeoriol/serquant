@@ -12,8 +12,7 @@
  */
 namespace Serquant\Entity;
 
-use Doctrine\Common\Util\Inflector,
-    Doctrine\ORM\Mapping\ClassMetadata,
+use Doctrine\ORM\Mapping\ClassMetadata,
     Doctrine\ORM\Mapping\ClassMetadataFactory,
     Serquant\Entity\Exception\RuntimeException,
     Serquant\Entity\Registry\Registrable;
@@ -159,9 +158,7 @@ class Serializer
         } else {
             $className = get_class($entity);
             $class = $this->metadataFactory->getMetadataFor($className);
-            $child = $doc->createElement(
-                Inflector::tableize($class->reflClass->getShortName())
-            );
+            $child = $doc->createElement($class->reflClass->getShortName());
             $node->appendChild($child);
             foreach ($class->fieldMappings as $field => $mapping) {
                 $value = $class->reflFields[$field]->getValue($entity);
