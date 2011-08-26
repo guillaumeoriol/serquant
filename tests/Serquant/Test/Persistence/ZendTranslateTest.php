@@ -74,7 +74,10 @@ class ZendTranslateTest extends \Serquant\Resource\Persistence\ZendTestCase
         $method = new \ReflectionMethod($this->persister, 'translate');
         $method->setAccessible(true);
 
-        $this->setExpectedException('RuntimeException');
+        // As the first character will be removed, "name" will be changed to
+        // "ame" that is undefined in the column name array, triggering a
+        // notice. This notice will be converted by PHPUnit to an exception.
+        $this->setExpectedException('PHPUnit_Framework_Error_Notice');
         list ($query) = $method->invoke($this->persister, $entityName, $expressions);
     }
 

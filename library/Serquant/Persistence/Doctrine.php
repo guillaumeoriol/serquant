@@ -147,14 +147,14 @@ class Doctrine implements Persistence, Serializable
                     foreach ($fields as $field) {
                         if ('-' === substr($field, 0, 1)) {
                             $orderBy[] = 'e.' . substr($field, 1) . ' DESC';
-                        } else if ('+' === substr($field, 0, 1)) {
-                            $orderBy[] = 'e.' . substr($field, 1) . ' ASC';
                         } else {
-                            throw new RuntimeException(
-                                'Sort order not specified for property \'' .
-                                $field . '\'. It must be preceded by either' .
-                                '+ or - sign.'
-                            );
+                            // We don't check anymore if the first character
+                            // is a '+' symbol as the PHP engine automatically
+                            // processes $_GET and $_REQUEST superglobals with
+                            // urldecode(), thus changing any plus symbol into
+                            // a space, and dojo.store.JsonRest doesn't encode
+                            // the '+' it adds for sorting.
+                            $orderBy[] = 'e.' . substr($field, 1) . ' ASC';
                         }
                     }
                 } else if (preg_match(

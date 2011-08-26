@@ -63,18 +63,6 @@ class DoctrineTranslateTest extends \Doctrine\Tests\OrmTestCase
         $this->assertEquals("select e.id,e.name from $entityName e", $dql);
     }
 
-    public function testTranslateWithSortOperatorWithoutOrder()
-    {
-        $this->setExpectedException('RuntimeException');
-
-        $entityName = '\Serquant\Resource\Persistence\Doctrine\Entity\User';
-        $expressions = array('sort(name)');
-
-        $method = new \ReflectionMethod($this->persister, 'translate');
-        $method->setAccessible(true);
-        list ($query) = $method->invoke($this->persister, $entityName, $expressions);
-    }
-
     public function testTranslateWithSortAscOperator()
     {
         $entityName = '\Serquant\Resource\Persistence\Doctrine\Entity\User';

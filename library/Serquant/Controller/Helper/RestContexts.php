@@ -70,7 +70,7 @@ class RestContexts extends \Zend_Controller_Action_Helper_Abstract
             return;
         }
 
-        $this->initContexts();
+        $this->initContexts($controller);
 
         // Set a Vary response header based on the Accept header.
         // This is to ensure that, if the client chooses to cache responses,
@@ -80,13 +80,13 @@ class RestContexts extends \Zend_Controller_Action_Helper_Abstract
     }
 
     /**
-     * Enable context switch on the listed actions.
+     * Enable context switch on the listed actions of a controller
      *
+     * @param Serquant\Controller\Rest $controller Controller
      * @return void
      */
-    protected function initContexts()
+    protected function initContexts($controller)
     {
-        $controller = $this->getActionController();
         $contextSwitch = $controller->getHelper('contextSwitch');
 
         // Disable automatic Json serialization to remain format agnostic
