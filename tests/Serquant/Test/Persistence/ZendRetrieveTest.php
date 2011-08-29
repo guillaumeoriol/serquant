@@ -74,18 +74,18 @@ class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     public function testRetrieveNoEntityThrowsNoResultException()
     {
-        $table = $this->getMock('Zend_Db_Table');
-        $table->expects($this->any())
-              ->method('find')
-              ->will($this->returnValue(array()));
-
-        $this->persister->setTableGateway($table);
-
         $className = 'Serquant\Resource\Persistence\Zend\Person';
         $entity = new $className;
         $entity->id = 1;
         $entity->firstName = 'George';
         $entity->lastName = 'Washington';
+
+        $table = $this->getMock('Zend_Db_Table');
+        $table->expects($this->any())
+              ->method('find')
+              ->will($this->returnValue(array()));
+
+        $this->persister->setTableGateway($className, $table);
 
         $this->setExpectedException('Serquant\Persistence\Exception\NoResultException');
         $this->persister->retrieve($className, 1);
@@ -93,18 +93,18 @@ class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     public function testRetrieveMultipleEntitiesThrowsNonUniqueResultException()
     {
-        $table = $this->getMock('Zend_Db_Table');
-        $table->expects($this->any())
-              ->method('find')
-              ->will($this->returnValue(array(1, 2, 3)));
-
-        $this->persister->setTableGateway($table);
-
         $className = 'Serquant\Resource\Persistence\Zend\Person';
         $entity = new $className;
         $entity->id = 1;
         $entity->firstName = 'George';
         $entity->lastName = 'Washington';
+
+        $table = $this->getMock('Zend_Db_Table');
+        $table->expects($this->any())
+              ->method('find')
+              ->will($this->returnValue(array(1, 2, 3)));
+
+        $this->persister->setTableGateway($className, $table);
 
         $this->setExpectedException('Serquant\Persistence\Exception\NonUniqueResultException');
         $this->persister->retrieve($className, 1);
@@ -126,7 +126,8 @@ class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
               ->method('find')
               ->will($this->returnValue(new \ArrayIterator(array($row))));
 
-        $this->persister->setTableGateway($table);
+        $this->persister->setTableGateway($entityName, $table);
+
         $entity = $this->persister->retrieve($entityName, 1);
         $this->assertEquals($data['id'], $entity->getId());
         $this->assertEquals($data['first_name'], $entity->getFirstName());

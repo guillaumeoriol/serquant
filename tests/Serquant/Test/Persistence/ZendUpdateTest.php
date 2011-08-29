@@ -77,17 +77,17 @@ class ZendUpdateTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     public function testUpdateNoEntityThrowsNoResultException()
     {
-        $table = $this->getMock('Zend_Db_Table');
-        $table->expects($this->any())
-              ->method('update')
-              ->will($this->returnValue(0));
-        $this->persister->setTableGateway($table);
-
         $className = 'Serquant\Resource\Persistence\Zend\Person';
         $entity = new $className;
         $entity->id = 1;
         $entity->firstName = 'George';
         $entity->lastName = 'Washington';
+
+        $table = $this->getMock('Zend_Db_Table');
+        $table->expects($this->any())
+              ->method('update')
+              ->will($this->returnValue(0));
+        $this->persister->setTableGateway($className, $table);
 
         $property = new \ReflectionProperty($this->persister, 'loadedEntities');
         $property->setAccessible(true);
@@ -100,17 +100,17 @@ class ZendUpdateTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     public function testUpdateMultipleEntitiesThrowsNonUniqueResultException()
     {
-        $table = $this->getMock('Zend_Db_Table');
-        $table->expects($this->any())
-              ->method('update')
-              ->will($this->returnValue(2));
-        $this->persister->setTableGateway($table);
-
         $className = 'Serquant\Resource\Persistence\Zend\Person';
         $entity = new $className;
         $entity->id = 1;
         $entity->firstName = 'George';
         $entity->lastName = 'Washington';
+
+        $table = $this->getMock('Zend_Db_Table');
+        $table->expects($this->any())
+              ->method('update')
+              ->will($this->returnValue(2));
+        $this->persister->setTableGateway($className, $table);
 
         $property = new \ReflectionProperty($this->persister, 'loadedEntities');
         $property->setAccessible(true);
@@ -123,18 +123,18 @@ class ZendUpdateTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     public function testUpdateEntity()
     {
-        $table = $this->getMock('Zend_Db_Table');
-        $table->expects($this->any())
-              ->method('update')
-              ->will($this->returnValue(1));
-        $this->persister->setTableGateway($table);
-
         $className = 'Serquant\Resource\Persistence\Zend\Person';
         $entity = new $className;
         $entity->id = 1;
         $entity->firstName = 'George';
         $entity->lastName = 'Washington';
         $oid = spl_object_hash($entity);
+
+        $table = $this->getMock('Zend_Db_Table');
+        $table->expects($this->any())
+              ->method('update')
+              ->will($this->returnValue(1));
+        $this->persister->setTableGateway($className, $table);
 
         $loadedEntitiesProp = new \ReflectionProperty($this->persister, 'loadedEntities');
         $loadedEntitiesProp->setAccessible(true);

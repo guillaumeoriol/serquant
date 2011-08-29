@@ -32,6 +32,12 @@ class ZendCreateTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     public function testCreateSetupEntityId()
     {
+        $className = 'Serquant\Resource\Persistence\Zend\User';
+        $entity = new $className;
+        $entity->status = 'deprecated';
+        $entity->username = 'gw';
+        $entity->name = 'Washington';
+
         $row = $this->getMock('Zend_Db_Table_Row');
         $row->expects($this->any())
             ->method('save')
@@ -42,12 +48,7 @@ class ZendCreateTest extends \Serquant\Resource\Persistence\ZendTestCase
               ->method('createRow')
               ->will($this->returnValue($row));
 
-        $this->persister->setTableGateway($table);
-
-        $entity = new \Serquant\Resource\Persistence\Zend\User();
-        $entity->status = 'deprecated';
-        $entity->username = 'gw';
-        $entity->name = 'Washington';
+        $this->persister->setTableGateway($className, $table);
 
         $this->persister->create($entity);
         $this->assertNotNull($entity->getId());

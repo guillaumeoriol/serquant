@@ -21,10 +21,14 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     private $em;
 
+    private $persister;
+
     protected function setUp()
     {
         $this->db = $this->getTestAdapter();
+        \Zend_Db_Table::setDefaultAdapter($this->db);
         $this->em = $this->getTestEntityManager();
+        $this->persister = new \Serquant\Persistence\Zend($this->em);
     }
 
 
@@ -40,13 +44,10 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     public function testFetchPairsWithZendPersister()
     {
-        $entityName = '\Serquant\Resource\Persistence\Zend\Role';
+        $entityName = 'Serquant\Resource\Persistence\Zend\Role';
         $inputFilterName = null;
 
-        $persister = new Zend($this->em);
-        \Zend_Db_Table::setDefaultAdapter($this->db);
-
-        $service = new Crud($entityName, $inputFilterName, $persister);
+        $service = new Crud($entityName, $inputFilterName, $this->persister);
         $result = $service->fetchPairs('id', 'name', array());
         $data = $result->getData();
 
@@ -59,5 +60,22 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
             $scalar = $scalar && is_scalar($value);
         }
         $this->assertTrue($scalar);
+    }
+
+    public function testFetchPairsOnDifferentServicesWithSameZendPersister()
+    {
+        $inputFilterName = null;
+        $entityName1 = 'Serquant\Resource\Persistence\Zend\Role';
+        $entityName2 = 'Serquant\Resource\Persistence\Zend\Message';
+
+        $service1 = new Crud($entityName1, $inputFilterName, $this->persister);
+        $result1 = $service1->fetchPairs('id', 'name', array());
+        $data1 = $result1->getData();
+
+        $service2 = new Crud($entityName2, $inputFilterName, $this->persister);
+        $result2 = $service2->fetchPairs('language', 'message', array());
+        $data2 = $result2->getData();
+
+        $this->assertNotEquals($result1, $result2);
     }
 }

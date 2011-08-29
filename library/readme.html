@@ -13,11 +13,13 @@
 	<p>L'application est organisée en couches aussi découplées que
 		possible entre-elles :</p>
 	<ol>
-		<li><a href="#controller">Controller</a></li>
-		<li><a href="#service">Service</a></li>
-		<li><a href="#domain">Domain (business logic)</a></li>
-		<li><a href="#persistence">Persistence (or Data source)</a>
+		<li><a href="#controller">Controller</a>
 		</li>
+		<li><a href="#service">Service</a>
+		</li>
+		<li><a href="#domain">Domain (business logic)</a>
+		</li>
+		<li><a href="#persistence">Persistence (or Data source)</a></li>
 	</ol>
 
 	<h2>
@@ -73,7 +75,50 @@
 	<p>En sortie de filtre, les données doivent être du type attendu
 		par le domaine (c'est-à-dire du type défini pour les propriétés de
 		l'entité).</p>
+	<p>Simple entities (having no association) may be represented
+		safely with this flat model. Unfortunately, more complex entities
+		implementing associations will break this model. Let's think of a
+		Customer entity having an association with an Address entity. Though
+		internally customer details and address will belong to two separate
+		entities, it will be displayed to the end user as a single form.</p>
+	<pre>
+class Customer {
+  private $id;
+  private $name;
+  private $address;
+}
 
+class Address {
+  private $id;
+  private $postalCode;
+  private $city;
+}
+	</pre>
+	<p>This implies a hierarchical representation of data that is
+		incompatible with the flat model. From the domain point of view,
+		outgoing data will be represented this way:</p>
+	<pre>
+{
+  "id": "1240",
+  "name": "Dupont",
+  "address": {
+    "id": "9571",
+    "postalCode": "77400",
+    "city": "Lagny-sur-Marne"
+  }
+}
+	</pre>
+	<p>or (when the associated entity has not been retrieved yet):</p>
+    <pre>
+{
+  "id": "1240",
+  "name": "Dupont",
+  "address": {
+    "$ref": "9571"
+  }
+}
+    </pre>
+	<p>This is achieved by the entity serializer.</p>
 	<h2>
 		<a name="domain">Domain</a>
 	</h2>
@@ -162,13 +207,11 @@ class Customer
 	<ul>
 		<li>To retrieve the <strong>metadata driver</strong> from the
 			configuration:<br /> <code>$this-&gt;em-&gt;getConfiguration()-&gt;getMetadataDriverImpl()</code><br />
-			<em>There is no setter to do it otherwise.</em>
-		</li>
+			<em>There is no setter to do it otherwise.</em></li>
 		<li>To retrieve the <strong>database platform</strong> from the
 			database connection:<br /> <code>$this-&gt;em-&gt;getConnection()-&gt;getDatabasePlatform()</code><br />The
 			database platform is only needed to complete the ID generator
-			mapping.<br /> <em>There is no setter to do it otherwise.</em>
-		</li>
+			mapping.<br /> <em>There is no setter to do it otherwise.</em></li>
 		<li>To get the <strong>event manager</strong>:<br /> <code>$this-&gt;em-&gt;getEventManager()</code><br />The
 			event manager is used to trigger a listener if one is registered for
 			metadata loading.<br /> <em>There is no setter to do it
@@ -288,18 +331,16 @@ class Customer
 					qui renvoie à <code>UnitOfWork#doPersist($entity, $visited)</code>
 				</li>
 				<li>quand l'état est STATE_NEW, la fonction appelle <code>persistNew($class,
-						$entity)</code>
-				</li>
+						$entity)</code></li>
 				<li>la fonction invoque les événements liés au cycle de vie</li>
 				<li>la fonction génère, le cas échéant (assignation d'un
 					identifiant avant l'insertion), un identifiant et l'enregistre dans
-					les <em>entityIdentifiers</em>
-				</li>
-				<li>puis elle appelle <code>scheduleForInsert($entity)</code>
-				</li>
+					les <em>entityIdentifiers</em></li>
+				<li>puis elle appelle <code>scheduleForInsert($entity)</code></li>
 				<li>If the entity already has an identifier, it will be added
 					to the <em>identity map</em>.</li>
-			</ul></li>
+			</ul>
+		</li>
 		<li>Au moment du <code>EntityManager#flush()</code>, <code>UnitOfWork#commit()</code>
 			est appelée
 			<ul>
@@ -309,20 +350,19 @@ class Customer
 					qui réalise, grosso modo, les opérations suivantes :
 					<ul>
 						<li><code>$stmt =
-								$this->_conn->prepare($this->_getInsertSQL());</code></li>
+								$this->_conn->prepare($this->_getInsertSQL());</code>
+						</li>
 						<li><code>$insertData =
-								$this->_prepareInsertData($entity);</code>
-						</li>
+								$this->_prepareInsertData($entity);</code></li>
 						<li><code>$stmt->bindValue($paramIndex++, $value,
-								$this->_columnTypes[$column])</code>
-						</li>
-						<li><code>$stmt->execute();</code>
-						</li>
-					</ul>
-				</li>
+								$this->_columnTypes[$column])</code></li>
+						<li><code>$stmt->execute();</code></li>
+					</ul></li>
 				<li>Les identifiants retournés après insertion sont utilisés
-					pour mettre à jour l'entité et les <em>entityIdentifiers</em></li>
-			</ul></li>
+					pour mettre à jour l'entité et les <em>entityIdentifiers</em>
+				</li>
+			</ul>
+		</li>
 	</ol>
 
 	<p>Côté Zend, les choses sont différentes :</p>
@@ -337,12 +377,10 @@ class Customer
 					méthode <code>Zend_Db_Table_Row_Abstract#_transformColumn()</code>
 					est surcharghée)</li>
 				<li>Puis la valeur transmise est assignée à la colonne <strong>sans
-						transtypage</strong>
-				</li>
+						transtypage</strong></li>
 				<li>Enfin, un indicateur est positionné pour signaler que la
 					valeur de la colonne a été modifiée</li>
-			</ol>
-		</li>
+			</ol></li>
 	</ol>
 
 	<h4>retrieve</h4>
@@ -394,8 +432,7 @@ class Customer
 		<li>si la clé a changé, effectue des updates en cascade sur les
 			tables dépendantes</li>
 		<li>si les données ont changé, réalise la modification en
-			appelant <code>Zend_Db_Table#update()</code>
-		</li>
+			appelant <code>Zend_Db_Table#update()</code></li>
 		<li>invoque une méthode qui est un point d'extension post-update</li>
 		<li>renvoie la clé</li>
 	</ul>
@@ -424,7 +461,8 @@ class Customer
 	<h4>principe des metadata chez Doctrine</h4>
 	<ol>
 		<li>Tout commence par l'instanciation d'une factory : <code>new
-				$metadataFactoryClassName;</code></li>
+				$metadataFactoryClassName;</code>
+		</li>
 		<li>Puis, les métadonnées sont obtenues par <code>ClassMetadataFactory#getMetadataFor(ltrim($entityName,
 				'\\'))</code><br />qui appelle <code>ClassMetadataFactory#loadMetadata($className)</code>.<br />
 			Cette dernière réalise les opérations suivantes :
@@ -452,12 +490,12 @@ class Customer
         
         return new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($reader, (array)$paths);
     }								</pre> <em><code>$path</code> est le chemin où se trouvent
-										les entités</em></li>
-							</ul>
-						</li>
-					</ol></li>
-			</ol>
-		</li>
+										les entités</em>
+								</li>
+							</ul></li>
+					</ol>
+				</li>
+			</ol></li>
 	</ol>
 
 	<h2>
@@ -477,7 +515,8 @@ $container-&gt;setDefinition('service_country', new Definition(
 &nbsp;&nbsp;&nbsp;&nbsp;new Reference('persistence_doctrine')
 &nbsp;&nbsp;)
 ));
-</pre></li>
+</pre>
+		</li>
 		<li>Write a default controller to prepare the GUI. This
 			controller must extend <code>Serquant\Controller\Action</code>. It
 			must define a protected <var>$serviceName</var> property matching the

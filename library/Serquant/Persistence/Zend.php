@@ -49,10 +49,10 @@ class Zend implements Persistence, Serializable
     private $em;
 
     /**
-     * Table data gateway
-     * @var \Zend_Db_Table_Abstract
+     * Table data gateways
+     * @var array Array of Zend_Db_Table_Abstract elements
      */
-    private $table;
+    private $gateways;
 
     /**
      * Registry of the loaded entities
@@ -92,6 +92,28 @@ class Zend implements Persistence, Serializable
     }
 
     /**
+     * Normalizes the given argument to return an entity name.
+     *
+     * @param string|object $entity Name or instance of the entity
+     * @return string The normalized entity name
+     * @throws InvalidArgumentException If the entity argument is of wrong type.
+     */
+    protected function normalizeEntityName($entity)
+    {
+        if (is_object($entity)) {
+            $entity = get_class($entity);
+        }
+        if (!is_string($entity)) {
+            throw new InvalidArgumentException(
+                'The entity argument should either be an entity name or ' .
+                'an instance of an entity class. ' . gettype($entity) .
+                ' type provided.'
+            );
+        }
+        return $entity;
+    }
+
+    /**
      * Get class metadata of the given entity
      *
      * @param string|object $entityName Name or instance of the entity
@@ -99,27 +121,27 @@ class Zend implements Persistence, Serializable
      */
     protected function getEntityMetadata($entityName)
     {
-        if (is_object($entityName)) {
-            $entityName = get_class($entityName);
-        }
-        return $this->em->getClassMetadata($entityName);
+        return $this->em->getClassMetadata(
+            $this->normalizeEntityName($entityName)
+        );
     }
 
     /**
-     * Set the table data gateway corresponding to the entity.
+     * Set the table data gateway corresponding to an entity.
      *
      * This function permits to inject a stub gateway for testing purpose.
      *
+     * @param string|object $entityName Name or instance of the entity
      * @param \Zend_Db_Table_Abstract $table Table data gateway
      * @return void
      */
-    public function setTableGateway(\Zend_Db_Table_Abstract $table)
+    public function setTableGateway($entityName, \Zend_Db_Table_Abstract $table)
     {
-        $this->table = $table;
+        $this->gateways[$this->normalizeEntityName($entityName)] = $table;
     }
 
     /**
-     * Get the table gateway corresponding to the entity.
+     * Get the table gateway corresponding to an entity.
      *
      * @param string|object $entityName Name or instance of the entity
      * @return \Zend_Db_Table_Abstract
@@ -128,7 +150,8 @@ class Zend implements Persistence, Serializable
      */
     protected function getTableGateway($entityName)
     {
-        if ($this->table === null) {
+        $entityName = $this->normalizeEntityName($entityName);
+        if (!isset($this->gateways[$entityName])) {
             $entityMetadata = $this->getEntityMetadata($entityName);
             $className = $entityMetadata->customRepositoryClassName;
 
@@ -141,15 +164,16 @@ class Zend implements Persistence, Serializable
                 );
             }
 
-            $this->table = new $className;
-            if (!($this->table instanceof \Zend_Db_Table_Abstract)) {
+            $gateway = new $className;
+            if (!($gateway instanceof \Zend_Db_Table_Abstract)) {
                 throw new InvalidArgumentException(
                     "Class $className is not an instance of "
                     . 'Zend_Db_Table_Abstract.'
                 );
             }
+            $this->gateways[$entityName] = $gateway;
         }
-        return $this->table;
+        return $this->gateways[$entityName];
     }
 
     /**
