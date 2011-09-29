@@ -187,4 +187,45 @@ class SerializerTest extends \Serquant\Resource\Persistence\ZendTestCase
             $this->serializer->toXml($issue)
         );
     }
+
+    public function testIssue7()
+    {
+        $permission1 = new \Serquant\Resource\Persistence\Zend\Permission();
+        $permission1->setId(1);
+        $permission1->setRole(1);
+        $permission1->setResource(1);
+        $permission1->setActionName('insert');
+        $this->registry->put($permission1);
+
+        $permission2 = new \Serquant\Resource\Persistence\Zend\Permission();
+        $permission2->setId(2);
+        $permission2->setRole(1);
+        $permission2->setResource(1);
+        $permission2->setActionName('update');
+        $this->registry->put($permission2);
+
+        $raw = new \ArrayIterator(array($permission1, $permission2));
+
+        $expected = array(
+            array(
+    			'id' => $permission1->getId(),
+                'role' => $permission1->getRole(),
+                'resource' => $permission1->getResource(),
+                'actionName' => $permission1->getActionName(),
+                'assertion' => null
+            ),
+            array(
+    			'id' => $permission2->getId(),
+                'role' => $permission2->getRole(),
+                'resource' => $permission2->getResource(),
+                'actionName' => $permission2->getActionName(),
+                'assertion' => null
+            )
+        );
+
+        $this->assertEquals(
+            json_encode($expected),
+            $this->serializer->toJson($raw)
+        );
+    }
 }

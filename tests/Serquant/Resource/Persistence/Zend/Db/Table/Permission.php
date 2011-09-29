@@ -12,17 +12,9 @@
  */
 namespace Serquant\Resource\Persistence\Zend\Db\Table;
 
-class Role extends \Zend_Db_Table_Abstract
+class Permission extends \Zend_Db_Table_Abstract
 {
-    /**
-     * Table name
-     * @var string
-     */
-    protected $_name = 'roles';
+    protected $_name = 'permissions';
 
-    /**
-     * Primary key
-     * @var string
-     */
     protected $_primary = 'id';
 }
