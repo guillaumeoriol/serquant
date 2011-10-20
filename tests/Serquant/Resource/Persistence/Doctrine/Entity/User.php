@@ -25,6 +25,7 @@ class User
     public $id;
     /**
      * @Column(type="string", length=50)
+     * @validation:MaxLength(20)
      */
     public $status;
     /**

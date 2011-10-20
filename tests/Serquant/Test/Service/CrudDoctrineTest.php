@@ -24,25 +24,23 @@ class CrudDoctrineTest extends \Serquant\Resource\Persistence\OrmFunctionalTestC
     protected function setUp()
     {
         $this->em = $this->getTestEntityManager();
-        $this->persister = new Doctrine();
-        $this->persister->setEntityManager($this->em);
+        $this->persister = new Doctrine($this->em);
     }
 
     public function testFetchPairsWithExistingSelectOperator()
     {
         $this->setExpectedException('InvalidArgumentException');
 
-        $entityName = $inputFilterName = null;
-        $service = new Crud($entityName, $inputFilterName, $this->persister);
+        $entityName = null;
+        $service = new Crud($entityName, $this->persister);
         $service->fetchPairs('id', 'name', array('select(id,name)'));
     }
 
     public function testFetchPairsWithZendPersister()
     {
         $entityName = '\Serquant\Resource\Persistence\Doctrine\Entity\Role';
-        $inputFilterName = null;
 
-        $service = new Crud($entityName, $inputFilterName, $this->persister);
+        $service = new Crud($entityName, $this->persister);
         $result = $service->fetchPairs('id', 'name', array());
         $data = $result->getData();
 

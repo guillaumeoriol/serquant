@@ -31,8 +31,7 @@ class CrudDoctrineAssociationTest
     protected function setUp()
     {
         $this->em = $this->getTestEntityManager();
-        $this->persister = new Doctrine();
-        $this->persister->setEntityManager($this->em);
+        $this->persister = new Doctrine($this->em);
 
         $this->setUpDb();
     }
@@ -110,9 +109,8 @@ class CrudDoctrineAssociationTest
     public function testUserWithPhoneAndAddressThroughService()
     {
         $entityName = '\Serquant\Resource\Persistence\Doctrine\Entity\CmsUser';
-        $inputFilterName = null;
 
-        $service = new Crud($entityName, $inputFilterName, $this->persister);
+        $service = new Crud($entityName, $this->persister);
         $result = $service->fetchOne(array('username' => 'user1'));
         $user = $result->getData();
 
@@ -148,9 +146,8 @@ class CrudDoctrineAssociationTest
     public function testUserWithoutAddressThroughService()
     {
         $entityName = '\Serquant\Resource\Persistence\Doctrine\Entity\CmsUser';
-        $inputFilterName = null;
 
-        $service = new Crud($entityName, $inputFilterName, $this->persister);
+        $service = new Crud($entityName, $this->persister);
         $result = $service->fetchOne(array('username' => 'user2'));
         $user = $result->getData();
 
@@ -184,9 +181,8 @@ class CrudDoctrineAssociationTest
     public function testUserWithoutPhonenumbersThroughService()
     {
         $entityName = '\Serquant\Resource\Persistence\Doctrine\Entity\CmsUser';
-        $inputFilterName = null;
 
-        $service = new Crud($entityName, $inputFilterName, $this->persister);
+        $service = new Crud($entityName, $this->persister);
         $result = $service->fetchOne(array('username' => 'user3'));
         $user = $result->getData();
 
@@ -218,9 +214,8 @@ class CrudDoctrineAssociationTest
     public function testUserWithoutAnyThroughService()
     {
         $entityName = '\Serquant\Resource\Persistence\Doctrine\Entity\CmsUser';
-        $inputFilterName = null;
 
-        $service = new Crud($entityName, $inputFilterName, $this->persister);
+        $service = new Crud($entityName, $this->persister);
         $result = $service->fetchOne(array('username' => 'user4'));
         $user = $result->getData();
 

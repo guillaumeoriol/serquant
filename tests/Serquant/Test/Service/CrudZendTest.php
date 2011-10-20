@@ -31,23 +31,20 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
         $this->persister = new \Serquant\Persistence\Zend($this->em);
     }
 
-
     public function testFetchPairsWithExistingSelectOperator()
     {
         $this->setExpectedException('InvalidArgumentException');
 
-        $entityName = $inputFilterName = null;
-        $persister = new Zend($this->em);
-        $service = new Crud($entityName, $inputFilterName, $persister);
+        $entityName = null;
+        $service = new Crud($entityName, $this->persister);
         $service->fetchPairs('id', 'name', array('select(id,name)'));
     }
 
     public function testFetchPairsWithZendPersister()
     {
         $entityName = 'Serquant\Resource\Persistence\Zend\Role';
-        $inputFilterName = null;
 
-        $service = new Crud($entityName, $inputFilterName, $this->persister);
+        $service = new Crud($entityName, $this->persister);
         $result = $service->fetchPairs('id', 'name', array());
         $data = $result->getData();
 
@@ -64,15 +61,14 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     public function testFetchPairsOnDifferentServicesWithSameZendPersister()
     {
-        $inputFilterName = null;
         $entityName1 = 'Serquant\Resource\Persistence\Zend\Role';
         $entityName2 = 'Serquant\Resource\Persistence\Zend\Message';
 
-        $service1 = new Crud($entityName1, $inputFilterName, $this->persister);
+        $service1 = new Crud($entityName1, $this->persister);
         $result1 = $service1->fetchPairs('id', 'name', array());
         $data1 = $result1->getData();
 
-        $service2 = new Crud($entityName2, $inputFilterName, $this->persister);
+        $service2 = new Crud($entityName2, $this->persister);
         $result2 = $service2->fetchPairs('language', 'message', array());
         $data2 = $result2->getData();
 

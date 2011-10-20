@@ -30,7 +30,7 @@ use Doctrine\DBAL\Types\Type,
  * @link     http://www.serquant.com/
  * @todo     Replace this factory by the one implemented for Symfony.
  */
-class Factory
+class EntityManagerFactory
 {
     /**
      * Doctrine configuration
@@ -66,7 +66,7 @@ class Factory
      */
     public static function load($config)
     {
-        $instance = new Factory($config);
+        $instance = new EntityManagerFactory($config);
         return $instance->getEntityManager();
     }
 

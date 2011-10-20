@@ -46,7 +46,7 @@ class Zend implements Persistence, Serializable
      * Entity manager
      * @var EntityManager
      */
-    private $em;
+    private $entityManager;
 
     /**
      * Table data gateways
@@ -67,7 +67,7 @@ class Zend implements Persistence, Serializable
      */
     public function __construct(EntityManager $em)
     {
-        $this->em = $em;
+        $this->entityManager = $em;
         $this->loadedEntities = new Ormless($em->getMetadataFactory());
     }
 
@@ -78,7 +78,7 @@ class Zend implements Persistence, Serializable
      */
     public function getMetadataFactory()
     {
-        return $this->em->getMetadataFactory();
+        return $this->entityManager->getMetadataFactory();
     }
 
     /**
@@ -89,6 +89,17 @@ class Zend implements Persistence, Serializable
     public function getEntityRegistry()
     {
         return $this->loadedEntities;
+    }
+
+    /**
+     * Get metadata of the given class
+     *
+     * @param string $className Name of the entity class
+     * @return \Doctrine\ORM\Mapping\ClassMetadata
+     */
+    public function getClassMetadata($className)
+    {
+        return $this->getMetadataFactory()->getMetadataFor($className);
     }
 
     /**
@@ -121,7 +132,7 @@ class Zend implements Persistence, Serializable
      */
     protected function getEntityMetadata($entityName)
     {
-        return $this->em->getClassMetadata(
+        return $this->entityManager->getClassMetadata(
             $this->normalizeEntityName($entityName)
         );
     }
@@ -206,7 +217,7 @@ class Zend implements Persistence, Serializable
         $limitStart = $limitCount = null;
 
         $class = $this->getEntityMetadata($entityName);
-        $platform = $this->em->getConnection()->getDatabasePlatform();
+        $platform = $this->entityManager->getConnection()->getDatabasePlatform();
 
         foreach ($expressions as $key => $value) {
             if (is_int($key)) {
@@ -444,7 +455,7 @@ class Zend implements Persistence, Serializable
         }
 
         $class = $this->getEntityMetadata($entityName);
-        $platform = $this->em->getConnection()->getDatabasePlatform();
+        $platform = $this->entityManager->getConnection()->getDatabasePlatform();
         $data = $this->convertToPhpValues($row, $class, $platform);
 
         $entity = $class->newInstance();
@@ -517,7 +528,7 @@ class Zend implements Persistence, Serializable
     public function create($entity)
     {
         $class = $this->getEntityMetadata($entity);
-        $platform = $this->em->getConnection()->getDatabasePlatform();
+        $platform = $this->entityManager->getConnection()->getDatabasePlatform();
         $data = $this->convertToDatabaseValues($entity, $class, $platform);
 
         // @todo Implement id generation when the identifier is not generated
@@ -608,7 +619,7 @@ class Zend implements Persistence, Serializable
         }
 
         $table = $this->getTableGateway($entity);
-        $platform = $this->em->getConnection()->getDatabasePlatform();
+        $platform = $this->entityManager->getConnection()->getDatabasePlatform();
         $count = $table->update(
             $this->loadedEntities->computeChangeSet($entity, $platform),
             $this->getWhereClause($entity)

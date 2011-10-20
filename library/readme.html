@@ -3,21 +3,43 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>Design considerations</title>
+<style type="text/css">
+h1,h2,h3,h4,h5,h6 {
+	color: #0080C0;
+}
+
+pre {
+	width: 60em;
+	padding: 1em;
+	background-color: #000000;
+	color: #FFFFFF;
+}
+
+p,li {
+	width: 48em;
+}
+
+li {
+	margin-bottom: 1em;
+}
+</style>
 </head>
 <body>
-
-	<p>Library designed to build PHP applications based on Zend or
-		Symfony frameworks.</p>
+	<h1>Serquant</h1>
+	<p>A library designed to help building PHP applications based on
+		Zend or Symfony frameworks.</p>
 
 	<h2>Layers</h2>
-	<p>L'application est organisée en couches aussi découplées que
-		possible entre-elles :</p>
+	<p>The application is organized by layers that should not be
+		coupled together:</p>
 	<ol>
-		<li><a href="#controller">Controller</a></li>
-		<li><a href="#service">Service</a></li>
-		<li><a href="#domain">Domain (business logic)</a></li>
-		<li><a href="#persistence">Persistence (or Data source)</a>
+		<li><a href="#controller">Controller</a>
 		</li>
+		<li><a href="#service">Service</a>
+		</li>
+		<li><a href="#domain">Domain (business logic)</a>
+		</li>
+		<li><a href="#persistence">Persistence (or Data source)</a></li>
 	</ol>
 
 	<h2>
@@ -38,10 +60,10 @@
 		).
 	</p>
 	<ol>
-		<li>With JSON, either Zend Framework built-in decoder or PHP
-			native function (json_decode) is used. In both cases, the result is
-			the same: a type conversion is done (that is not application-aware as
-			we can see with the date).<pre>
+		<li>With JSON, either the Zend Framework built-in decoder or the
+			PHP native function (json_decode) is used. In both cases, the result
+			is the same: a type conversion is done (that is not application-aware
+			as we can see with the date).<pre>
 $encoded = '{ 
   "null": null, 
   "bool": true, 
@@ -66,9 +88,8 @@ object(stdClass)#1 (9) {
   ["array"]=> array(3) { [0]=> int(0) [1]=> int(1) [2]=> int(2) } 
   ["object"]=> object(stdClass)#2 (1) { ["a"]=> int(1) } 
   ["date"]=> string(10) "2010-09-09" 
-}
-	</pre>Hence, the result primarily depends on variable types used on client
-			side (dojo.store, for instance).</li>
+}</pre>Hence, the result primarily depends on variable types used on client
+			side (defined by dojo.store, for instance).</li>
 		<li>With XML, the result is constructed with Zend_Config_Xml
 			class. No type conversion is done for scalars. Vectors are always
 			converted to arrays. <pre>
@@ -113,45 +134,39 @@ array(
     'a' => string '1' (length=1)
   )
   'date' => string '2010-09-09' (length=10)
-)
-</pre></li>
+)</pre>
+		</li>
 		<li>With default form <code>enctype</code>, the native PHP
 			function <code>parse_str</code> is used, which does no type
 			conversion.</li>
 	</ol>
 
 	<p>Different content types will result in different PHP types. As a
-		consequence, filters and validators MUST accomodate this situation and
-		handle properly raw string types as well as converted types.</p>
+		consequence, converters MUST accomodate this situation and handle
+		properly raw string types as well as converted types.</p>
 
-	<p>En définitive, le contrôleur s'occupe seulement de transformer
-		la requête reçue pour qu'elle soit conforme à l'API du service.</p>
+	<p>The main purpose of the controller (on input) is to transform
+		the incoming request to conform with the service API requirements.</p>
 
 	<h2>
 		<a name="service">Service layer</a>
 	</h2>
 	<h4>Form</h4>
-	<p>
-		In a simple form, element names match the property names of the
+	<p>In a basic form, element names match the property names of the
 		corresponding entity (the business object). This simple design avoids
 		having an additional mapper between external names (the ones used in
 		the user interface) and internal names (of the domain). As property
 		names of the entity are unique by design, there is no risk to get a
 		collision between two form fields having the same id (a form
-		represents a business object). No need to use the array notation in
-		forms. Furthermore, it is forbidden to use this notation as
-		<code>Serquant\Service\Crud#populate</code>
-		(server side) and
-		<code>technema.grid.Editable#formToObject</code>
-		methods (client side) don't implement the required logic for it.
-	</p>
+		represents a business object). No need to use any array notation in
+		forms.</p>
 	<p>
 		Simple entities (having no association) may be represented safely with
 		this flat model. Unfortunately, more complex entities implementing
 		associations will break this model. Let's think of a <em>Customer</em>
-		entity having an association with an Address entity. Though internally
-		customer details and address will belong to two separate entities, it
-		will be displayed to the end user as a single form.
+		entity having an association with an <em>Address</em> entity. Though
+		internally customer details and address will belong to two separate
+		entities, it will be displayed to the end user as a single form.
 	</p>
 	<pre>
 class Customer {
@@ -164,8 +179,7 @@ class Address {
   private $id;
   private $postalCode;
   private $city;
-}
-	</pre>
+}</pre>
 	<p>This implies a hierarchical representation of data that is
 		incompatible with the flat model. From the domain point of view,
 		outgoing data will be represented this way:</p>
@@ -178,8 +192,7 @@ class Address {
     "postalCode": "77400",
     "city": "Lagny-sur-Marne"
   }
-}
-	</pre>
+}</pre>
 	<p>or (when the associated entity has not been retrieved yet):</p>
 	<pre>
 {
@@ -188,52 +201,160 @@ class Address {
   "address": {
     "$ref": "9571"
   }
-}
-    </pre>
+}</pre>
 	<p>This is achieved by the entity serializer.</p>
 	<p>
-		Unfortunately, the same data structure will be presented to the input
-		filter for filtering and validation. As the form (holding the
-		presentation, the filters and validators) and the entity have
-		different structures, it doesn't work. We therefore need to <strong>de-couple
-			form presentation from filtering/validating</strong>. This is achieved by
-		removing every server-side filtering/validating code from the
-		Zend_Form object and putting it in an Zend_Filter_Input object.
+		Unfortunately, the same data structure will be presented to the
+		service for validation. As the form (holding the presentation) and the
+		entity have different structures, it doesn't work. We therefore need
+		to <strong>de-couple form presentation from validation</strong>. This
+		is achieved by removing every server-side filtering/validating code
+		from the Zend_Form object and putting it <em>somewhere else</em>. But
+		where?
 	</p>
 
-	<p>The last question is about type mapping. Where should it occur?</p>
-	<ol>
-		<li>The first place could be in the existing action helper ( <code>Params</code>
-			). But this class belongs to the Controller layer that is not aware
-			of the domain and thus can't do an appropriate type conversion (that
-			should depend on the entity definition).</li>
-		<li>The second place could be during input filter processing. By
-			nature, filters do transform the original data and may possibly cast
-			a source type into a target one. But they are executed before any
-			validation and their output is passed as an input to the validators.
-			How could a erroneous value be converted properly?</li>
-		<li>The last place is therefore after filtering and validating.
-			As stated in the <a
-			href="http://framework.zend.com/manual/en/zend.filter.input.html">documentation</a>,
-			<q>Zend_Filter_Input provides a declarative interface to
-				associate multiple filters and validators, apply them to collections
-				of data, and to retrieve input values after they have been processed
-				by the filters and validators.</q> The class doesn't implement any
-			post-validation processing that could be used for type mapping. Thus,
-			we have two options:
-			<ul>
-				<li>Write a class similar to <code>Zend_Input_Filter</code> but
-					that would include pre-processing (filtering), validation and
-					post-processing (type mapping). This was discussed for <a
-					href="http://framework.zend.com/wiki/display/ZFDEV2/Zend_Form+2.0">Zend_Form
-						2.0 refactoring</a>.</li>
-				<li>Implement type mapping as a separate process. I prefer this
-					solution for beeing simpler to implement than the previous one. It
-					is to be implemented in the entity setters. (Does it violate the <q>no
-						infrastructure code in entity</q> rule?)</li>
-			</ul>
-		</li>
-	</ol>
+	<p>
+		Could it be a
+		<code>Zend_Filter_Input</code>
+		object? The previous example with Customer/Address shows an object
+		referencing another object. If we don't want to repeat our code,
+		address validation should not be done within customer validation (or
+		there is a chance that the same code will be duplicated for a supplier
+		address or another address in the application). But
+		<code>Zend_Filter_Input</code>
+		does not process its elements recursively. As though, it is not a good
+		candidate for the validation.
+	</p>
+
+	<h4>Validation</h4>
+	<p>
+		We decided to use Symfony's <a
+			href="http://symfony.com/doc/2.0/book/validation.html">Validator</a>
+		component instead of Zend Framework's one. Symfony describes it as a
+		PHP port of the Hibernate implementation of <a
+			href="http://jcp.org/en/jsr/detail?id=303">JSR-303 Bean
+			Validation specification</a>. The paradigm is very different from Zend
+		Framework's filtering and validating process. Here, the type
+		conversion is done in a first step, then the entity is populated and,
+		finally, the validator validates the populated entity. Therefore,
+		violations may happen at conversion stage or at validation stage.
+	</p>
+	<p>
+		Validation constraints can be specified via a number of different
+		formats:YAML, XML, annotations, or PHP). I prefer the annotations for
+		beeing in the same place as ORM mapping. See the list of <a
+			href="http://symfony.com/doc/2.0/book/validation.html#supported-constraints">supported constraints</a>.
+	</p>
+
+	<p>When populating an entity from input data, any setter defined in
+		the entity will be used.</p>
+	<pre>
+/**
+ * @Entity
+ * @Table(name="users")
+ */
+class User
+{
+    /**
+     * @Column(name="id", type="integer")
+     * @Id
+     * @GeneratedValue(strategy="AUTO")
+     */
+    private $id;
+
+    /** 
+     * @Column(name="name", type="string", length=20) 
+     * @validation:MaxLength(10)
+     */
+    private $name;
+
+    /**
+     * Set user name
+     *
+     * @param string $name User name
+     * @return void
+     */
+    public function setName($name) // Will be used by Crud#populate()
+    {
+        $this-&gt;name = $name;
+    }
+}</pre>
+
+	<p>
+		For <em>x-to-many</em> associations, adding an item to the association
+		is done by convention with an
+		<code>addXXX()</code>
+		method (
+		<code>addPhonenumber()</code>
+		in the following example). The property name is plural but the
+		function name is singular (as it describes the action of adding <em>one</em>
+		item). To be able to use this method in
+		<code>Crud#populate</code>
+		, we should find the singular form of the property. But many words
+		have defective plural and some others ends in 's' even when singular
+		in meaning. In fact, there is no way to infere the right method name.
+		Thus, in such situations, write a
+		<code>setXXX()</code>
+		method that will be executed when populating the entity, and call your
+		own
+		<code>addXXX()</code>
+		method from it:
+	</p>
+	<pre>
+/**
+ * @Entity
+ * @Table(name="users")
+ */
+class User
+{
+    /**
+     * @Column(name="id", type="integer")
+     * @Id
+     * @GeneratedValue(strategy="AUTO")
+     */
+    private $id;
+
+    /** 
+     * @Column(name="name", type="string", length=20) 
+     */
+    private $name;
+
+    /**
+     * @OneToMany(
+     *     targetEntity="Phonenumber", 
+     *     mappedBy="user", 
+     *     cascade={"persist", "remove", "merge"}, 
+     *     orphanRemoval=true)
+     */
+    public $phonenumbers;
+
+    public function __construct() {
+        $this-&gt;phonenumbers = new ArrayCollection;
+    }
+
+    // ...
+    
+    /**
+     * Adds a phonenumber to the user.
+     *
+     * @param Phonenumber $phone
+     */
+    public function addPhonenumber(Phonenumber $phonenumber) {
+        $this-&gt;phonenumbers[] = $phonenumber;
+        $phone-&gt;setUser($this);
+    }
+
+    /**
+     * Set user phonenumbers.
+     *
+     * @param ArrayCollection $phonenumbers
+     */
+    public function setPhonenumbers($phonenumbers) {
+        foreach ($phonenumbers as $phonenumber) {
+            $this-&gt;addPhonenumber($phonenumber);
+        }
+    }
+}</pre>
 	<p>
 		<small> La conversion opposée est réalisée par le contrôleur,
 			via un script de vue, car c'est lui qui sait la forme attendue (JSON,
@@ -251,12 +372,11 @@ class Address {
 		simples que possible (principe de simplicité nommé par Martin Fowler <a
 			href="http://www.martinfowler.com/bliki/POJO.html">POJO</a>).<br />
 		Domain entities must declare their properties either protected or
-		private to conform with EJB 3 specification.<br /> Des
-		getters/setters publics doivent être écrits (sans quoi la fonction
-		Crud#populate() lève une exception).<br /> Les magic getters/setters
-		sont à proscrire, comme toutes les fonctions magiques d'une manière
-		générale, du fait de la difficulté de compréhension du code qu'elles
-		introduisent et de la dégradation de performance qu'elles provoquent.
+		private to conform with EJB 3 specification.<br /> Les magic
+		getters/setters sont à proscrire, comme toutes les fonctions magiques
+		d'une manière générale, du fait de la difficulté de compréhension du
+		code qu'elles introduisent et de la dégradation de performance
+		qu'elles provoquent.
 	</p>
 	<p>
 		Les dates sont représentées par des classes
@@ -330,13 +450,11 @@ class Customer
 	<ul>
 		<li>To retrieve the <strong>metadata driver</strong> from the
 			configuration:<br /> <code>$this-&gt;em-&gt;getConfiguration()-&gt;getMetadataDriverImpl()</code><br />
-			<em>There is no setter to do it otherwise.</em>
-		</li>
+			<em>There is no setter to do it otherwise.</em></li>
 		<li>To retrieve the <strong>database platform</strong> from the
 			database connection:<br /> <code>$this-&gt;em-&gt;getConnection()-&gt;getDatabasePlatform()</code><br />The
 			database platform is only needed to complete the ID generator
-			mapping.<br /> <em>There is no setter to do it otherwise.</em>
-		</li>
+			mapping.<br /> <em>There is no setter to do it otherwise.</em></li>
 		<li>To get the <strong>event manager</strong>:<br /> <code>$this-&gt;em-&gt;getEventManager()</code><br />The
 			event manager is used to trigger a listener if one is registered for
 			metadata loading.<br /> <em>There is no setter to do it
@@ -456,18 +574,16 @@ class Customer
 					qui renvoie à <code>UnitOfWork#doPersist($entity, $visited)</code>
 				</li>
 				<li>quand l'état est STATE_NEW, la fonction appelle <code>persistNew($class,
-						$entity)</code>
-				</li>
+						$entity)</code></li>
 				<li>la fonction invoque les événements liés au cycle de vie</li>
 				<li>la fonction génère, le cas échéant (assignation d'un
 					identifiant avant l'insertion), un identifiant et l'enregistre dans
-					les <em>entityIdentifiers</em>
-				</li>
-				<li>puis elle appelle <code>scheduleForInsert($entity)</code>
-				</li>
+					les <em>entityIdentifiers</em></li>
+				<li>puis elle appelle <code>scheduleForInsert($entity)</code></li>
 				<li>If the entity already has an identifier, it will be added
 					to the <em>identity map</em>.</li>
-			</ul></li>
+			</ul>
+		</li>
 		<li>Au moment du <code>EntityManager#flush()</code>, <code>UnitOfWork#commit()</code>
 			est appelée
 			<ul>
@@ -477,20 +593,19 @@ class Customer
 					qui réalise, grosso modo, les opérations suivantes :
 					<ul>
 						<li><code>$stmt =
-								$this->_conn->prepare($this->_getInsertSQL());</code></li>
+								$this->_conn->prepare($this->_getInsertSQL());</code>
+						</li>
 						<li><code>$insertData =
-								$this->_prepareInsertData($entity);</code>
-						</li>
+								$this->_prepareInsertData($entity);</code></li>
 						<li><code>$stmt->bindValue($paramIndex++, $value,
-								$this->_columnTypes[$column])</code>
-						</li>
-						<li><code>$stmt->execute();</code>
-						</li>
-					</ul>
-				</li>
+								$this->_columnTypes[$column])</code></li>
+						<li><code>$stmt->execute();</code></li>
+					</ul></li>
 				<li>Les identifiants retournés après insertion sont utilisés
-					pour mettre à jour l'entité et les <em>entityIdentifiers</em></li>
-			</ul></li>
+					pour mettre à jour l'entité et les <em>entityIdentifiers</em>
+				</li>
+			</ul>
+		</li>
 	</ol>
 
 	<p>Côté Zend, les choses sont différentes :</p>
@@ -505,12 +620,10 @@ class Customer
 					méthode <code>Zend_Db_Table_Row_Abstract#_transformColumn()</code>
 					est surcharghée)</li>
 				<li>Puis la valeur transmise est assignée à la colonne <strong>sans
-						transtypage</strong>
-				</li>
+						transtypage</strong></li>
 				<li>Enfin, un indicateur est positionné pour signaler que la
 					valeur de la colonne a été modifiée</li>
-			</ol>
-		</li>
+			</ol></li>
 	</ol>
 
 	<h4>retrieve</h4>
@@ -562,8 +675,7 @@ class Customer
 		<li>si la clé a changé, effectue des updates en cascade sur les
 			tables dépendantes</li>
 		<li>si les données ont changé, réalise la modification en
-			appelant <code>Zend_Db_Table#update()</code>
-		</li>
+			appelant <code>Zend_Db_Table#update()</code></li>
 		<li>invoque une méthode qui est un point d'extension post-update</li>
 		<li>renvoie la clé</li>
 	</ul>
@@ -592,7 +704,8 @@ class Customer
 	<h4>principe des metadata chez Doctrine</h4>
 	<ol>
 		<li>Tout commence par l'instanciation d'une factory : <code>new
-				$metadataFactoryClassName;</code></li>
+				$metadataFactoryClassName;</code>
+		</li>
 		<li>Puis, les métadonnées sont obtenues par <code>ClassMetadataFactory#getMetadataFor(ltrim($entityName,
 				'\\'))</code><br />qui appelle <code>ClassMetadataFactory#loadMetadata($className)</code>.<br />
 			Cette dernière réalise les opérations suivantes :
@@ -620,12 +733,12 @@ class Customer
         
         return new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($reader, (array)$paths);
     }								</pre> <em><code>$path</code> est le chemin où se trouvent
-										les entités</em></li>
-							</ul>
-						</li>
-					</ol></li>
-			</ol>
-		</li>
+										les entités</em>
+								</li>
+							</ul></li>
+					</ol>
+				</li>
+			</ol></li>
 	</ol>
 
 	<h2>
@@ -645,7 +758,8 @@ $container-&gt;setDefinition('service_country', new Definition(
 &nbsp;&nbsp;&nbsp;&nbsp;new Reference('persistence_doctrine')
 &nbsp;&nbsp;)
 ));
-</pre></li>
+</pre>
+		</li>
 		<li>Write a default controller to prepare the GUI. This
 			controller must extend <code>Serquant\Controller\Action</code>. It
 			must define a protected <var>$serviceName</var> property matching the

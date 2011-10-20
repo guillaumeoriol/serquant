@@ -12,13 +12,20 @@
  */
 namespace Serquant\Service;
 
-use Serquant\Entity\Serializer,
+use Doctrine\Common\Collections\ArrayCollection,
+    Doctrine\ORM\Mapping\ClassMetadata,
+    Serquant\Converter\Converter,
+    Serquant\Converter\Exception\ConverterException,
+    Serquant\Entity\Serializer,
     Serquant\Persistence\Persistence,
     Serquant\Persistence\Serializable,
     Serquant\Service\Service,
     Serquant\Service\Exception\InvalidArgumentException,
     Serquant\Service\Exception\RuntimeException,
-    Serquant\Service\Result;
+    Serquant\Service\Result,
+    Symfony\Component\Validator\ConstraintViolation,
+    Symfony\Component\Validator\ConstraintViolationList,
+    Symfony\Component\Validator\ValidatorFactory;
 
 /**
  * Basic service layer implementing CRUD functions for persistent entities.
@@ -38,6 +45,12 @@ use Serquant\Entity\Serializer,
 class Crud implements Service
 {
     /**
+     * Entity class name that is managed by this service layer.
+     * @var string
+     */
+    protected $entityName;
+
+    /**
      * Persistence layer
      * @var Persistence
      */
@@ -50,32 +63,48 @@ class Crud implements Service
     private $serializer;
 
     /**
-     * Entity class name that is managed by this service layer.
-     * @var string
+     * Entity validator.
+     * @var ValidatorInterface
      */
-    protected $entityName;
-
-    /**
-     * Input filter class name used to validate input data before saving.
-     * @var string
-     */
-    protected $inputFilterName;
+    private $validator;
 
     /**
      * Constructor
      *
      * @param string $entityName Entity class name
-     * @param string $inputFilterName Input filter class name
      * @param Persistence $persister Persistence layer
      */
-    public function __construct(
-        $entityName,
-        $inputFilterName,
-        Persistence $persister
-    ) {
+    public function __construct($entityName, Persistence $persister)
+    {
         $this->entityName = $entityName;
-        $this->inputFilterName = $inputFilterName;
         $this->persister = $persister;
+    }
+
+    /**
+     * Get a service from the dependency injection container.
+     *
+     * @param string $name Service name
+     * @return mixed
+     */
+    protected function getService($name)
+    {
+        $front = \Zend_Controller_Front::getInstance();
+        $container = $front->getParam('bootstrap')->getContainer();
+        return $container->{$name};
+    }
+
+    /**
+     * Get the validator service.
+     *
+     * @return ValidatorInterface
+     */
+    protected function getValidator()
+    {
+        if ($this->validator === null) {
+            $factory = ValidatorFactory::buildDefault();
+            $this->validator = $factory->getValidator();
+        }
+        return $this->validator;
     }
 
     /**
@@ -237,42 +266,84 @@ class Crud implements Service
     }
 
     /**
-     * Populate the entity from the input filter
+     * Populate the entity from the input data
      *
      * @param object $entity Entity to populate
-     * @param \Zend_Form $inputFilter Input filter to populate from
-     * @return void
-     * @throws RuntimeException If a setter method is not available for
-     * a property.
+     * @param array $data Input data, in the form of field/value pairs.
+     * @return ConstraintViolationList
      */
-    protected function populate($entity, \Zend_Form $inputFilter)
+    protected function populate($entity, $data)
     {
-        if ($inputFilter->isArray()) {
-            throw new RuntimeException(
-                'Form \'' . get_class($inputFilter) . '\' shall not use the ' .
-                'array notation (ie call setElementsBelongTo() method) as ' .
-                'this service does not implement the logic for this notation.'
-            );
-        }
-
-        foreach ($inputFilter->getElements() as $name => $element) {
-            if (!$element->getIgnore()) {
-                $method = 'set' . ucfirst($name);
-                if (method_exists($entity, $method)) {
-                    $value = $element->getValue();
-                    call_user_func(array($entity, $method), $value);
-                } else {
-                    throw new RuntimeException(
-                        'No setter method defined for field \'' . $name
-                        . '\' of entity ' . get_class($entity)
+        $errors = new ConstraintViolationList();
+        $metadata = $this->persister->getClassMetadata(get_class($entity));
+        foreach ($data as $field => $value) {
+            if (isset($metadata->fieldMappings[$field])) {
+                try {
+                    $type = $metadata->fieldMappings[$field]['type'];
+                    $converter = Converter::getConverter($type);
+                    $converted = $converter->getAsDomainType($value);
+                } catch (ConverterException $e) {
+                    $errors->add(
+                        new ConstraintViolation(
+                            $e->getMessage(),
+                            array('{type}' => $type, '{value}' => $value),
+                            $entity,
+                            $field,
+                            $data[$field]
+                        )
                     );
+                    continue;
                 }
+            } else if (isset($metadata->associationMappings[$field])) {
+                $relatedClass = $metadata->associationMappings[$field]['targetEntity'];
+                $type = $metadata->associationMappings[$field]['type'];
+                if ($type & ClassMetadata::TO_ONE) {
+                    $converted = new $relatedClass;
+                    $errors->addAll($this->populate($converted, $value));
+                } else {
+                    if (!is_array($value)) {
+                        $value = array($value);
+                    }
+                    $converted = new ArrayCollection();
+                    foreach ($value as $item) {
+                        $convertedItem = new $relatedClass;
+                        $errors->addAll($this->populate($convertedItem, $item));
+                        $converted->add($convertedItem);
+                    }
+                }
+            }
+            $method = 'set' . ucfirst($field);
+            if (method_exists($entity, $method)) {
+                call_user_func(array($entity, $method), $converted);
+            } else {
+                $metadata->reflFields[$field]->setValue($entity, $converted);
             }
         }
 
-        foreach ($inputFilter->getSubForms() as $name => $subForm) {
-            $this->populate($entity, $subForm);
+        return $errors;
+    }
+
+    /**
+     * Get error messages from a violation list.
+     *
+     * @param ConstraintViolationList $violations List of constraint violations.
+     * @return array
+     */
+    protected function getErrorMessages(ConstraintViolationList $violations)
+    {
+        $translator = $this->getService('translator');
+        $messages = array();
+        foreach ($violations as $violation) {
+            $template = $translator->translate($violation->getMessageTemplate());
+            $messageParameters = $violation->getMessageParameters();
+            $message = \str_replace(
+                array_keys($messageParameters),
+                array_values($messageParameters),
+                $template
+            );
+            $messages[$violation->getPropertyPath()] = $message;
         }
+        return $messages;
     }
 
     /**
@@ -290,17 +361,17 @@ class Crud implements Service
     public function create(array $data)
     {
         try {
-            $inputFilter = new $this->inputFilterName;
-            if ($inputFilter->isValid($data)) {
-                $entity = new $this->entityName;
-                $this->populate($entity, $inputFilter);
+            $entity = new $this->entityName;
+            $violations = $this->populate($entity, $data);
+            $violations->addAll($this->getValidator()->validate($entity));
+            if (count($violations) === 0) {
                 $this->persister->create($entity);
                 $status = Result::STATUS_SUCCESS;
-                $violations = null;
+                $errors = null;
             } else {
                 $status = Result::STATUS_VALIDATION_ERROR;
-                $entity = $inputFilter->getUnfilteredValues();
-                $violations = $inputFilter->getMessages();
+                $entity = $data;
+                $errors = $this->getErrorMessages($violations);
             }
         } catch (\Exception $e) {
             // Sanitize for exception shielding
@@ -309,7 +380,7 @@ class Crud implements Service
             );
         }
 
-        return new Result($status, $entity, $violations);
+        return new Result($status, $entity, $errors);
     }
 
     /**
@@ -369,17 +440,17 @@ class Crud implements Service
         }
 
         try {
-            $inputFilter = new $this->inputFilterName;
-            if ($inputFilter->isValid($data)) {
-                $entity = $this->persister->retrieve($this->entityName, $id);
-                $this->populate($entity, $inputFilter);
+            $entity = $this->persister->retrieve($this->entityName, $id);
+            $violations = $this->populate($entity, $data);
+            $violations->addAll($this->getValidator()->validate($entity));
+            if (count($violations) === 0) {
                 $this->persister->update($entity);
                 $status = Result::STATUS_SUCCESS;
-                $violations = null;
+                $errors = null;
             } else {
                 $status = Result::STATUS_VALIDATION_ERROR;
-                $entity = $inputFilter->getUnfilteredValues();
-                $violations = $inputFilter->getMessages();
+                $entity = $data;
+                $errors = $this->getErrorMessages($violations);
             }
         } catch (\Exception $e) {
             // Sanitize for exception shielding
@@ -389,7 +460,7 @@ class Crud implements Service
             );
         }
 
-        return new Result($status, $entity, $violations);
+        return new Result($status, $entity, $errors);
     }
 
     /**

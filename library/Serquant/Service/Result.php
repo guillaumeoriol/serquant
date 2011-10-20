@@ -60,7 +60,7 @@ class Result
     {
         $this->setStatus($status);
         $this->setData($data);
-        if ($errors !== null) {
+        if (($this->status !== self::STATUS_SUCCESS) && ($errors !== null)) {
             $this->setErrors($errors);
         }
     }

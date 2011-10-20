@@ -46,29 +46,13 @@ class Doctrine implements Persistence, Serializable
     private $loadedEntities;
 
     /**
-     * Set the entity manager.
+     * Service constructor
      *
-     * @param \Doctrine\ORM\EntityManager $em Doctrine entity manager
-     * @return void
+     * @param EntityManager $em Entity manager used for data mapping
      */
-    public function setEntityManager(EntityManager $em)
+    public function __construct(EntityManager $em)
     {
         $this->entityManager = $em;
-    }
-
-    /**
-     * Get the entity manager.
-     *
-     * @return \Doctrine\ORM\EntityManager
-     */
-    public function getEntityManager()
-    {
-        if ($this->entityManager === null) {
-            $front = \Zend_Controller_Front::getInstance();
-            $container = $front->getParam('bootstrap')->getContainer();
-            $this->entityManager = $container->doctrine;
-        }
-        return $this->entityManager;
     }
 
     /**
@@ -78,7 +62,7 @@ class Doctrine implements Persistence, Serializable
      */
     public function getMetadataFactory()
     {
-        return $this->getEntityManager()->getMetadataFactory();
+        return $this->entityManager->getMetadataFactory();
     }
 
     /**
@@ -90,10 +74,21 @@ class Doctrine implements Persistence, Serializable
     {
         if ($this->loadedEntities === null) {
             $this->loadedEntities = new DoctrineGateway(
-                $this->getEntityManager()->getUnitOfWork()
+                $this->entityManager->getUnitOfWork()
             );
         }
         return $this->loadedEntities;
+    }
+
+    /**
+     * Get metadata of the given class
+     *
+     * @param string $className Name of the entity class
+     * @return \Doctrine\ORM\Mapping\ClassMetadata
+     */
+    public function getClassMetadata($className)
+    {
+        return $this->getMetadataFactory()->getMetadataFor($className);
     }
 
     /**
@@ -127,10 +122,7 @@ class Doctrine implements Persistence, Serializable
         $orderBy = array();
         $parameters = array();
         $limitStart = $limitCount = null;
-
-        $em = $this->getEntityManager();
-        $factory = $em->getMetadataFactory();
-        $entityMetadata = $factory->getMetadataFor($entityName);
+        $entityMetadata = $this->getClassMetadata($entityName);
 
         foreach ($expressions as $key => $value) {
             if (is_int($key)) {
@@ -202,7 +194,7 @@ class Doctrine implements Persistence, Serializable
             $dql .= ' order by ' . implode(', ', $orderBy);
         }
 
-        $query = $em->createQuery($dql);
+        $query = $this->entityManager->createQuery($dql);
         $query->setParameters($parameters);
 
         if (($limitStart !== null) && ($limitCount !== null)) {
@@ -313,9 +305,8 @@ class Doctrine implements Persistence, Serializable
      */
     public function create($entity)
     {
-        $em = $this->getEntityManager();
-        $em->persist($entity);
-        $em->flush();
+        $this->entityManager->persist($entity);
+        $this->entityManager->flush();
     }
 
     /**
@@ -330,9 +321,7 @@ class Doctrine implements Persistence, Serializable
      */
     public function retrieve($entityName, $id)
     {
-        $em = $this->getEntityManager();
-        $entity = $em->find($entityName, $id);
-        return $entity;
+        return $this->entityManager->find($entityName, $id);
     }
 
     /**
@@ -344,8 +333,7 @@ class Doctrine implements Persistence, Serializable
      */
     public function update($entity)
     {
-        $em = $this->getEntityManager();
-        $em->flush();
+        $this->entityManager->flush();
     }
 
     /**
@@ -357,8 +345,7 @@ class Doctrine implements Persistence, Serializable
      */
     public function delete($entity)
     {
-        $em = $this->getEntityManager();
-        $em->remove($entity);
-        $em->flush();
+        $this->entityManager->remove($entity);
+        $this->entityManager->flush();
     }
 }

@@ -81,6 +81,12 @@ class CmsUser
         return $this->phonenumbers;
     }
 
+    public function setPhonenumbers($phonenumbers) {
+        foreach ($phonenumbers as $phonenumber) {
+            $this->addPhonenumber($phonenumber);
+        }
+    }
+
     public function removePhonenumber($index) {
         if (isset($this->phonenumbers[$index])) {
             $ph = $this->phonenumbers[$index];

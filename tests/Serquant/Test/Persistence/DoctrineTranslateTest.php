@@ -23,8 +23,7 @@ class DoctrineTranslateTest extends \Doctrine\Tests\OrmTestCase
     protected function setUp()
     {
         $this->em = $this->_getTestEntityManager();
-        $this->persister = new Doctrine();
-        $this->persister->setEntityManager($this->em);
+        $this->persister = new Doctrine($this->em);
     }
 
     public function testTranslateWithUnimplementedOperator()
