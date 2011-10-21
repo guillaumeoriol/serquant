@@ -46,8 +46,8 @@ class BooleanConverter extends Converter
      * @var array
      */
     private static $messageId = array(
-        self::OBJECT_TO_STRING => 'com.serquant.converter.integer.OBJECT_TO_STRING',
-        self::ARRAY_OR_RESOURCE => 'com.serquant.converter.integer.ARRAY_OR_RESOURCE'
+        self::OBJECT_TO_STRING => 'com.serquant.converter.boolean.OBJECT_TO_STRING',
+        self::ARRAY_OR_RESOURCE => 'com.serquant.converter.boolean.ARRAY_OR_RESOURCE'
     );
 
     /**

@@ -13,9 +13,9 @@
 namespace Serquant\Test\Converter;
 
 use Serquant\Converter\Converter,
-    Serquant\Converter\IntegerConverter;
+    Serquant\Converter\DateConverter;
 
-class IntegerConverterObjectA
+class DateConverterNonPrintableObject
 {
     private $value;
 
@@ -25,43 +25,28 @@ class IntegerConverterObjectA
     }
 }
 
-class IntegerConverterObjectB
+class DateConverterPrintableObject
 {
     private $value;
 
     public function __construct($value)
     {
-        $this->value = $value;
+        $this->value = new \DateTime($value);
     }
 
     public function __toString()
     {
-        return '(' . $this->value . ')';
+        return $this->value->format(\DateTime::ATOM);
     }
 }
 
-class IntegerConverterObjectC
-{
-    private $value;
-
-    public function __construct($value)
-    {
-        $this->value = $value;
-    }
-
-    public function __toString()
-    {
-        return hexdec($this->value);
-    }
-}
-
-class IntegerConverterTest extends \PHPUnit_Framework_TestCase
+class DateConverterTest extends \PHPUnit_Framework_TestCase
 {
     private $converter;
 
     protected function setUp()
     {
-        $this->converter = Converter::getConverter('integer');
+        $this->converter = Converter::getConverter('date');
     }
 
     public function testGetAsDomainTypeWithNull()
@@ -73,36 +58,22 @@ class IntegerConverterTest extends \PHPUnit_Framework_TestCase
 
     public function testGetAsDomainTypeWithBooleanValue()
     {
-        $converted = $this->converter->getAsDomainType(FALSE);
-        $this->assertEquals(0, $converted);
-
-        $converted = $this->converter->getAsDomainType(TRUE);
-        $this->assertEquals(1, $converted);
+        $raw = TRUE;
+        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
+        $converted = $this->converter->getAsDomainType($raw);
     }
 
     public function testGetAsDomainTypeWithIntValue()
     {
         $raw = 123;
+        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
         $converted = $this->converter->getAsDomainType($raw);
-        $this->assertTrue($raw === $converted);
     }
 
     public function testGetAsDomainTypeWithFloatValue()
     {
-        $raw = 1.234;
-        $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals(1, $converted);
-
-        $raw = 5.678;
-        $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals(6, $converted);
-
-        $raw = 1.5;
-        $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals(2, $converted);
-
+        $raw = 1.2345;
         $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
-        $raw = ((float) PHP_INT_MAX) + 1000000;
         $converted = $this->converter->getAsDomainType($raw);
     }
 
@@ -112,82 +83,92 @@ class IntegerConverterTest extends \PHPUnit_Framework_TestCase
         $converted = $this->converter->getAsDomainType($raw);
         $this->assertNull($converted);
 
-        $raw = "\t   \r\n";
+        $raw = "\t  \r\n";
         $converted = $this->converter->getAsDomainType($raw);
         $this->assertNull($converted);
 
-        $raw = '123';
-        $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals(123, $converted);
+        $timezone = new \DateTimeZone(date_default_timezone_get());
 
-        $raw = '-123';
+        $raw = '2011-10-20';
         $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals(-123, $converted);
+        $expected = \DateTime::createFromFormat('Y-m-d\TH:i:s', $raw . 'T00:00:00', $timezone);
+        $this->assertEquals(
+            $this->converter->getAsString($expected),
+            $this->converter->getAsString($converted)
+        );
 
-        $raw = '12.3';
+        $raw = '2011-10-21T09:33:45';
         $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals(12, $converted);
+        $expected = \DateTime::createFromFormat('Y-m-d\TH:i:s', $raw, $timezone);
+        $this->assertEquals(
+            $this->converter->getAsString($expected),
+            $this->converter->getAsString($converted)
+        );
 
-        $raw = '012';
+        $raw = '2011-10-21T09:33:45+01:00';
         $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals(12, $converted);
-
-        $raw = '1e3';
-        $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals(1000, $converted);
-
-        $raw = '0x1A';
-        $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals(26, $converted);
-
-        $raw = ' 123 ';
-        $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals(123, $converted);
+        $this->assertEquals($raw, $this->converter->getAsString($converted));
     }
 
-    public function testGetAsDomainTypeWithStringValueNotNumeric()
+    public function testGetAsDomainTypeWithStringValueNotRepresentingADate()
     {
+        $raw = 'ABCDEF';
         $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
-        $raw = 'A123';
         $converted = $this->converter->getAsDomainType($raw);
     }
 
-    public function testGetAsDomainTypeWithStringValueInfinite()
+    public function testGetAsDomainTypeWithStringValueRepresentingAWrongDate()
     {
+        $raw = '2011-13-00';
         $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
-        $raw = '1e500';
+        $converted = $this->converter->getAsDomainType($raw);
+    }
+
+    public function testGetAsDomainTypeWithStringValueRepresentingAWrongDateTime()
+    {
+        $raw = '2011-10-01 08:23:45';
+        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
+        $converted = $this->converter->getAsDomainType($raw);
+    }
+
+    public function testGetAsDomainTypeWithStringValueRepresentingAWrongDateTimeTz()
+    {
+        $raw = '2011-10-21T09:33:45+0100';
+        $converted = $this->converter->getAsDomainType($raw);
+        $this->assertEquals('2011-10-21T09:33:45+01:00', $this->converter->getAsString($converted));
+
+        $raw = '2011-10-01T08:23:45+02 00';
+        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
         $converted = $this->converter->getAsDomainType($raw);
     }
 
     public function testGetAsDomainTypeWithArrayValue()
     {
-        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
         $raw = array(1);
+        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
         $converted = $this->converter->getAsDomainType($raw);
     }
 
     public function testGetAsDomainTypeWithNonPrintableObjectValue()
     {
+        $raw = new DateConverterNonPrintableObject(123);
         $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
-        $raw = new IntegerConverterObjectA(123);
         $converted = $this->converter->getAsDomainType($raw);
     }
 
     public function testGetAsDomainTypeWithPrintableObjectValue()
     {
-        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
-        $raw = new IntegerConverterObjectB(123);
+        $dateString = '2011-10-21T09:33:45+01:00';
+        $date = new \DateTime($dateString);
+        $raw = new DateConverterPrintableObject($dateString);
         $converted = $this->converter->getAsDomainType($raw);
-
-        $raw = new IntegerConverterObjectC('1A');
-        $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals(26, $converted);
+        $this->assertEquals($date, $converted);
     }
 
     public function testGetAsDomainTypeWithResourceValue()
     {
-        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
         $raw = tmpfile();
+        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
         $converted = $this->converter->getAsDomainType($raw);
     }
 }

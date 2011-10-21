@@ -46,8 +46,8 @@ class StringConverter extends Converter
      * @var array
      */
     private static $messageId = array(
-        self::OBJECT_TO_STRING => 'com.serquant.converter.integer.OBJECT_TO_STRING',
-        self::ARRAY_OR_RESOURCE => 'com.serquant.converter.integer.ARRAY_OR_RESOURCE'
+        self::OBJECT_TO_STRING => 'com.serquant.converter.string.OBJECT_TO_STRING',
+        self::ARRAY_OR_RESOURCE => 'com.serquant.converter.string.ARRAY_OR_RESOURCE'
     );
 
     /**
@@ -68,10 +68,11 @@ class StringConverter extends Converter
      *       the number textually (including the exponent part for floats).
      *       Floating point numbers can be converted using exponential notation
      *       (4.1E+6).</li>
-     *   <li>A string is returned trimmed.</li>
+     *   <li>A string is trimmed first. If it's empty, NULL is returned.</li>
      *   <li>An array throws a {@link ConverterException} exception.</li>
      *   <li>An object is casted to string if it defines a __toString() method;
-     *       otherwise, it throws a {@link ConverterException} exception.</li>
+     *       otherwise, it throws a {@link ConverterException} exception. Then
+     *       the string rule applies.</li>
      *   <li>A resource throws a {@link ConverterException} exception.</li>
      * </ul>
      *
@@ -87,10 +88,6 @@ class StringConverter extends Converter
             return $value;
         }
 
-        if (is_string($value)) {
-            return trim($value);
-        }
-
         if (is_object($value)) {
             if (!method_exists($value, '__toString')) {
                 throw new ConverterException(
@@ -98,7 +95,15 @@ class StringConverter extends Converter
                     self::OBJECT_TO_STRING
                 );
             }
-            return trim($value->__toString());
+            $value = $value->__toString();
+        }
+
+        if (is_string($value)) {
+            $value = trim($value);
+            if (empty($value)) {
+                return null;
+            }
+            return $value;
         }
 
         if (is_array($value) || is_resource($value)) {

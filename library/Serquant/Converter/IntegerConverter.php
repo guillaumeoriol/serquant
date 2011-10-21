@@ -72,18 +72,19 @@ class IntegerConverter extends Converter
      *       <code>var_dump((((float) PHP_INT_MAX) + 1) > PHP_INT_MAX)</code>
      *       returns <em>false</em> because of limited precision in floating
      *       point numbers.</li>
-     *   <li>A string is converted only if it takes the is_numeric() test.
-     *       (Numeric strings consist of optional sign, any number of digits,
-     *       optional decimal part and optional exponential part. Thus
-     *       +0123.45e6 is a valid numeric value. Hexadecimal notation (0xFF) is
-     *       allowed too but only without sign, decimal and exponential part.)
-     *       Otherwise, it throws a {@link ConverterException} exception.
-     *       The value is converted to a number. "If the string does not contain
-     *       any of the characters '.', 'e', or 'E' and the numeric value fits
-     *       into integer type limits (as defined by PHP_INT_MAX), the string
-     *       will be evaluated as an integer. In all other cases it will be
-     *       evaluated as a float." When the number is evaluated as a float,
-     *       the float conversion rule applies.</li>
+     *   <li>A string is trimmed first. If it's empty, NULL is returned.
+     *       Otherwise, if it takes the is_numeric() test (Numeric strings
+     *       consist of optional sign, any number of digits, optional decimal
+     *       part and optional exponential part. Thus +0123.45e6 is a valid
+     *       numeric value. Hexadecimal notation (0xFF) is allowed too but only
+     *       without sign, decimal and exponential part.), the value is
+     *       converted to a number. Otherwise, it throws a
+     *       {@link ConverterException} exception. "If the string does not
+     *       contain any of the characters '.', 'e', or 'E' and the numeric
+     *       value fits into integer type limits (as defined by PHP_INT_MAX),
+     *       the string will be evaluated as an integer. In all other cases it
+     *       will be evaluated as a float." When the number is evaluated as a
+     *       float, the float conversion rule applies.</li>
      *   <li>An array throws a {@link ConverterException} exception.</li>
      *   <li>An object is first casted to string if it defines a __toString()
      *       method; then, the string conversion rule applies. If this method
@@ -125,6 +126,10 @@ class IntegerConverter extends Converter
 
         if (is_string($value)) {
             $value = trim($value);
+            if (empty($value)) {
+                return null;
+            }
+
             if (!is_numeric($value)) {
                 throw new ConverterException(
                     self::$messageId[self::NOT_NUMERIC],

@@ -46,8 +46,8 @@ class TextConverter extends Converter
      * @var array
      */
     private static $messageId = array(
-        self::OBJECT_TO_STRING => 'com.serquant.converter.integer.OBJECT_TO_STRING',
-        self::ARRAY_OR_RESOURCE => 'com.serquant.converter.integer.ARRAY_OR_RESOURCE'
+        self::OBJECT_TO_STRING => 'com.serquant.converter.text.OBJECT_TO_STRING',
+        self::ARRAY_OR_RESOURCE => 'com.serquant.converter.text.ARRAY_OR_RESOURCE'
     );
 
     /**
@@ -68,10 +68,12 @@ class TextConverter extends Converter
      *       the number textually (including the exponent part for floats).
      *       Floating point numbers can be converted using exponential notation
      *       (4.1E+6).</li>
-     *   <li>A string is returned unchanged.</li>
+     *   <li>An empty string or a string consisting of spaces only returns NULL.
+     *       Otherwise it is returned unchanged.</li>
      *   <li>An array throws a {@link ConverterException} exception.</li>
      *   <li>An object is casted to string if it defines a __toString() method;
-     *       otherwise, it throws a {@link ConverterException} exception.</li>
+     *       otherwise, it throws a {@link ConverterException} exception. Then
+     *       the string rule applies.</li>
      *   <li>A resource throws a {@link ConverterException} exception.</li>
      * </ul>
      *
@@ -83,7 +85,7 @@ class TextConverter extends Converter
      */
     public function getAsDomainType($value)
     {
-        if ($value === null || is_string($value)) {
+        if ($value === null) {
             return $value;
         }
 
@@ -94,7 +96,14 @@ class TextConverter extends Converter
                     self::OBJECT_TO_STRING
                 );
             }
-            return $value->__toString();
+            $value = $value->__toString();
+        }
+
+        if (is_string($value)) {
+            if (strlen(trim($value)) === 0) {
+                return null;
+            }
+            return $value;
         }
 
         if (is_array($value) || is_resource($value)) {

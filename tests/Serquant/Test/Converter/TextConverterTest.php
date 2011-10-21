@@ -100,6 +100,14 @@ class TextConverterTest extends \PHPUnit_Framework_TestCase
 
     public function testGetAsDomainTypeWithStringValue()
     {
+        $raw = '';
+        $converted = $this->converter->getAsDomainType($raw);
+        $this->assertNull($converted);
+
+        $raw = "\t   \r\n";
+        $converted = $this->converter->getAsDomainType($raw);
+        $this->assertNull($converted);
+
         $raw = 'abcd';
         $converted = $this->converter->getAsDomainType($raw);
         $this->assertTrue($raw === $converted);
