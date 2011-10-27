@@ -53,19 +53,6 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
         $this->assertTrue($obj === $method->invoke($service, 'obj'));
     }
 
-    public function testGetValidator()
-    {
-        $entityName = null;
-        $service = new Crud($entityName, $this->persister);
-
-        $method = new \ReflectionMethod($service, 'getValidator');
-        $method->setAccessible(true);
-        $this->assertInstanceOf(
-        	'Symfony\Component\Validator\ValidatorInterface',
-            $method->invoke($service)
-        );
-    }
-
     public function testPopulateOnBasicEntityWithSetters()
     {
         $entityName = '\Serquant\Resource\Persistence\Doctrine\Entity\Role';

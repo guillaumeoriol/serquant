@@ -63,12 +63,6 @@ class Crud implements Service
     private $serializer;
 
     /**
-     * Entity validator.
-     * @var ValidatorInterface
-     */
-    private $validator;
-
-    /**
      * Constructor
      *
      * @param string $entityName Entity class name
@@ -91,20 +85,6 @@ class Crud implements Service
         $front = \Zend_Controller_Front::getInstance();
         $container = $front->getParam('bootstrap')->getContainer();
         return $container->{$name};
-    }
-
-    /**
-     * Get the validator service.
-     *
-     * @return ValidatorInterface
-     */
-    protected function getValidator()
-    {
-        if ($this->validator === null) {
-            $factory = ValidatorFactory::buildDefault();
-            $this->validator = $factory->getValidator();
-        }
-        return $this->validator;
     }
 
     /**
@@ -363,7 +343,7 @@ class Crud implements Service
         try {
             $entity = new $this->entityName;
             $violations = $this->populate($entity, $data);
-            $violations->addAll($this->getValidator()->validate($entity));
+            $violations->addAll($this->getService('validator')->validate($entity));
             if (count($violations) === 0) {
                 $this->persister->create($entity);
                 $status = Result::STATUS_SUCCESS;
@@ -442,7 +422,7 @@ class Crud implements Service
         try {
             $entity = $this->persister->retrieve($this->entityName, $id);
             $violations = $this->populate($entity, $data);
-            $violations->addAll($this->getValidator()->validate($entity));
+            $violations->addAll($this->getService('validator')->validate($entity));
             if (count($violations) === 0) {
                 $this->persister->update($entity);
                 $status = Result::STATUS_SUCCESS;

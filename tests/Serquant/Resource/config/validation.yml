@@ -1,0 +1,5 @@
+# Serquant/Resource/config/validation.yml
+Serquant\Resource\Persistence\Doctrine\Entity\User:
+    properties:
+        name:
+            - NotBlank: ~

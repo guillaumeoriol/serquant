@@ -51,23 +51,26 @@ class EntityManagerFactory
     private $em;
 
     /**
-     * Factory method to be called by the service container
+     * Factory method to be called by the service container in order to get
+     * an entity manager instance.
      *
+     * Sample configuration file:
      * <pre>
      * services:
-     *     my_service:
-     *         factory_class:  \Serquant\Doctrine\DependencyInjection\Factory
-     *         factory_method: load
-     *         arguments:      [%my_service_config%]
+     *   doctrine:
+     *     class: Doctrine\ORM\EntityManager
+     *     factory_class: Serquant\Doctrine\DependencyInjection\EntityManagerFactory
+     *     factory_method: get
+     *     arguments: [%doctrine_config%]
      * </pre>
      *
      * @param array $config Service configuration options
      * @return EntityManager
      */
-    public static function load($config)
+    public static function get($config)
     {
-        $instance = new EntityManagerFactory($config);
-        return $instance->getEntityManager();
+        $factory = new EntityManagerFactory($config);
+        return $factory->getEntityManager();
     }
 
     /**
