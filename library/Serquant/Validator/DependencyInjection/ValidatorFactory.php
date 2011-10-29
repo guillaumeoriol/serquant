@@ -61,6 +61,8 @@ class ValidatorFactory implements ValidatorContextInterface
      *     annotations:
      *       cache: apc
      *       debug: true
+     *       namespaceAlias:
+     *         Symfony\Component\Validator\Constraints: validator
      *       autoloadNamespaces:
      *         Symfony\Component\Validator\Constraints: APPLICATION_ROOT . '/library'
      *     staticMethod:
@@ -124,12 +126,20 @@ class ValidatorFactory implements ValidatorContextInterface
             }
             // See http://www.doctrine-project.org/docs/common/2.1/en/reference/annotations.html
             AnnotationRegistry::registerAutoloadNamespaces($options['autoloadNamespaces']);
+
+            $reader = new AnnotationReader();
+            if (isset($options['namespaceAlias'])
+                && (is_array($options['namespaceAlias']))
+            ) {
+                foreach ($options['namespaceAlias'] as $namespace => $alias) {
+                    $reader->setAnnotationNamespaceAlias($namespace, $alias);
+                }
+            }
+
             if (isset($options['cache'])) {
                 $cache = self::getCache(strtolower($options['cache']));
                 $debug = isset($options['debug']) ? (bool) $options['debug'] : false;
-                $reader = new CachedReader(new AnnotationReader(), $cache, $debug);
-            } else {
-                $reader = new AnnotationReader();
+                $reader = new CachedReader($reader, $cache, $debug);
             }
             $loaders[] = new AnnotationLoader($reader);
         }

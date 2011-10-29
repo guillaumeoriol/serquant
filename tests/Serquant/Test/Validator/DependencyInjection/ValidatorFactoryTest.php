@@ -125,4 +125,21 @@ class ValidatorFactoryTest extends \PHPUnit_Framework_TestCase
         $validator = ValidatorFactory::get($config);
         $this->assertInstanceOf('Symfony\Component\Validator\ValidatorInterface', $validator);
     }
+
+    public function testGetWithNamespaceAlias()
+    {
+        $config = array(
+            'annotations' => array(
+                'namespaceAlias' => array(
+                    'Symfony\Component\Validator\Constraints\\' => 'validator'
+        		),
+                'autoloadNamespaces' => array(
+            		'Symfony\Component\Validator\Constraints' => APPLICATION_ROOT . '/library'
+        		)
+    		)
+        );
+        $validator = ValidatorFactory::get($config);
+        $this->assertInstanceOf('Symfony\Component\Validator\ValidatorInterface', $validator);
+
+    }
 }

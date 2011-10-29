@@ -12,12 +12,15 @@
  */
 namespace Serquant\Doctrine\DependencyInjection;
 
-use Doctrine\DBAL\Types\Type,
-    Doctrine\ORM\Configuration,
-    Doctrine\ORM\EntityManager,
-    Doctrine\Common\EventManager,
-    Serquant\Doctrine\Exception\InvalidArgumentException,
-    Serquant\Doctrine\Logger;
+use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\Configuration;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\AnnotationRegistry;
+use Doctrine\Common\EventManager;
+use Serquant\Doctrine\Exception\InvalidArgumentException;
+use Serquant\Doctrine\Logger;
 
 /**
  * Factory used by the service container (DependencyInjection) to bootstrap
@@ -145,7 +148,7 @@ class EntityManagerFactory
         $driver = strtolower($metadata['driver']);
         switch ($driver) {
             case 'annotation':
-                $driverImpl = $this->config->newDefaultAnnotationDriver($paths);
+                $driverImpl = $this->getAnnotationDriver($paths, $metadata);
                 break;
 
             case 'xml':
@@ -162,6 +165,42 @@ class EntityManagerFactory
                 );
         }
         $this->config->setMetadataDriverImpl($driverImpl);
+    }
+
+    /**
+     * Get an annotation driver with a correctly configured annotation reader.
+     *
+     * @param array $paths Annotation driver paths
+     * @param array $options Metadata options
+     * @return Mapping\Driver\AnnotationDriver
+     * @todo Remove this function and restore the original call to
+     * $this->config->newDefaultAnnotationDriver($paths) in initMetadataDriver()
+     * once https://github.com/guillaumeoriol/serquant/issues/12 has been fixed.
+     */
+    protected function getAnnotationDriver($paths, $options)
+    {
+        // Register the ORM Annotations in the AnnotationRegistry
+        if (isset($options['annotationsFile'])) {
+            AnnotationRegistry::registerFile($options['annotationsFile']);
+        }
+
+        $reader = new AnnotationReader();
+        if (isset($options['namespaceAlias'])
+            && (is_array($options['namespaceAlias']))
+        ) {
+            foreach ($options['namespaceAlias'] as $namespace => $alias) {
+                $reader->setAnnotationNamespaceAlias($namespace, $alias);
+            }
+        }
+
+        $reader->setDefaultAnnotationNamespace('Doctrine\ORM\Mapping\\');
+        $reader->setIgnoreNotImportedAnnotations(true);
+        $reader->setEnableParsePhpImports(false);
+        $reader = new \Doctrine\Common\Annotations\CachedReader(
+            new \Doctrine\Common\Annotations\IndexedReader($reader),
+            new \Doctrine\Common\Cache\ArrayCache()
+        );
+        return new AnnotationDriver($reader, (array) $paths);
     }
 
     /**
