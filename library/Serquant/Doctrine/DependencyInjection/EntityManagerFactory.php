@@ -148,7 +148,12 @@ class EntityManagerFactory
         $driver = strtolower($metadata['driver']);
         switch ($driver) {
             case 'annotation':
-                $driverImpl = $this->getAnnotationDriver($paths, $metadata);
+                if (isset($metadata['annotationReader'])) {
+                    $driverImpl = new AnnotationDriver(
+                        $metadata['annotationReader'], $paths);
+                } else {
+                    $driverImpl = $this->config->newDefaultAnnotationDriver($paths);
+                }
                 break;
 
             case 'xml':
@@ -165,42 +170,6 @@ class EntityManagerFactory
                 );
         }
         $this->config->setMetadataDriverImpl($driverImpl);
-    }
-
-    /**
-     * Get an annotation driver with a correctly configured annotation reader.
-     *
-     * @param array $paths Annotation driver paths
-     * @param array $options Metadata options
-     * @return Mapping\Driver\AnnotationDriver
-     * @todo Remove this function and restore the original call to
-     * $this->config->newDefaultAnnotationDriver($paths) in initMetadataDriver()
-     * once https://github.com/guillaumeoriol/serquant/issues/12 has been fixed.
-     */
-    protected function getAnnotationDriver($paths, $options)
-    {
-        // Register the ORM Annotations in the AnnotationRegistry
-        if (isset($options['annotationsFile'])) {
-            AnnotationRegistry::registerFile($options['annotationsFile']);
-        }
-
-        $reader = new AnnotationReader();
-        if (isset($options['namespaceAlias'])
-            && (is_array($options['namespaceAlias']))
-        ) {
-            foreach ($options['namespaceAlias'] as $namespace => $alias) {
-                $reader->setAnnotationNamespaceAlias($namespace, $alias);
-            }
-        }
-
-        $reader->setDefaultAnnotationNamespace('Doctrine\ORM\Mapping\\');
-        $reader->setIgnoreNotImportedAnnotations(true);
-        $reader->setEnableParsePhpImports(false);
-        $reader = new \Doctrine\Common\Annotations\CachedReader(
-            new \Doctrine\Common\Annotations\IndexedReader($reader),
-            new \Doctrine\Common\Cache\ArrayCache()
-        );
-        return new AnnotationDriver($reader, (array) $paths);
     }
 
     /**

@@ -56,90 +56,38 @@ class ValidatorFactoryTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Symfony\Component\Validator\ValidatorInterface', $validator);
     }
 
-    public function testGetWithAnnotationsWithoutAutoloadNamespaces()
+    public function testGetWithEmptyAnnotations()
     {
         $config = array('annotations' => array());
-        $this->setExpectedException('Serquant\Validator\Exception\InvalidArgumentException');
         $validator = ValidatorFactory::get($config);
+        $this->assertInstanceOf('Symfony\Component\Validator\ValidatorInterface', $validator);
     }
 
-    public function testGetWithAnnotationsWithScalarAutoloadNamespaces()
+    public function testGetWithAnnotationsWithAnnotationReader()
     {
+        $reader = \Serquant\DependencyInjection\Factory\AnnotationReaderFactory::get(array());
         $config = array('annotations' => array(
-        	'autoloadNamespaces' => APPLICATION_ROOT . '/library'
+        	'annotationReader' => $reader
         ));
-        $this->setExpectedException('Serquant\Validator\Exception\InvalidArgumentException');
-        $validator = ValidatorFactory::get($config);
-    }
-
-    public function testGetWithUncachedAnnotations()
-    {
-        $config = array(
-            'annotations' => array(
-                'autoloadNamespaces' => array(
-            		'Symfony\Component\Validator\Constraints' => APPLICATION_ROOT . '/library'
-        		)
-            )
-        );
         $validator = ValidatorFactory::get($config);
         $this->assertInstanceOf('Symfony\Component\Validator\ValidatorInterface', $validator);
     }
 
-    public function testGetWithCachedAnnotationsInProductionEnvironment()
+    public function testGetWithAnnotationsWithoutAnnotationReader()
     {
         $config = array(
             'annotations' => array(
+                'annotationFile' => TEST_PATH . '/library/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php',
+            	'annotationAutoloadNamespaces' => array( // Leading backslash forbidden
+            		'Symfony\Component\Validator\Constraints' => TEST_PATH . '/library',
+            		'Domain\Entity' => APPLICATION_ROOT . '/application'
+            	),
+                'ignoreNotImportedAnnotations' => true,
                 'cache' => 'apc',
-                'autoloadNamespaces' => array(
-            		'Symfony\Component\Validator\Constraints' => APPLICATION_ROOT . '/library'
-        		)
+                'cacheDebug' => true
             )
         );
         $validator = ValidatorFactory::get($config);
         $this->assertInstanceOf('Symfony\Component\Validator\ValidatorInterface', $validator);
-
-        $config = array(
-            'annotations' => array(
-                'cache' => 'apc',
-                'debug' => false,
-                'autoloadNamespaces' => array(
-            		'Symfony\Component\Validator\Constraints' => APPLICATION_ROOT . '/library'
-        		)
-            )
-        );
-        $validator = ValidatorFactory::get($config);
-        $this->assertInstanceOf('Symfony\Component\Validator\ValidatorInterface', $validator);
-    }
-
-    public function testGetWithCachedAnnotationsInTestingEnvironment()
-    {
-        $config = array(
-            'annotations' => array(
-                'cache' => 'apc',
-                'debug' => true,
-                'autoloadNamespaces' => array(
-            		'Symfony\Component\Validator\Constraints' => APPLICATION_ROOT . '/library'
-        		)
-            )
-        );
-        $validator = ValidatorFactory::get($config);
-        $this->assertInstanceOf('Symfony\Component\Validator\ValidatorInterface', $validator);
-    }
-
-    public function testGetWithNamespaceAlias()
-    {
-        $config = array(
-            'annotations' => array(
-                'namespaceAlias' => array(
-                    'Symfony\Component\Validator\Constraints\\' => 'validator'
-        		),
-                'autoloadNamespaces' => array(
-            		'Symfony\Component\Validator\Constraints' => APPLICATION_ROOT . '/library'
-        		)
-    		)
-        );
-        $validator = ValidatorFactory::get($config);
-        $this->assertInstanceOf('Symfony\Component\Validator\ValidatorInterface', $validator);
-
     }
 }

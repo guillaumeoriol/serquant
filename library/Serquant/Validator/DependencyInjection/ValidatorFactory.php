@@ -12,9 +12,6 @@
  */
 namespace Serquant\Validator\DependencyInjection;
 
-use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Annotations\AnnotationRegistry;
-use Doctrine\Common\Annotations\CachedReader;
 use Symfony\Component\Validator\ConstraintValidatorFactory;
 use Symfony\Component\Validator\ConstraintValidatorFactoryInterface;
 use Symfony\Component\Validator\ValidatorContext;
@@ -28,7 +25,7 @@ use Symfony\Component\Validator\Mapping\Loader\LoaderChain;
 use Symfony\Component\Validator\Mapping\Loader\StaticMethodLoader;
 use Symfony\Component\Validator\Mapping\Loader\XmlFilesLoader;
 use Symfony\Component\Validator\Mapping\Loader\YamlFilesLoader;
-use Serquant\Validator\Exception\InvalidArgumentException;
+use Serquant\DependencyInjection\Factory\AnnotationReaderFactory;
 
 /**
  * Factory used by the service container (DependencyInjection) to bootstrap
@@ -59,12 +56,7 @@ class ValidatorFactory implements ValidatorContextInterface
      *     mappingFiles:
      *       - validation.xml
      *     annotations:
-     *       cache: apc
-     *       debug: true
-     *       namespaceAlias:
-     *         Symfony\Component\Validator\Constraints: validator
-     *       autoloadNamespaces:
-     *         Symfony\Component\Validator\Constraints: APPLICATION_ROOT . '/library'
+     *       annotationReader: @annotation_reader
      *     staticMethod:
      *
      * services:
@@ -115,32 +107,9 @@ class ValidatorFactory implements ValidatorContextInterface
 
         if (isset($config['annotations'])) {
             $options = $config['annotations'];
-            if (!isset($options['autoloadNamespaces'])
-                || (!is_array($options['autoloadNamespaces']))
-            ) {
-                throw new InvalidArgumentException(
-                    'Validator annotations are enabled but no '
-                    . '"autoloadNamespaces" property is defined (or it is not '
-                    . 'of array type).'
-                );
-            }
-            // See http://www.doctrine-project.org/docs/common/2.1/en/reference/annotations.html
-            AnnotationRegistry::registerAutoloadNamespaces($options['autoloadNamespaces']);
-
-            $reader = new AnnotationReader();
-            if (isset($options['namespaceAlias'])
-                && (is_array($options['namespaceAlias']))
-            ) {
-                foreach ($options['namespaceAlias'] as $namespace => $alias) {
-                    $reader->setAnnotationNamespaceAlias($namespace, $alias);
-                }
-            }
-
-            if (isset($options['cache'])) {
-                $cache = self::getCache(strtolower($options['cache']));
-                $debug = isset($options['debug']) ? (bool) $options['debug'] : false;
-                $reader = new CachedReader($reader, $cache, $debug);
-            }
+            $reader = isset($options['annotationReader'])
+                ? $options['annotationReader']
+                : AnnotationReaderFactory::get($options);
             $loaders[] = new AnnotationLoader($reader);
         }
 
@@ -163,39 +132,6 @@ class ValidatorFactory implements ValidatorContextInterface
 
         $factory = new static($context);
         return $factory->getValidator();
-    }
-
-    /**
-     * Get a Doctrine cache object from its name.
-     *
-     * @param string $name Cache name
-     * @return \Doctrine\Common\Cache\AbstractCache
-     */
-    static protected function getCache($name)
-    {
-        switch($name) {
-            case 'apc':
-                $cache = new \Doctrine\Common\Cache\ApcCache();
-                break;
-
-            case 'memcache':
-                $cache = new \Doctrine\Common\Cache\MemcacheCache();
-                break;
-
-            case 'xcache':
-                $cache = new \Doctrine\Common\Cache\XcacheCache();
-                break;
-
-            case 'array':
-                $cache = new \Doctrine\Common\Cache\ArrayCache();
-                break;
-
-            default:
-                throw new InvalidArgumentException(
-                    "Invalid cache driver specified: $name"
-                );
-        }
-        return $cache;
     }
 
     /**
