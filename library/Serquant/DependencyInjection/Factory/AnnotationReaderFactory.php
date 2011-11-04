@@ -46,11 +46,11 @@ class AnnotationReaderFactory
      * parameters:
      *   annotation_reader_config:
      * # The following one is needed by Doctrine ORM
-     *     annotationFile: APPLICATION_ROOT . '/library/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php'
+     *     annotationFile: /path/to/DoctrineAnnotations.php
      * # The following two lines are needed by Symfony Validator
-	 *     annotationAutoloadNamespaces:
-     *       Symfony\Component\Validator\Constraints: APPLICATION_ROOT . '/library'
-     *       Domain\Entity: APPLICATION_PATH
+     *     annotationAutoloadNamespaces:
+     *       Symfony\Component\Validator\Constraints: /path/to/library
+     *       Domain\Entity: /path/to/application
      *     ignoreNotImportedAnnotations: true
      *     cache: apc
      *     cacheDebug: true
@@ -68,7 +68,7 @@ class AnnotationReaderFactory
      */
     static public function get(array $config)
     {
-        self::setAnnotationAutoloading($config);
+        self::setupAnnotationAutoloading($config);
 
         $reader = new AnnotationReader();
         $reader->setEnableParsePhpImports(true); // Immutable as it is deprecated
@@ -133,8 +133,15 @@ class AnnotationReaderFactory
         return $cache;
     }
 
-
-    static protected function setAnnotationAutoloading($config)
+    /**
+     * Setup the autoloading within the AnnotationRegistry
+     *
+     * @param array $config Configuration
+     * @return void
+     * @throws InvalidArgumentException when the annotationAutoloadNamespaces
+     * is not of array type.
+     */
+    static protected function setupAnnotationAutoloading($config)
     {
         // Registration of autoload namespaces
         if (isset($config['annotationAutoloadNamespaces'])) {

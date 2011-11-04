@@ -10,9 +10,9 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Test\Validator\DependencyInjection;
+namespace Serquant\Test\DependencyInjection\Factory;
 
-use Serquant\Validator\DependencyInjection\ValidatorFactory;
+use Serquant\DependencyInjection\Factory\ValidatorFactory;
 use Symfony\Component\Validator\Validator;
 
 class ValidatorFactoryTest extends \PHPUnit_Framework_TestCase

@@ -5,12 +5,12 @@
  * PHP version 5.3
  *
  * @category Serquant
- * @package  Doctrine
+ * @package  Factory
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Doctrine\DependencyInjection;
+namespace Serquant\DependencyInjection\Factory;
 
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Configuration;
@@ -27,7 +27,7 @@ use Serquant\Doctrine\Logger;
  * Doctrine ORM and return an entity manager instance.
  *
  * @category Serquant
- * @package  Doctrine
+ * @package  Factory
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
@@ -62,7 +62,7 @@ class EntityManagerFactory
      * services:
      *   doctrine:
      *     class: Doctrine\ORM\EntityManager
-     *     factory_class: Serquant\Doctrine\DependencyInjection\EntityManagerFactory
+     *     factory_class: Serquant\DependencyInjection\Factory\EntityManagerFactory
      *     factory_method: get
      *     arguments: [%doctrine_config%]
      * </pre>
@@ -150,7 +150,8 @@ class EntityManagerFactory
             case 'annotation':
                 if (isset($metadata['annotationReader'])) {
                     $driverImpl = new AnnotationDriver(
-                        $metadata['annotationReader'], $paths);
+                        $metadata['annotationReader'], $paths
+                    );
                 } else {
                     $driverImpl = $this->config->newDefaultAnnotationDriver($paths);
                 }
