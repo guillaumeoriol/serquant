@@ -12,11 +12,11 @@
  */
 namespace Serquant\Converter;
 
-use Serquant\Converter\Exception\InvalidArgumentException,
-    Serquant\Converter\Exception\ConverterException;
+use Serquant\Converter\Exception\ConverterException;
+use Serquant\Converter\Exception\InvalidArgumentException;
 
 /**
- * Base class for all converters.
+ * Base class for all type converters.
  *
  * This class is inspired by the interface of the javax.faces.convert package
  * and by the Doctrine\DBAL\Types\Type class.
@@ -27,7 +27,7 @@ use Serquant\Converter\Exception\InvalidArgumentException,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-abstract class Converter
+abstract class AbstractTypeConverter
 {
     const TARRAY = 'array';
     const BIGINT = 'bigint';
