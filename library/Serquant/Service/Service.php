@@ -265,11 +265,4 @@ interface Service
      * missing.
      */
     public function delete($id = null);
-
-    /**
-     * Get the entity serializer.
-     *
-     * @return \Serquant\Entity\Serializer Entity serializer.
-     */
-    public function getSerializer();
 }

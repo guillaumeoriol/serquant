@@ -12,13 +12,12 @@
  */
 namespace Serquant\Test\DependencyInjection\Factory;
 
-use Serquant\DependencyInjection\Factory\AnnotationReaderFactory;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\AnnotationRegistry;
+use Serquant\DependencyInjection\Factory\AnnotationReaderFactory;
 
 /**
- * Short description.
- *
- * Long description.
+ * Test class for the AnnotationReaderFactory.
  *
  * @category Serquant
  * @package  Factory
@@ -30,6 +29,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 {
     public function testGetWithEmptyConfig()
     {
+        AnnotationRegistry::reset();
         $config = array();
 
         $reader = AnnotationReaderFactory::get($config);
@@ -38,6 +38,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithWrongAutoloadNamespaces()
     {
+        AnnotationRegistry::reset();
         $config = array('annotationAutoloadNamespaces' => false);
 
         $this->setExpectedException('Serquant\DependencyInjection\Exception\InvalidArgumentException');
@@ -46,6 +47,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithAutoloadNamespaces()
     {
+        AnnotationRegistry::reset();
         $autoloadNamespaces = array(
     		'Symfony\Component\Validator\Constraints' => TEST_PATH . '/library'
 		);
@@ -66,6 +68,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithSingleAnnotationFile()
     {
+        AnnotationRegistry::reset();
         $config = array(
         	'annotationFile' => TEST_PATH . '/library/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php'
         );
@@ -77,6 +80,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithMultipleAnnotationFiles()
     {
+        AnnotationRegistry::reset();
         $config = array(
         	'annotationFile' => array(
                 TEST_PATH . '/library/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php',
@@ -92,6 +96,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithSingleAnnotationLoader()
     {
+        AnnotationRegistry::reset();
         $loader = function ($class) { return false; };
         $config = array('annotationLoaders' => $loader);
 
@@ -106,6 +111,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithMultipleAnnotationLoaders()
     {
+        AnnotationRegistry::reset();
         $loader0 = function ($class) { return false; };
         $loader1 = function ($class) { return false; };
         $config = array('annotationLoaders' => array($loader0, $loader1));
@@ -122,6 +128,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithIgnoreNotImportedAnnotations()
     {
+        AnnotationRegistry::reset();
         $config = array('ignoreNotImportedAnnotations' => true);
 
         $reader = AnnotationReaderFactory::get($config);
@@ -145,6 +152,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithWrongNamespaceAlias()
     {
+        AnnotationRegistry::reset();
         $config = array('namespaceAliases' => false);
 
         $this->setExpectedException('Serquant\DependencyInjection\Exception\InvalidArgumentException');
@@ -153,6 +161,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithNamespaceAlias()
     {
+        AnnotationRegistry::reset();
         $aliases = array('Doctrine\ORM\Mapping\\' => 'orm');
         $config = array('namespaceAliases' => $aliases);
 
@@ -167,6 +176,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithWrongCacheDriver()
     {
+        AnnotationRegistry::reset();
         $config = array('cache' => 'wrong');
 
         $this->setExpectedException('Serquant\DependencyInjection\Exception\InvalidArgumentException');
@@ -175,6 +185,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithArrayCache()
     {
+        AnnotationRegistry::reset();
         $config = array('cache' => 'array');
 
         $reader = AnnotationReaderFactory::get($config);
@@ -183,6 +194,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWithArrayCacheDebug()
     {
+        AnnotationRegistry::reset();
         $config = array(
         	'cache' => 'array',
         	'cacheDebug' => true

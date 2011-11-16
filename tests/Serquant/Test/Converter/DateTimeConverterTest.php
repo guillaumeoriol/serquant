@@ -13,9 +13,9 @@
 namespace Serquant\Test\Converter;
 
 use Serquant\Converter\Converter,
-    Serquant\Converter\DateConverter;
+    Serquant\Converter\DateTimeConverter;
 
-class DateConverterNonPrintableObject
+class DateTimeConverterNonPrintableObject
 {
     private $value;
 
@@ -25,7 +25,7 @@ class DateConverterNonPrintableObject
     }
 }
 
-class DateConverterPrintableObject
+class DateTimeConverterPrintableObject
 {
     private $value;
 
@@ -40,13 +40,13 @@ class DateConverterPrintableObject
     }
 }
 
-class DateConverterTest extends \PHPUnit_Framework_TestCase
+class DateTimeConverterTest extends \PHPUnit_Framework_TestCase
 {
     private $converter;
 
     protected function setUp()
     {
-        $this->converter = Converter::getConverter('date');
+        $this->converter = Converter::getConverter('DateTime');
     }
 
     public function testGetAsDomainTypeWithNull()
@@ -151,7 +151,7 @@ class DateConverterTest extends \PHPUnit_Framework_TestCase
 
     public function testGetAsDomainTypeWithNonPrintableObjectValue()
     {
-        $raw = new DateConverterNonPrintableObject(123);
+        $raw = new DateTimeConverterNonPrintableObject(123);
         $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
         $converted = $this->converter->getAsDomainType($raw);
     }
@@ -160,7 +160,7 @@ class DateConverterTest extends \PHPUnit_Framework_TestCase
     {
         $dateString = '2011-10-21T09:33:45+01:00';
         $date = new \DateTime($dateString);
-        $raw = new DateConverterPrintableObject($dateString);
+        $raw = new DateTimeConverterPrintableObject($dateString);
         $converted = $this->converter->getAsDomainType($raw);
         $this->assertEquals($date, $converted);
     }
@@ -170,5 +170,11 @@ class DateConverterTest extends \PHPUnit_Framework_TestCase
         $raw = tmpfile();
         $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
         $converted = $this->converter->getAsDomainType($raw);
+    }
+
+    public function testGetAsStringWithNull()
+    {
+        $converted = $this->converter->getAsString(null);
+        $this->assertNull($converted);
     }
 }

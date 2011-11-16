@@ -12,13 +12,10 @@
  */
 namespace Serquant\Converter;
 
-use Serquant\Converter\Converter,
-    Serquant\Converter\Exception\ConverterException;
+use Serquant\Converter\Exception\ConverterException;
 
 /**
- * Converter for the 'string' mapping type.
- *
- * The corresponding domain type is the PHP primitive type 'string'.
+ * Converter for the 'string' PHP type.
  *
  * @category Serquant
  * @package  Converter
@@ -79,7 +76,7 @@ class StringConverter extends Converter
      * <em>Leading and trailing spaces are removed.</em>
      *
      * @param mixed $value The value to convert
-     * @return string|NULL The converted value
+     * @return string The converted value
      * @throws ConverterException when the conversion fails.
      */
     public function getAsDomainType($value)
@@ -124,12 +121,14 @@ class StringConverter extends Converter
     /**
      * {@inheritDoc}
      *
-     * @param string $value Value of domain type.
+     * @param string $value The domain type value to convert
      * @return string Value converted to string
-     * @throws ConverterException when the conversion fails.
      */
     public function getAsString($value)
     {
+        if ($value === null) {
+            return null;
+        }
         return $value;
     }
 }

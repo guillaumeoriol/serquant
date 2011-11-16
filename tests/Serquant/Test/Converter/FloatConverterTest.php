@@ -13,9 +13,9 @@
 namespace Serquant\Test\Converter;
 
 use Serquant\Converter\Converter,
-    Serquant\Converter\IntegerConverter;
+    Serquant\Converter\FloatConverter;
 
-class StringConverterObjectA
+class FloatConverterObjectA
 {
     private $value;
 
@@ -25,7 +25,7 @@ class StringConverterObjectA
     }
 }
 
-class StringConverterObjectB
+class FloatConverterObjectB
 {
     private $value;
 
@@ -40,7 +40,7 @@ class StringConverterObjectB
     }
 }
 
-class StringConverterObjectC
+class FloatConverterObjectC
 {
     private $value;
 
@@ -51,51 +51,49 @@ class StringConverterObjectC
 
     public function __toString()
     {
-        return '   -' . $this->value . '-   ';
+        return hexdec($this->value);
     }
 }
 
-class StringConverterTest extends \PHPUnit_Framework_TestCase
+class FloatConverterTest extends \PHPUnit_Framework_TestCase
 {
     private $converter;
 
     protected function setUp()
     {
-        $this->converter = Converter::getConverter('string');
+        $this->converter = Converter::getConverter('float');
     }
 
     public function testGetAsDomainTypeWithNull()
     {
         $raw = null;
         $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals($raw, $converted);
+        $this->assertNull($converted);
     }
 
     public function testGetAsDomainTypeWithBooleanValue()
     {
         $converted = $this->converter->getAsDomainType(FALSE);
-        $this->assertEquals('0', $converted);
+        $this->assertEquals(0, $converted);
+        $this->assertInternalType('float', $converted);
 
         $converted = $this->converter->getAsDomainType(TRUE);
-        $this->assertEquals('1', $converted);
+        $this->assertEquals(1, $converted);
+        $this->assertInternalType('float', $converted);
     }
 
     public function testGetAsDomainTypeWithIntValue()
     {
         $raw = 123;
         $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals('123', $converted);
+        $this->assertTrue(123.0 === $converted);
     }
 
     public function testGetAsDomainTypeWithFloatValue()
     {
-        $raw = 1.2345;
+        $raw = 1.234;
         $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals('1.2345', $converted);
-
-        $raw = 12345678901234567890123456789;
-        $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals('1.2345678901235E+28', $converted);
+        $this->assertTrue($raw === $converted);
     }
 
     public function testGetAsDomainTypeWithStringValue()
@@ -108,13 +106,59 @@ class StringConverterTest extends \PHPUnit_Framework_TestCase
         $converted = $this->converter->getAsDomainType($raw);
         $this->assertNull($converted);
 
-        $raw = 'abcd';
+        $raw = '0';
         $converted = $this->converter->getAsDomainType($raw);
-        $this->assertTrue($raw === $converted);
+        $this->assertEquals(0, $converted, '', 0.000001);
+        $this->assertInternalType('float', $converted);
 
-        $raw = "\t    efgh\r\n";
+        $raw = '123';
         $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals('efgh', $converted);
+        $this->assertEquals(123, $converted, '', 0.000001);
+        $this->assertInternalType('float', $converted);
+
+        $raw = '-123';
+        $converted = $this->converter->getAsDomainType($raw);
+        $this->assertEquals(-123, $converted, '', 0.000001);
+        $this->assertInternalType('float', $converted);
+
+        $raw = '12.3';
+        $converted = $this->converter->getAsDomainType($raw);
+        $this->assertEquals(12.3, $converted, '', 0.000001);
+        $this->assertInternalType('float', $converted);
+
+        $raw = '012';
+        $converted = $this->converter->getAsDomainType($raw);
+        $this->assertEquals(12, $converted, '', 0.000001);
+        $this->assertInternalType('float', $converted);
+
+        $raw = '1e3';
+        $converted = $this->converter->getAsDomainType($raw);
+        $this->assertEquals(1000, $converted, '', 0.000001);
+        $this->assertInternalType('float', $converted);
+
+        $raw = '0x1A';
+        $converted = $this->converter->getAsDomainType($raw);
+        $this->assertEquals(26, $converted, '', 0.000001);
+        $this->assertInternalType('float', $converted);
+
+        $raw = ' 123 ';
+        $converted = $this->converter->getAsDomainType($raw);
+        $this->assertEquals(123, $converted, '', 0.000001);
+        $this->assertInternalType('float', $converted);
+    }
+
+    public function testGetAsDomainTypeWithStringValueNotNumeric()
+    {
+        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
+        $raw = 'A123';
+        $converted = $this->converter->getAsDomainType($raw);
+    }
+
+    public function testGetAsDomainTypeWithStringValueInfinite()
+    {
+        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
+        $raw = '1e500';
+        $converted = $this->converter->getAsDomainType($raw);
     }
 
     public function testGetAsDomainTypeWithArrayValue()
@@ -127,15 +171,19 @@ class StringConverterTest extends \PHPUnit_Framework_TestCase
     public function testGetAsDomainTypeWithNonPrintableObjectValue()
     {
         $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
-        $raw = new StringConverterObjectA(123);
+        $raw = new FloatConverterObjectA(123);
         $converted = $this->converter->getAsDomainType($raw);
     }
 
     public function testGetAsDomainTypeWithPrintableObjectValue()
     {
-        $raw = new StringConverterObjectB(123);
+        $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
+        $raw = new FloatConverterObjectB(123);
         $converted = $this->converter->getAsDomainType($raw);
-        $this->assertEquals('(123)', $converted);
+
+        $raw = new FloatConverterObjectC('1A');
+        $converted = $this->converter->getAsDomainType($raw);
+        $this->assertEquals(26, $converted);
     }
 
     public function testGetAsDomainTypeWithResourceValue()

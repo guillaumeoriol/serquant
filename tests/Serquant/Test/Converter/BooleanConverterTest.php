@@ -172,4 +172,21 @@ class BooleanConverterTest extends \PHPUnit_Framework_TestCase
         $raw = tmpfile();
         $converted = $this->converter->getAsDomainType($raw);
     }
+
+    public function testGetAsStringWithNull()
+    {
+        $converted = $this->converter->getAsString(null);
+        $this->assertNull($converted);
+    }
+
+    public function testGetAsString()
+    {
+        $converted = $this->converter->getAsString(true);
+        $this->assertEquals('1', $converted);
+        $this->assertInternalType('string', $converted);
+
+        $converted = $this->converter->getAsString(false);
+        $this->assertEquals('0', $converted);
+        $this->assertInternalType('string', $converted);
+    }
 }

@@ -15,7 +15,7 @@ namespace Serquant\Converter;
 use Serquant\Converter\Exception\ConverterException;
 
 /**
- * Converter for the 'integer' PHP type.
+ * Converter for the 'float' PHP type.
  *
  * @category Serquant
  * @package  Converter
@@ -23,7 +23,7 @@ use Serquant\Converter\Exception\ConverterException;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class IntegerConverter extends Converter
+class FloatConverter extends Converter
 {
     /**#@+
      * Code of the {@link ConverterException} thrown in case of conversion
@@ -34,7 +34,6 @@ class IntegerConverter extends Converter
     const ARRAY_OR_RESOURCE = 2;
     const NOT_NUMERIC = 3;
     const INFINITE = 4;
-    const OVERFLOW = 5;
     /**#@-*/
 
     /**
@@ -46,11 +45,10 @@ class IntegerConverter extends Converter
      * @var array
      */
     private static $messageId = array(
-        self::OBJECT_TO_STRING => 'com.serquant.converter.integer.OBJECT_TO_STRING',
-        self::ARRAY_OR_RESOURCE => 'com.serquant.converter.integer.ARRAY_OR_RESOURCE',
-        self::NOT_NUMERIC => 'com.serquant.converter.integer.NOT_NUMERIC',
-        self::INFINITE => 'com.serquant.converter.integer.INFINITE',
-        self::OVERFLOW => 'com.serquant.converter.integer.OVERFLOW'
+        self::OBJECT_TO_STRING => 'com.serquant.converter.float.OBJECT_TO_STRING',
+        self::ARRAY_OR_RESOURCE => 'com.serquant.converter.float.ARRAY_OR_RESOURCE',
+        self::NOT_NUMERIC => 'com.serquant.converter.float.NOT_NUMERIC',
+        self::INFINITE => 'com.serquant.converter.float.INFINITE'
     );
 
     /**
@@ -59,16 +57,10 @@ class IntegerConverter extends Converter
      * Conversion rules:
      * <ul>
      *   <li>NULL is returned unchanged.</li>
-     *   <li>The boolean TRUE is converted to 1 and the boolean FALSE is
-     *       converted to 0.</li>
-     *   <li>An integer is returned unchanged.</li>
-     *   <li>A float number is rounded to the nearest integer. An exact half
-     *       is rounded up (9.5 is rounded to 10). If the float value is greater
-     *       than the max integer value, a {@link ConverterException} exception
-     *       is thrown. Be careful with near-limit values: for instance
-     *       <code>var_dump((((float) PHP_INT_MAX) + 1) > PHP_INT_MAX)</code>
-     *       returns <em>false</em> because of limited precision in floating
-     *       point numbers.</li>
+     *   <li>The boolean TRUE is converted to the floating-point value 1 and
+     *       the boolean FALSE is converted to the floating-point value 0.</li>
+     *   <li>An integer is returned casted to float.</li>
+     *   <li>A float number is returned unchanged.</li>
      *   <li>A string is trimmed first. If it's empty, NULL is returned.
      *       Otherwise, if it takes the is_numeric() test (Numeric strings
      *       consist of optional sign, any number of digits, optional decimal
@@ -80,8 +72,8 @@ class IntegerConverter extends Converter
      *       contain any of the characters '.', 'e', or 'E' and the numeric
      *       value fits into integer type limits (as defined by PHP_INT_MAX),
      *       the string will be evaluated as an integer. In all other cases it
-     *       will be evaluated as a float." When the number is evaluated as a
-     *       float, the float conversion rule applies.</li>
+     *       will be evaluated as a float." When the number is evaluated as an
+     *       integer, the integer conversion rule applies.</li>
      *   <li>An array throws a {@link ConverterException} exception.</li>
      *   <li>An object is first casted to string if it defines a __toString()
      *       method; then, the string conversion rule applies. If this method
@@ -90,18 +82,17 @@ class IntegerConverter extends Converter
      * </ul>
      *
      * @param mixed $value The value to convert
-     * @return integer The converted value
+     * @return float The converted value
      * @throws ConverterException when the conversion fails.
      */
     public function getAsDomainType($value)
     {
-        if ($value === null || is_int($value)) {
+        if ($value === null || is_float($value)) {
             return $value;
         }
 
         if (is_bool($value)) {
-             // Do an explicit conversion, though a simple cast should suffice
-            return $value ? 1 : 0;
+            return (float) $value;
         }
 
         if (is_array($value) || is_resource($value)) {
@@ -152,14 +143,8 @@ class IntegerConverter extends Converter
             }
         }
 
-        if (is_float($value)) {
-            if ($value > PHP_INT_MAX) {
-                throw new ConverterException(
-                    self::$messageId[self::OVERFLOW],
-                    self::OVERFLOW
-                );
-            }
-            return round($value, 0, PHP_ROUND_HALF_UP);
+        if (is_int($value)) {
+            $value = (float) $value;
         }
 
         return $value;
@@ -168,7 +153,7 @@ class IntegerConverter extends Converter
     /**
      * {@inheritDoc}
      *
-     * @param integer $value The domain type value to convert
+     * @param float $value The domain type value to convert
      * @return string Value converted to string
      */
     public function getAsString($value)

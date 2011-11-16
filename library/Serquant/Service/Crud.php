@@ -12,20 +12,14 @@
  */
 namespace Serquant\Service;
 
-use Doctrine\Common\Collections\ArrayCollection,
-    Doctrine\ORM\Mapping\ClassMetadata,
-    Serquant\Converter\Converter,
-    Serquant\Converter\Exception\ConverterException,
-    Serquant\Entity\Serializer,
+use Serquant\Entity\Serializer,
     Serquant\Persistence\Persistence,
-    Serquant\Persistence\Serializable,
     Serquant\Service\Service,
     Serquant\Service\Exception\InvalidArgumentException,
     Serquant\Service\Exception\RuntimeException,
     Serquant\Service\Result,
     Symfony\Component\Validator\ConstraintViolation,
-    Symfony\Component\Validator\ConstraintViolationList,
-    Symfony\Component\Validator\ValidatorFactory;
+    Symfony\Component\Validator\ConstraintViolationList;
 
 /**
  * Basic service layer implementing CRUD functions for persistent entities.
@@ -80,35 +74,11 @@ class Crud implements Service
      * @param string $name Service name
      * @return mixed
      */
-    protected function getService($name)
+    protected function get($name)
     {
         $front = \Zend_Controller_Front::getInstance();
         $container = $front->getParam('bootstrap')->getContainer();
         return $container->{$name};
-    }
-
-    /**
-     * Get entity serializer.
-     *
-     * @return Serializer Entity serializer
-     */
-    public function getSerializer()
-    {
-        if ($this->serializer === null) {
-            if (!($this->persister instanceof Serializable)) {
-                throw new RuntimeException(
-                    'Unable to get a serializer from a '
-                    . get_class($this->persister) . ' persister as it does not '
-                    . 'implement the Serquant\Persistence\Serializable '
-                    . 'interface'
-                );
-            }
-            $this->serializer = new Serializer(
-                $this->persister->getMetadataFactory(),
-                $this->persister->getEntityRegistry()
-            );
-        }
-        return $this->serializer;
     }
 
     /**
@@ -246,64 +216,6 @@ class Crud implements Service
     }
 
     /**
-     * Populate the entity from the input data
-     *
-     * @param object $entity Entity to populate
-     * @param array $data Input data, in the form of field/value pairs.
-     * @return ConstraintViolationList
-     */
-    protected function populate($entity, $data)
-    {
-        $errors = new ConstraintViolationList();
-        $metadata = $this->persister->getClassMetadata(get_class($entity));
-        foreach ($data as $field => $value) {
-            if (isset($metadata->fieldMappings[$field])) {
-                try {
-                    $type = $metadata->fieldMappings[$field]['type'];
-                    $converter = Converter::getConverter($type);
-                    $converted = $converter->getAsDomainType($value);
-                } catch (ConverterException $e) {
-                    $errors->add(
-                        new ConstraintViolation(
-                            $e->getMessage(),
-                            array('{type}' => $type, '{value}' => $value),
-                            $entity,
-                            $field,
-                            $data[$field]
-                        )
-                    );
-                    continue;
-                }
-            } else if (isset($metadata->associationMappings[$field])) {
-                $relatedClass = $metadata->associationMappings[$field]['targetEntity'];
-                $type = $metadata->associationMappings[$field]['type'];
-                if ($type & ClassMetadata::TO_ONE) {
-                    $converted = new $relatedClass;
-                    $errors->addAll($this->populate($converted, $value));
-                } else {
-                    if (!is_array($value)) {
-                        $value = array($value);
-                    }
-                    $converted = new ArrayCollection();
-                    foreach ($value as $item) {
-                        $convertedItem = new $relatedClass;
-                        $errors->addAll($this->populate($convertedItem, $item));
-                        $converted->add($convertedItem);
-                    }
-                }
-            }
-            $method = 'set' . ucfirst($field);
-            if (method_exists($entity, $method)) {
-                call_user_func(array($entity, $method), $converted);
-            } else {
-                $metadata->reflFields[$field]->setValue($entity, $converted);
-            }
-        }
-
-        return $errors;
-    }
-
-    /**
      * Get error messages from a violation list.
      *
      * @param ConstraintViolationList $violations List of constraint violations.
@@ -311,7 +223,7 @@ class Crud implements Service
      */
     protected function getErrorMessages(ConstraintViolationList $violations)
     {
-        $translator = $this->getService('translator');
+        $translator = $this->get('translator');
         $messages = array();
         foreach ($violations as $violation) {
             $template = $translator->translate($violation->getMessageTemplate());
@@ -342,8 +254,8 @@ class Crud implements Service
     {
         try {
             $entity = new $this->entityName;
-            $violations = $this->populate($entity, $data);
-            $violations->addAll($this->getService('validator')->validate($entity));
+            $violations = $this->get('serializer')->deserialize($entity, $data);
+            $violations->addAll($this->get('validator')->validate($entity));
             if (count($violations) === 0) {
                 $this->persister->create($entity);
                 $status = Result::STATUS_SUCCESS;
@@ -421,8 +333,8 @@ class Crud implements Service
 
         try {
             $entity = $this->persister->retrieve($this->entityName, $id);
-            $violations = $this->populate($entity, $data);
-            $violations->addAll($this->getService('validator')->validate($entity));
+            $violations = $this->get('serializer')->deserialize($entity, $data);
+            $violations->addAll($this->get('validator')->validate($entity));
             if (count($violations) === 0) {
                 $this->persister->update($entity);
                 $status = Result::STATUS_SUCCESS;

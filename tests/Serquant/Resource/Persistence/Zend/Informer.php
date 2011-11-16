@@ -12,6 +12,8 @@
  */
 namespace Serquant\Resource\Persistence\Zend;
 
+use Serquant\Converter\Mapping as Converter;
+
 /**
  * Mapped superclass designed to implement a simple informer that is common to
  * multiple sublasses. It gives the ability to know who created the entity and
@@ -26,10 +28,16 @@ namespace Serquant\Resource\Persistence\Zend;
  */
 class Informer
 {
-    /** @Column(name="saved_at", type="datetime") */
+    /**
+     * @Converter\Property(type="DateTime")
+     * @Column(name="saved_at", type="datetime")
+     */
     protected $savedAt;
 
-    /** @Column(name="saved_by", type="integer", nullable=true) */
+    /**
+     * @Converter\Property(type="integer")
+     * @Column(name="saved_by", type="integer", nullable=true)
+     */
     protected $savedBy;
 
     /**

@@ -10,59 +10,68 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Resource\Persistence\Doctrine\Entity;
+namespace Serquant\Resource\Converter;
 
 use Serquant\Converter\Mapping as Converter;
 
 /**
  * @Entity
- * @Table(name="users")
  */
-class User
+class UserWithPrivatePropertiesNotConvertible
 {
     /**
      * @Converter\Property(type="integer")
-     * @Id @Column(type="integer")
-     * @GeneratedValue
      */
-    public $id;
+    private $id;
+
+    /**
+     * @Converter\Property(type="bool")
+     */
+    private $status;
 
     /**
      * @Converter\Property(type="string")
-     * @Column(type="string", length=50)
-     * @validation:MaxLength(20)
      */
-    public $status;
+    private $username;
 
     /**
-     * @Converter\Property(type="string")
-     * @Column(type="string", length=255, unique=true)
+     * @Converter\Property(type="Serquant\Resource\Converter\RoleWithPrivateProperties")
      */
-    public $username;
-
-    /**
-     * @Converter\Property(type="string")
-     * @Column(type="string", length=255)
-     */
-    public $name;
+    private $role;
 
     public function __construct() {
+    }
+
+    public function setId($id) {
+        $this->id = $id;
     }
 
     public function getId() {
         return $this->id;
     }
 
+    public function setStatus($status) {
+        $this->status = $status;
+    }
+
     public function getStatus() {
         return $this->status;
+    }
+
+    public function setUsername($username) {
+        $this->username = $username;
     }
 
     public function getUsername() {
         return $this->username;
     }
 
-    public function getName() {
-        return $this->name;
+    public function setRole($role) {
+        $this->role = $role;
+    }
+
+    public function getRole() {
+        return $this->role;
     }
 }
 

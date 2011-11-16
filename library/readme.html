@@ -30,7 +30,7 @@ li {
 		Zend or Symfony frameworks.</p>
 
 	<h2>Layers</h2>
-	<p>The application is organized by layers that should not be
+	<p>The application is organized into layers that should not be
 		coupled together:</p>
 	<ol>
 		<li><a href="#controller">Controller</a>
@@ -47,10 +47,10 @@ li {
 	</h2>
 	<p>
 		When a controller (Default, Rest, etc.) receives an HTTP request from
-		a client (browser or any other client such as a web service), the data
-		may be held by the URI (with GET and DELETE methods) or may reside in
-		the request body (with POST and PUT methods). When data reside in the
-		request body, the
+		a client (browser or any other client such as a web service) with
+		additional data, these data may be held by the URI (with GET and
+		DELETE methods) or may reside in the request body (with POST and PUT
+		methods). When data reside in the request body, the
 		<code>Serquant\Controller\Helper\Params</code>
 		action helper decodes them according to their content type. At the
 		moment, three content types are implemented: JSON, XML and the default
@@ -154,16 +154,16 @@ array(
 	<h4>Form</h4>
 	<p>In a basic form, element names match the property names of the
 		corresponding entity (the business object). This simple design avoids
-		having an additional mapper between external names (the ones used in
-		the user interface) and internal names (of the domain). As property
+		having an additional mapping between form elements (the element names
+		used in the HTML form) and property names (of the domain). As property
 		names of the entity are unique by design, there is no risk to get a
 		collision between two form fields having the same id (a form
 		represents a business object). No need to use any array notation in
 		forms.</p>
 	<p>
 		Simple entities (having no association) may be represented safely with
-		this flat model. Unfortunately, more complex entities implementing
-		associations will break this model. Let's think of a <em>Customer</em>
+		this flat model. Unfortunately, more complex entities (implementing
+		associations) will break this model. Let's think of a <em>Customer</em>
 		entity having an association with an <em>Address</em> entity. Though
 		internally customer details and address will belong to two separate
 		entities, it will be displayed to the end user as a single form.
@@ -202,15 +202,15 @@ class Address {
     "$ref": "9571"
   }
 }</pre>
-	<p>This is achieved by the entity serializer.</p>
+	<p>This is achieved by the serializer.</p>
 	<p>
 		Unfortunately, the same data structure will be presented to the
-		service for validation. As the form (holding the presentation) and the
-		entity have different structures, it doesn't work. We therefore need
-		to <strong>de-couple form presentation from validation</strong>. This
-		is achieved by removing every server-side filtering/validating code
-		from the Zend_Form object and putting it <em>somewhere else</em>. But
-		where?
+		service for validation. With a classical Zend_Form validation, the
+		form (holding the presentation) and the entity have different
+		structures. It doesn't work. We therefore need to <strong>de-couple
+			form presentation from validation</strong>. This is achieved by removing every
+		server-side filtering/validating code from the Zend_Form object and
+		putting it <em>somewhere else</em>. But where?
 	</p>
 
 	<p>
@@ -236,16 +236,18 @@ class Address {
 			Validation specification</a>. The paradigm is very different from Zend
 		Framework's filtering and validating process. Here, the type
 		conversion is done in a first step, then the entity is populated and,
-		finally, the validator validates the populated entity. Therefore,
-		violations may happen at conversion stage or at validation stage.
+		finally, the validator validates the populated entity. Violations may
+		happen at conversion stage or at validation stage.
 	</p>
 	<p>
 		Validation constraints can be specified via a number of different
-		formats:YAML, XML, annotations, or PHP). I prefer the annotations for
+		formats: YAML, XML, annotations, or PHP. I prefer the annotations for
 		beeing in the same place as ORM mapping. See the list of <a
-			href="http://symfony.com/doc/2.0/book/validation.html#supported-constraints">supported constraints</a>.
+			href="http://symfony.com/doc/2.0/book/validation.html#supported-constraints">supported
+			constraints</a>.
 	</p>
-
+	
+    <!-- @todo Rewrite from here and add a section on conversion -->
 	<p>When populating an entity from input data, any setter defined in
 		the entity will be used.</p>
 	<pre>

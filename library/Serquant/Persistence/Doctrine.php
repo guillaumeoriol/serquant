@@ -17,7 +17,6 @@ use Doctrine\ORM\EntityManager,
     DoctrineExtensions\Paginate\PaginationAdapter,
     Serquant\Entity\Registry\DoctrineGateway,
     Serquant\Persistence\Persistence,
-    Serquant\Persistence\Serializable,
     Serquant\Persistence\Exception\NoResultException,
     Serquant\Persistence\Exception\NonUniqueResultException,
     Serquant\Persistence\Exception\RuntimeException;
@@ -31,7 +30,7 @@ use Doctrine\ORM\EntityManager,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class Doctrine implements Persistence, Serializable
+class Doctrine implements Persistence
 {
     /**
      * Entity manager

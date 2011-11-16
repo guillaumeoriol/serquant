@@ -5,26 +5,29 @@
  * PHP version 5.3
  *
  * @category Serquant
- * @package  Exception
+ * @package  Mapping
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Converter\Exception;
-
-use Serquant\Converter\Exception;
+namespace Serquant\Converter\Mapping;
 
 /**
- * Exception thrown if an argument does not match with the expected value.
+ * Requirements a ClassMetadataFactory must fulfill.
  *
  * @category Serquant
- * @package  Exception
+ * @package  Mapping
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class InvalidArgumentException
-    extends \InvalidArgumentException
-    implements Exception
+interface ClassMetadataFactoryInterface
 {
+    /**
+     * Gets metatadata of a class.
+     *
+     * @param string $class Fully qualified class name
+     * @return ClassMetadata
+     */
+    public function getClassMetadata($class);
 }

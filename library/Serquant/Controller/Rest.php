@@ -12,8 +12,9 @@
  */
 namespace Serquant\Controller;
 
-use Serquant\Controller\Exception\RuntimeException,
-    Serquant\Service\Service;
+use Serquant\Controller\Exception\RuntimeException;
+use Serquant\Converter\SerializerInterface;
+use Serquant\Service\Service;
 
 /**
  * Generic RESTful controller.
@@ -27,8 +28,8 @@ use Serquant\Controller\Exception\RuntimeException,
  * through a CRUD service.
  *
  * There is no exception handling in this controller as Zend Framework
- * has its own mechanism to handle exceptions in controllers, ie
- * {@link \Zend_Controller_Plugin_ErrorHandler the ErrorHandler plugin}
+ * has its own mechanism to handle exceptions in controllers
+ * ({@link \Zend_Controller_Plugin_ErrorHandler the ErrorHandler plugin})
  * that would trigger the error action of the error controller from
  * the default module.
  *
@@ -60,25 +61,68 @@ class Rest extends \Zend_Rest_Controller
     protected $serviceName;
 
     /**
-     * Get service layer.
+     * Serializer to convert data from/to the client
+     * @var \Serquant\Converter\SerializerInterface
+     */
+    protected $serializer;
+
+    /**
+     * Gets the service layer object.
      *
-     * @return \Serquant\Service\Service
+     * @return Service
+     * @throws RuntimeException A RuntimeException is thrown if the service
+     * is missing or if it does not implement the Service interface.
      */
     protected function getService()
     {
         if ($this->service === null) {
             $front = \Zend_Controller_Front::getInstance();
             $container = $front->getParam('bootstrap')->getContainer();
-            $this->service = $container->{$this->serviceName};
-            if (!($this->service instanceof Service)) {
+            try {
+                $this->service = $container->{$this->serviceName};
+                if (!($this->service instanceof Service)) {
+                    throw new RuntimeException(
+                        "The provided service '{$this->serviceName}' must " .
+                        'implement the Serquant\Service\Service interface, ' .
+                        'but ' . get_class($this->service) . ' does not.'
+                    );
+                }
+            } catch (\InvalidArgumentException $e) {
                 throw new RuntimeException(
-                    "The provided service '{$this->serviceName}' must " .
-                    'implement the Serquant\Service\Service interface ' .
-                    '(but ' . get_class($this->service) . ' does not).'
+                    "The service layer '{$this->serviceName}' does not exist."
                 );
+
             }
         }
         return $this->service;
+    }
+
+    /**
+     * Gets the serializer.
+     *
+     * @return SerializerInterface
+     * @throws RuntimeException A RuntimeException is thrown if the serializer
+     * service is missing or if it does not implement the SerializerInterface.
+     */
+    protected function getSerializer()
+    {
+        if ($this->serializer === null) {
+            $front = \Zend_Controller_Front::getInstance();
+            $container = $front->getParam('bootstrap')->getContainer();
+            try {
+                $this->serializer = $container->serializer;
+                if (!($this->serializer instanceof SerializerInterface)) {
+                    throw new RuntimeException(
+                        'The serializer must implement the ' .
+                        'Serquant\Converter\SerializerInterface but ' .
+                        get_class($this->serializer) . ' does not.'
+                    );
+                }
+            } catch (\InvalidArgumentException $e) {
+                throw new RuntimeException('The serializer service does not exist.');
+            }
+        }
+        return $this->serializer;
     }
 
     /**
@@ -123,7 +167,7 @@ class Rest extends \Zend_Rest_Controller
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
-        $this->view->serializer = $service->getSerializer();
+        $this->view->serializer = $this->getSerializer();
     }
 
     /**
@@ -147,7 +191,7 @@ class Rest extends \Zend_Rest_Controller
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
-        $this->view->serializer = $service->getSerializer();
+        $this->view->serializer = $this->getSerializer();
     }
 
     /**
@@ -173,7 +217,7 @@ class Rest extends \Zend_Rest_Controller
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
-        $this->view->serializer = $service->getSerializer();
+        $this->view->serializer = $this->getSerializer();
     }
 
     /**
@@ -210,7 +254,7 @@ class Rest extends \Zend_Rest_Controller
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
-        $this->view->serializer = $service->getSerializer();
+        $this->view->serializer = $this->getSerializer();
     }
 
     /**
@@ -262,7 +306,7 @@ class Rest extends \Zend_Rest_Controller
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
-        $this->view->serializer = $service->getSerializer();
+        $this->view->serializer = $this->getSerializer();
     }
 
     /**

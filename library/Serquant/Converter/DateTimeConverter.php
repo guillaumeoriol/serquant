@@ -12,13 +12,11 @@
  */
 namespace Serquant\Converter;
 
-use Serquant\Converter\Converter,
-    Serquant\Converter\Exception\ConverterException;
+use DateTime;
+use Serquant\Converter\Exception\ConverterException;
 
 /**
- * Converter for the 'date' mapping type.
- *
- * The corresponding domain type is the PHP class 'DateTime'.
+ * Converter for the 'DateTime' PHP class.
  *
  * @category Serquant
  * @package  Converter
@@ -26,7 +24,7 @@ use Serquant\Converter\Converter,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class DateConverter extends Converter
+class DateTimeConverter extends Converter
 {
     /**
      * Date format.
@@ -77,10 +75,10 @@ class DateConverter extends Converter
      * @var array
      */
     private static $messageId = array(
-        self::OBJECT_TO_STRING => 'com.serquant.converter.date.OBJECT_TO_STRING',
-        self::PARSE_ERROR => 'com.serquant.converter.date.PARSE_ERROR',
-        self::PARSE_WARNING => 'com.serquant.converter.date.PARSE_WARNING',
-        self::INCONVERTIBLE => 'com.serquant.converter.date.INCONVERTIBLE'
+        self::OBJECT_TO_STRING => 'com.serquant.converter.datetime.OBJECT_TO_STRING',
+        self::PARSE_ERROR => 'com.serquant.converter.datetime.PARSE_ERROR',
+        self::PARSE_WARNING => 'com.serquant.converter.datetime.PARSE_WARNING',
+        self::INCONVERTIBLE => 'com.serquant.converter.datetime.INCONVERTIBLE'
     );
 
     /**
@@ -108,7 +106,7 @@ class DateConverter extends Converter
      * </ul>
      *
      * @param mixed $value The value to convert
-     * @return DateTime|NULL The converted value
+     * @return DateTime The converted value
      * @throws ConverterException when the conversion fails.
      */
     public function getAsDomainType($value)
@@ -142,14 +140,14 @@ class DateConverter extends Converter
             } else {
                 $format = self::FORMAT_DATE_TIME_TZ;
             }
-            $result = \DateTime::createFromFormat($format, $value);
+            $result = DateTime::createFromFormat($format, $value);
             if ($result === false) {
                 throw new ConverterException(
                     self::$messageId[self::PARSE_ERROR],
                     self::PARSE_ERROR
                 );
             }
-            $errors = \DateTime::getLastErrors();
+            $errors = DateTime::getLastErrors();
             if (count($errors['warnings']) > 0) {
                 throw new ConverterException(
                     self::$messageId[self::PARSE_WARNING],
@@ -171,12 +169,14 @@ class DateConverter extends Converter
      * Date is returned in {@link FORMAT_DATE_TIME_TZ full date and time with
      * timezone format}.
      *
-     * @param DateTime $value Value of domain type.
+     * @param DateTime $value The domain type value to convert
      * @return string Value converted to string
-     * @throws ConverterException when the conversion fails.
      */
     public function getAsString($value)
     {
+        if ($value === null) {
+            return null;
+        }
         return $value->format(self::FORMAT_DATE_TIME_TZ);
     }
 }

@@ -23,6 +23,36 @@ class RestTest extends \PHPUnit_Framework_TestCase
         $this->rest = new Rest($request, $response);
     }
 
+    public function testGetSerializerMissing()
+    {
+        $container = new \Serquant\DependencyInjection\ContainerBuilder();
+        $application = new \Zend_Application(APPLICATION_ROOT . '/application');
+        $application->getBootstrap()->setContainer($container);
+        $front = \Zend_Controller_Front::getInstance();
+        $front->setParam('bootstrap', $application->getBootstrap());
+
+        $method = new \ReflectionMethod($this->rest, 'getSerializer');
+        $method->setAccessible(true);
+        $this->setExpectedException('Serquant\Controller\Exception\RuntimeException');
+        $serializer = $method->invoke($this->rest);
+    }
+
+    public function testGetSerializerNotImplementingExpectedInterface()
+    {
+        $serializer = new \stdClass();
+        $container = new \Serquant\DependencyInjection\ContainerBuilder();
+        $container->set('serializer', $serializer);
+        $application = new \Zend_Application(APPLICATION_ROOT . '/application');
+        $application->getBootstrap()->setContainer($container);
+        $front = \Zend_Controller_Front::getInstance();
+        $front->setParam('bootstrap', $application->getBootstrap());
+
+        $method = new \ReflectionMethod($this->rest, 'getSerializer');
+        $method->setAccessible(true);
+        $this->setExpectedException('Serquant\Controller\Exception\RuntimeException');
+        $serializer = $method->invoke($this->rest);
+    }
+
     public function testGetRql()
     {
         $method = new \ReflectionMethod($this->rest, 'sanitizeRql');

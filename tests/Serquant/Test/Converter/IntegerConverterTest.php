@@ -116,6 +116,10 @@ class IntegerConverterTest extends \PHPUnit_Framework_TestCase
         $converted = $this->converter->getAsDomainType($raw);
         $this->assertNull($converted);
 
+        $raw = '0';
+        $converted = $this->converter->getAsDomainType($raw);
+        $this->assertEquals(0, $converted);
+
         $raw = '123';
         $converted = $this->converter->getAsDomainType($raw);
         $this->assertEquals(123, $converted);
@@ -189,5 +193,11 @@ class IntegerConverterTest extends \PHPUnit_Framework_TestCase
         $this->setExpectedException('Serquant\Converter\Exception\ConverterException');
         $raw = tmpfile();
         $converted = $this->converter->getAsDomainType($raw);
+    }
+
+    public function testGetAsStringWithNull()
+    {
+        $converted = $this->converter->getAsString(null);
+        $this->assertNull($converted);
     }
 }

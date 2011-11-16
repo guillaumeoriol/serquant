@@ -12,13 +12,10 @@
  */
 namespace Serquant\Converter;
 
-use Serquant\Converter\Converter,
-    Serquant\Converter\Exception\ConverterException;
+use Serquant\Converter\Exception\ConverterException;
 
 /**
- * Converter for the 'boolean' mapping type.
- *
- * The corresponding domain type is the PHP primitive type 'boolean'.
+ * Converter for the 'boolean' PHP type.
  *
  * @category Serquant
  * @package  Converter
@@ -70,7 +67,7 @@ class BooleanConverter extends Converter
      * </ul>
      *
      * @param mixed $value The value to convert
-     * @return boolean|NULL The converted value
+     * @return boolean The converted value
      * @throws ConverterException when the conversion fails.
      */
     public function getAsDomainType($value)
@@ -109,12 +106,14 @@ class BooleanConverter extends Converter
      * Unlike normal PHP boolean-to-string conversion, TRUE is converted to '1'
      * and FALSE is converted to '0' (and not to an empty string).
      *
-     * @param boolean $value Value of domain type.
-     * @return string Value converted to string
-     * @throws ConverterException when the conversion fails.
+     * @param boolean $value The domain type value to convert
+     * @return string The converted value
      */
     public function getAsString($value)
     {
+        if ($value === null) {
+            return null;
+        }
         return $value ? '1' : '0';
     }
 }

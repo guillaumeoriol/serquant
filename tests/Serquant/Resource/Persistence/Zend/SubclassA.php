@@ -12,12 +12,15 @@
  */
 namespace Serquant\Resource\Persistence\Zend;
 
+use Serquant\Converter\Mapping as Converter;
+
 /**
  * @Entity
  */
 class SubclassA extends Informer
 {
     /**
+     * @Converter\Property(type="integer")
      * @Id
      * @Column(name="id", type="integer")
      * @GeneratedValue(strategy="AUTO")
@@ -25,11 +28,13 @@ class SubclassA extends Informer
     public $id;
 
     /**
+     * @Converter\Property(type="string")
      * @Column(name="name", type="string", length=50)
      */
     public $name;
 
     /**
+     * @Converter\Property(type="string")
      * @Column(type="string")
      */
     public $specificToA;

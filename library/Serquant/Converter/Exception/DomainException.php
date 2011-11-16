@@ -15,7 +15,7 @@ namespace Serquant\Converter\Exception;
 use Serquant\Converter\Exception;
 
 /**
- * Exception thrown if an argument does not match with the expected value.
+ * Exception thrown if a value does not adhere to a defined valid data domain.
  *
  * @category Serquant
  * @package  Exception
@@ -23,8 +23,8 @@ use Serquant\Converter\Exception;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class InvalidArgumentException
-    extends \InvalidArgumentException
+class DomainException
+    extends \DomainException
     implements Exception
 {
 }

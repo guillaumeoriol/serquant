@@ -21,7 +21,6 @@ use Doctrine\Common\Annotations\AnnotationReader,
     Serquant\Paginator\Adapter\DbSelect,
     Serquant\Entity\Registry\Ormless,
     Serquant\Persistence\Persistence,
-    Serquant\Persistence\Serializable,
     Serquant\Persistence\Exception\InvalidArgumentException,
     Serquant\Persistence\Exception\NoResultException,
     Serquant\Persistence\Exception\NonUniqueResultException,
@@ -40,7 +39,7 @@ use Doctrine\Common\Annotations\AnnotationReader,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class Zend implements Persistence, Serializable
+class Zend implements Persistence
 {
     /**
      * Entity manager
