@@ -53,12 +53,24 @@ class AnnotationLoader implements LoaderInterface
         $reflClass = $metadata->getReflectionClass();
         $className = $reflClass->getName();
 
+        if ($annotation = $this->reader->getClassAnnotation(
+            $reflClass, 'Serquant\Converter\Mapping\Entity'
+        )) {
+            $metadata->setIdentifierPrefix($annotation->getPrefix());
+        }
+
         foreach ($reflClass->getProperties() as $reflProp) {
             if ($reflProp->getDeclaringClass()->getName() === $className) {
+                $name = $reflProp->getName();
+                if ($annotation = $this->reader->getPropertyAnnotation(
+                    $reflProp, 'Serquant\Converter\Mapping\Id'
+                )) {
+                    $metadata->setIdentifier($name);
+                }
+
                 if ($annotation = $this->reader->getPropertyAnnotation(
                     $reflProp, 'Serquant\Converter\Mapping\Property'
                 )) {
-                    $name = $reflProp->getName();
                     $metadata->addProperty($name, $annotation);
                     $metadata->addReflectionProperty($name, $reflProp);
                 }

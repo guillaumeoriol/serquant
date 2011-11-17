@@ -90,6 +90,24 @@ class SerializerTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('Washington', $entity->username);
     }
 
+
+    public function testDeserializeWithIdentifierPrefix()
+    {
+        $serializer = new Serializer($this->factory);
+        $class = 'Serquant\Resource\Converter\UserWithPublicProperties';
+        $entity = new $class;
+        $data = array(
+            'id' => '/rest/user/1',
+            'status' => 'true',
+            'username' => 'Washington'
+        );
+        $violations = $serializer->deserialize($entity, $data);
+        $this->assertInstanceOf('Symfony\Component\Validator\ConstraintViolationList', $violations);
+
+        $this->assertInternalType('integer', $entity->id);
+        $this->assertSame(1, $entity->id);
+    }
+
     public function testDeserializeWithPrivatePropertiesThatAreConvertible()
     {
         $serializer = new Serializer($this->factory);
@@ -296,7 +314,7 @@ class SerializerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1, count($violations));
     }
 
-    // -------------------------------------------------------------------------
+    // =========================================================================
 
     public function testToDomWithPublicProperties()
     {
@@ -310,7 +328,7 @@ class SerializerTest extends \PHPUnit_Framework_TestCase
 
         $expected = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL
                   . '<UserWithPublicProperties>'
-                  .   '<id>1</id>'
+                  .   '<id>/rest/user/1</id>'
                   .   '<status/>'
                   .   '<username>Washington</username>'
                   . '</UserWithPublicProperties>' . PHP_EOL;
@@ -467,7 +485,7 @@ class SerializerTest extends \PHPUnit_Framework_TestCase
         $data = $serializer->serialize($user);
         $this->assertEquals(
             array(
-                'id' => '1',
+                'id' => '/rest/user/1',
                 'status' => '1',
                 'username' => 'Washington'
             ),

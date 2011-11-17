@@ -28,7 +28,7 @@ interface SerializerInterface
     /**
      * Constructs an instance of this class.
      *
-     * @param ClassMetadataFactory $metadataFactory
+     * @param ClassMetadataFactory $metadataFactory Factory instance
      */
     public function __construct(ClassMetadataFactory $metadataFactory);
 

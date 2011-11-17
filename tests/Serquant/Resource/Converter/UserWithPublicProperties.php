@@ -15,11 +15,12 @@ namespace Serquant\Resource\Converter;
 use Serquant\Converter\Mapping as Converter;
 
 /**
- * @Entity
+ * @Converter\Entity(prefix="/rest/user/")
  */
 class UserWithPublicProperties
 {
     /**
+     * @Converter\Id
      * @Converter\Property(type="integer")
      */
     public $id;

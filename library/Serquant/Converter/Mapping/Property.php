@@ -18,8 +18,8 @@ use Serquant\Converter\Exception\DomainException;
 /**
  * 'Property' metadata definition.
  *
- * This class is the definition of the &#64;Property annotation (as required
- * by Doctrine annotations package).
+ * This class is the definition of the &#64;Property annotation used for
+ * conversion purpose (as required by Doctrine annotations package).
  *
  * @category Serquant
  * @package  Mapping
@@ -105,7 +105,7 @@ final class Property
      * When an alias (or abbreviation) is used, it is automatically translated
      * into the canonical type name.
      *
-     * @param string $type
+     * @param string $type Domain model type
      * @return void
      */
     public function setType($type)

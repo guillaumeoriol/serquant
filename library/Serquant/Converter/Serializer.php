@@ -33,7 +33,11 @@ use Symfony\Component\Validator\ConstraintViolationList;
  */
 class Serializer implements SerializerInterface
 {
-
+    /**
+     * Constructs an instance of Serializer.
+     *
+     * @param ClassMetadataFactory $metadataFactory Factory instance
+     */
     public function __construct(ClassMetadataFactory $metadataFactory)
     {
         $this->metadataFactory = $metadataFactory;
@@ -64,6 +68,7 @@ class Serializer implements SerializerInterface
                 );
             }
             $metadata = $this->metadataFactory->getClassMetadata(get_class($entity));
+            $prefix = $metadata->getIdentifierPrefix();
             foreach ($metadata->getProperties() as $name => $property) {
                 $type = $property->getType();
                 $method = 'get' . ucfirst($name);
@@ -73,10 +78,11 @@ class Serializer implements SerializerInterface
                     $value = $metadata->getReflectionProperty($name)->getValue($entity);
                 }
                 if ($property->isConvertible()) {
-                    // No need to enclose conversion in a try/catch block here
-                    // as exceptions are not thrown in normal processing
                     $converter = Converter::getConverter($type);
-                    $data[$name] = $converter->getAsString($value);
+                    $converted = $converter->getAsString($value);
+                    $data[$name] = (($converted !== null) && ($prefix !== null)
+                        && $metadata->isIdentifier($name))
+                        ? $prefix . $converted : $converted;
                 } else {
                     $data[$name] = $value === null ? null : $this->serialize($value);
                 }
@@ -122,6 +128,7 @@ class Serializer implements SerializerInterface
                 );
             }
             $metadata = $this->metadataFactory->getClassMetadata(get_class($entity));
+            $prefix = $metadata->getIdentifierPrefix();
             $name = $metadata->getReflectionClass()->getShortName();
             $entityNode = $doc->createElement($name);
             $node->appendChild($entityNode);
@@ -141,6 +148,9 @@ class Serializer implements SerializerInterface
                     $converter = Converter::getConverter($type);
                     $converted = $converter->getAsString($value);
                     if ($converted !== null) {
+                        if (($prefix !== null) && $metadata->isIdentifier($name)) {
+                            $converted = $prefix . $converted;
+                        }
                         $propertyNode->appendChild($doc->createTextNode($converted));
                     }
                 } else {
@@ -212,18 +222,27 @@ class Serializer implements SerializerInterface
     {
         if (!is_array($data) && !is_object($data)) {
             throw new InvalidArgumentException(
-            	'Entities may only be populated from arrays or objects.'
+                'Entities may only be populated from arrays or objects.'
             );
         }
 
         $errors = new ConstraintViolationList();
         $metadata = $this->metadataFactory->getClassMetadata(get_class($entity));
+        $prefix = $metadata->getIdentifierPrefix();
         foreach ($metadata->getProperties() as $name => $property) {
             if (array_key_exists($name, $data)) {
                 $type = $property->getType();
                 $value = $data[$name];
                 if ($property->isConvertible()) {
                     try {
+                        if ($prefix !== null
+                            && $metadata->isIdentifier($name)
+                            && is_string($value)
+                        ) {
+                            if (0 === strpos($value, $prefix)) {
+                                $value = substr($value, strlen($prefix));
+                            }
+                        }
                         $converter = Converter::getConverter($type);
                         $converted = $converter->getAsDomainType($value);
                     } catch (ConverterException $e) {
@@ -246,12 +265,13 @@ class Serializer implements SerializerInterface
                         if (!empty($value)) {
                             if (!is_array($value) && !is_object($value)) {
                                 throw new InvalidArgumentException(
-                                	'Multivalued properties may only be ' .
+                                    'Multivalued properties may only be ' .
                                     'populated from arrays or objects.'
                                 );
                             }
                             // @todo Should we try first with a getting method?
-                            $collection = $metadata->getReflectionProperty($name)->getValue($entity);
+                            $reflProperty = $metadata->getReflectionProperty($name);
+                            $collection = $reflProperty->getValue($entity);
                             if ($collection === null) {
                                 throw new RuntimeException(
                                     'Multivalue properties must be initialized ' .

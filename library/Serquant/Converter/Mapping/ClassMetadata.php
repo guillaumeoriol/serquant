@@ -48,6 +48,19 @@ class ClassMetadata implements ClassMetadataInterface
     private $reflProperties;
 
     /**
+     * List of properties that make up the identifier
+     * @var array
+     */
+    private $identifier;
+
+    /**
+     * Prefix that must be added to the identifier or removed from the
+     * identifier during serialization/deserialization.
+     * @var string
+     */
+    private $identifierPrefix;
+
+    /**
      * Map associating property names to conversion metadata
      * @var array
      */
@@ -63,6 +76,7 @@ class ClassMetadata implements ClassMetadataInterface
     {
         $this->name = $class;
         $this->reflProperties = array();
+        $this->identifier = array();
         $this->conversionProperties = array();
     }
 
@@ -73,10 +87,12 @@ class ClassMetadata implements ClassMetadataInterface
      */
     public function __sleep()
     {
-        return array_merge(parent::__sleep(), array(
+        return array(
             'name',
+            'identifier',
+            'identifierPrefix',
             'conversionProperties'
-        ));
+        );
     }
 
     /**
@@ -104,7 +120,7 @@ class ClassMetadata implements ClassMetadataInterface
      *
      * @return string The fully qualified class name
      */
-    protected function getClassName()
+    public function getClassName()
     {
         return $this->name;
     }
@@ -145,6 +161,53 @@ class ClassMetadata implements ClassMetadataInterface
     public function getReflectionProperty($name)
     {
         return $this->reflProperties[$name];
+    }
+
+    /**
+     * Defines a property as being the entity identifier (or part of it in case
+     * of composite identifier).
+     *
+     * @param string $name Property name
+     * @return void
+     */
+    public function setIdentifier($name)
+    {
+        if ($this->isIdentifier($name)) {
+            throw new RuntimeException($message, $code, $previous);
+        }
+        $this->identifier[] = $name;
+    }
+
+    /**
+     * Determines if a property name is the entity identifier (or part of it).
+     *
+     * @param string $name Property name
+     * @return boolean
+     */
+    public function isIdentifier($name)
+    {
+        return in_array($name, $this->identifier);
+    }
+
+    /**
+     * Sets the identifier prefix of the class
+     *
+     * @param string $prefix Identifier prefix
+     * @return void
+     */
+    public function setIdentifierPrefix($prefix)
+    {
+        $this->identifierPrefix = $prefix;
+    }
+
+    /**
+     * Gets the identifier prefix of the class
+     *
+     * @return string
+     */
+    public function getIdentifierPrefix()
+    {
+        return $this->identifierPrefix;
     }
 
     /**

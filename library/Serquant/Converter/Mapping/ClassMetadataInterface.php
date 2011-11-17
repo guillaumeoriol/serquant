@@ -51,6 +51,38 @@ interface ClassMetadataInterface
     public function getReflectionProperty($name);
 
     /**
+     * Defines a property as being the entity identifier (or part of it in case
+     * of composite identifier).
+     *
+     * @param string $name Property name
+     * @return void
+     */
+    public function setIdentifier($name);
+
+    /**
+     * Determines if a property name is the entity identifier (or part of it).
+     *
+     * @param string $name Property name
+     * @return boolean
+     */
+    public function isIdentifier($name);
+
+    /**
+     * Sets the identifier prefix of the class
+     *
+     * @param string $prefix Identifier prefix
+     * @return void
+     */
+    public function setIdentifierPrefix($prefix);
+
+    /**
+     * Gets the identifier prefix of the class
+     *
+     * @return string
+     */
+    public function getIdentifierPrefix();
+
+    /**
      * Adds a conversion property to the class metadata
      *
      * @param string $name Property name

@@ -35,7 +35,7 @@ class AnnotationLoaderTest extends \PHPUnit_Framework_TestCase
     {
         AnnotationRegistry::reset();
         $autoloadNamespaces = array(
-    		'Serquant\Converter\Mapping\Annotation' => APPLICATION_ROOT . '/library'
+    		'Serquant\Converter\Mapping' => APPLICATION_ROOT . '/library'
 		);
         $config = array(
         	'annotationAutoloadNamespaces' => $autoloadNamespaces,
@@ -67,13 +67,19 @@ class AnnotationLoaderTest extends \PHPUnit_Framework_TestCase
     {
         $loader = new AnnotationLoader($this->reader);
 
-        $class = 'Serquant\Resource\Persistence\Doctrine\Entity\User';
+        $class = 'Serquant\Resource\Converter\UserWithPublicProperties';
         $metadata = new ClassMetadata($class);
         $loader->loadClassMetadata($metadata);
 
-        $reflProp = new \ReflectionProperty($metadata, 'conversionProperties');
-        $reflProp->setAccessible(true);
-        $conversionProperties = $reflProp->getValue($metadata);
-        $this->assertEquals(0, count(array_diff(array('id', 'status', 'username', 'name'), array_keys($conversionProperties))));
+        $conversionProperties = $metadata->getProperties();
+        $this->assertEmpty(array_diff(
+            array('id', 'status', 'username'),
+            array_keys($conversionProperties)
+        ));
+
+        $this->assertTrue($metadata->isIdentifier('id'));
+        $this->assertFalse($metadata->isIdentifier('username'));
+
+        $this->assertEquals('/rest/user/', $metadata->getIdentifierPrefix());
     }
 }
