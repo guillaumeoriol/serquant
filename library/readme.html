@@ -27,32 +27,31 @@ li {
 <body>
 	<h1>Serquant</h1>
 	<p>A library designed to help building PHP applications based on
-		Zend or Symfony frameworks.</p>
+		Zend and Symfony frameworks.</p>
 
 	<h2>Layers</h2>
-	<p>The application is organized into layers that should not be
-		coupled together:</p>
+	<p>The application is organized into layers:</p>
 	<ol>
-		<li><a href="#controller">Controller</a>
+		<li><a href="#controller">Controller</a></li>
+		<li><a href="#service">Service</a></li>
+		<li><a href="#domain">Domain (business logic)</a></li>
+		<li><a href="#persistence">Persistence (or Data source)</a>
 		</li>
-		<li><a href="#service">Service</a>
-		</li>
-		<li><a href="#domain">Domain (business logic)</a>
-		</li>
-		<li><a href="#persistence">Persistence (or Data source)</a></li>
 	</ol>
-
+	<p>These layers should be coupled together as little as possible.</p>
 	<h2>
 		<a name="controller">Controller layer</a>
 	</h2>
+	<p>The main purpose of the controller (on input) is to transform
+		the incoming request to conform with the service API requirements.</p>
 	<p>
 		When a controller (Default, Rest, etc.) receives an HTTP request from
-		a client (browser or any other client such as a web service) with
-		additional data, these data may be held by the URI (with GET and
-		DELETE methods) or may reside in the request body (with POST and PUT
-		methods). When data reside in the request body, the
+		a client (browser or any other client such as a web service), some
+		additional data may be held by the URI (with GET and DELETE methods)
+		or may reside in the request body (with POST and PUT methods). When
+		data reside in the request body, the
 		<code>Serquant\Controller\Helper\Params</code>
-		action helper decodes them according to their content type. At the
+		action helper decodes them according to their content type. For the
 		moment, three content types are implemented: JSON, XML and the default
 		<code>enctype</code>
 		of forms (
@@ -89,7 +88,7 @@ object(stdClass)#1 (9) {
   ["object"]=> object(stdClass)#2 (1) { ["a"]=> int(1) } 
   ["date"]=> string(10) "2010-09-09" 
 }</pre>Hence, the result primarily depends on variable types used on client
-			side (defined by dojo.store, for instance).</li>
+			side (defined by a dojo.store, for instance).</li>
 		<li>With XML, the result is constructed with Zend_Config_Xml
 			class. No type conversion is done for scalars. Vectors are always
 			converted to arrays. <pre>
@@ -134,40 +133,67 @@ array(
     'a' => string '1' (length=1)
   )
   'date' => string '2010-09-09' (length=10)
-)</pre>
-		</li>
+)</pre></li>
 		<li>With default form <code>enctype</code>, the native PHP
 			function <code>parse_str</code> is used, which does no type
-			conversion.</li>
+			conversion at all.</li>
 	</ol>
 
 	<p>Different content types will result in different PHP types. As a
 		consequence, converters MUST accomodate this situation and handle
 		properly raw string types as well as converted types.</p>
 
-	<p>The main purpose of the controller (on input) is to transform
-		the incoming request to conform with the service API requirements.</p>
 
 	<h2>
 		<a name="service">Service layer</a>
 	</h2>
-	<h4>Form</h4>
-	<p>In a basic form, element names match the property names of the
-		corresponding entity (the business object). This simple design avoids
-		having an additional mapping between form elements (the element names
-		used in the HTML form) and property names (of the domain). As property
-		names of the entity are unique by design, there is no risk to get a
-		collision between two form fields having the same id (a form
-		represents a business object). No need to use any array notation in
-		forms.</p>
+	<p>
+		Index: <br /> <a href="#form">Form</a><br /> <a
+			href="#conversionValidation">Conversion &amp; validation</a><br />
+		&gt;&nbsp;<a href="#conversion">Conversion</a><br /> &gt;&nbsp;<a
+			href="#validation">Validation</a><br />
+	</p>
+
+	<h3>
+		<a name="form">Form</a>
+	</h3>
+	<ul>
+		<li>A form represents a business object.</li>
+		<li>A form object shall only take care of presentation and <strong>client-side</strong>
+			validation/filtering.</li>
+	</ul>
+
+	<p>With basic objects, the names of form elements can match the
+		property names of the corresponding entity (the business object). This
+		simple design avoids having an additional mapping between form
+		elements (the element names used in the HTML form) and property names
+		(of the domain). As property names of the entity are unique by design,
+		there is no risk to get a collision between two form fields having the
+		same id (bear in mind a form represents a business object). No need to
+		use any array notation in forms.</p>
 	<p>
 		Simple entities (having no association) may be represented safely with
 		this flat model. Unfortunately, more complex entities (implementing
 		associations) will break this model. Let's think of a <em>Customer</em>
 		entity having an association with an <em>Address</em> entity. Though
 		internally customer details and address will belong to two separate
-		entities, it will be displayed to the end user as a single form.
+		entities, it will be displayed to the end user as a single form:
 	</p>
+	<pre>
+&lt;form action="..."&gt;
+  &lt;p&gt;
+    &lt;input type="hidden" name="id" /&gt;
+    &lt;label for="name"&gt;name&lt;/label&gt;
+      &lt;input type="text" name="name" /&gt;
+    &lt;input type="hidden" name="addressId" /&gt;
+    &lt;label for="postalCode"&gt;postal code&lt;/label&gt;
+      &lt;input type="text" name="postalCode" /&gt;
+    &lt;label for="city"&gt;city&lt;/label&gt;
+      &lt;input type="text" name="city" /&gt;
+    
+    &lt;input type="submit" /&gt;
+  &lt;/p&gt;
+&lt;/form&gt;</pre>
 	<pre>
 class Customer {
   private $id;
@@ -181,8 +207,8 @@ class Address {
   private $city;
 }</pre>
 	<p>This implies a hierarchical representation of data that is
-		incompatible with the flat model. From the domain point of view,
-		outgoing data will be represented this way:</p>
+		incompatible with the flat model. The server will serialize outgoing
+		data this way:</p>
 	<pre>
 {
   "id": "1240",
@@ -205,9 +231,9 @@ class Address {
 	<p>This is achieved by the serializer.</p>
 	<p>
 		Unfortunately, the same data structure will be presented to the
-		service for validation. With a classical Zend_Form validation, the
-		form (holding the presentation) and the entity have different
-		structures. It doesn't work. We therefore need to <strong>de-couple
+		service layer for validation. With a classical Zend_Form validation,
+		the form (holding the presentation) and the entity have different
+		structures. It doesn't match. We therefore need to <strong>de-couple
 			form presentation from validation</strong>. This is achieved by removing every
 		server-side filtering/validating code from the Zend_Form object and
 		putting it <em>somewhere else</em>. But where?
@@ -226,19 +252,26 @@ class Address {
 		candidate for the validation.
 	</p>
 
-	<h4>Validation</h4>
+	<h3>
+		<a name="conversionValidation">Conversion &amp; validation</a>
+	</h3>
 	<p>
-		We decided to use Symfony's <a
-			href="http://symfony.com/doc/2.0/book/validation.html">Validator</a>
+		To de-couple form presentation from validation, we decided to use
+		Symfony's <a href="http://symfony.com/doc/2.0/book/validation.html">Validator</a>
 		component instead of Zend Framework's one. Symfony describes it as a
 		PHP port of the Hibernate implementation of <a
 			href="http://jcp.org/en/jsr/detail?id=303">JSR-303 Bean
 			Validation specification</a>. The paradigm is very different from Zend
-		Framework's filtering and validating process. Here, the type
-		conversion is done in a first step, then the entity is populated and,
-		finally, the validator validates the populated entity. Violations may
-		happen at conversion stage or at validation stage.
+		Framework's filtering and validating process. Here is the new
+		validation process:
 	</p>
+	<ol>
+		<li>type conversion is done first</li>
+		<li>then the entity is populated</li>
+		<li>finally, the validator validates the populated entity.</li>
+	</ol>
+	<p>Violations may happen at conversion stage (1) or at validation
+		stage (3).</p>
 	<p>
 		Validation constraints can be specified via a number of different
 		formats: YAML, XML, annotations, or PHP. I prefer the annotations for
@@ -246,117 +279,125 @@ class Address {
 			href="http://symfony.com/doc/2.0/book/validation.html#supported-constraints">supported
 			constraints</a>.
 	</p>
-	
-    <!-- @todo Rewrite from here and add a section on conversion -->
-	<p>When populating an entity from input data, any setter defined in
-		the entity will be used.</p>
+
+	<h4>
+		<a name="conversion">Conversion</a>
+	</h4>
+
+	<ul>
+		<li>The process of converting incoming data into an entity of the
+			domain is done by<br /> <code>Serquant\Converter\Serializer#deserialize</code>
+		</li>
+		<li>Only entity properties marked for conversion are converted</li>
+		<li>Conversion may only be defined with annotations for the
+			moment</li>
+		<li>The target type is determined by the <em>type</em> attribute
+			of the <em>Property</em> annotation.</li>
+	</ul>
+	<p>For instance:</p>
 	<pre>
-/**
- * @Entity
- * @Table(name="users")
- */
+use Serquant\Converter\Mapping as Converter;
+    
 class User
 {
     /**
-     * @Column(name="id", type="integer")
-     * @Id
-     * @GeneratedValue(strategy="AUTO")
+     * @Converter\Property(type="integer")
      */
     private $id;
 
     /** 
-     * @Column(name="name", type="string", length=20) 
-     * @validation:MaxLength(10)
+     * @Converter\Property(type="string")
+     */
+    private $name;
+    
+    ...
+}</pre>
+
+	<p>When populating an entity from input data, any setter defined in
+		the entity will be used. For instance:</p>
+	<pre>
+use Serquant\Converter\Mapping as Converter;
+    
+class User
+{
+    /**
+     * @Converter\Property(type="integer")
+     */
+    private $id;
+
+    /** 
+     * @Converter\Property(type="string")
      */
     private $name;
 
     /**
-     * Set user name
+     * Sets user name
      *
      * @param string $name User name
      * @return void
      */
-    public function setName($name) // Will be used by Crud#populate()
+    public function setName($name) // Will be used by Serializer#deserialize()
     {
         $this-&gt;name = $name;
     }
+    
+    ...
 }</pre>
 
-	<p>
-		For <em>x-to-many</em> associations, adding an item to the association
-		is done by convention with an
-		<code>addXXX()</code>
-		method (
-		<code>addPhonenumber()</code>
-		in the following example). The property name is plural but the
-		function name is singular (as it describes the action of adding <em>one</em>
-		item). To be able to use this method in
-		<code>Crud#populate</code>
-		, we should find the singular form of the property. But many words
-		have defective plural and some others ends in 's' even when singular
-		in meaning. In fact, there is no way to infere the right method name.
-		Thus, in such situations, write a
-		<code>setXXX()</code>
-		method that will be executed when populating the entity, and call your
-		own
-		<code>addXXX()</code>
-		method from it:
-	</p>
+	<h5>
+		<a name="identifierPrefix">Identifier prefix</a>
+	</h5>
+	<p>When data is serialized to JSON before beeing sent to the
+		client, no type information is given. For instance, in the following
+		code:</p>
 	<pre>
+{
+  "id": "1240",
+  "name": "Dupont",
+  "address": {
+    "id": "9571",
+    "postalCode": "77400",
+    "city": "Lagny-sur-Marne"
+  }
+}</pre>
+	<p>we don't know the object class having id, name and address
+		properties or the one having id, postalCode and city. Thus, the client
+		receiving this data is unable to handle it properly (ie populate the
+		dojo store in our situation).</p>
+
+	<p>If we serialize the same data with an identifier prefix, the
+		JSON becomes:</p>
+	<pre>
+{
+  "id": "/person/1240",
+  "name": "Dupont",
+  "address": {
+    "id": "/address/9571",
+    "postalCode": "77400",
+    "city": "Lagny-sur-Marne"
+  }
+}</pre>
+
+	<p>permitting the client to distinguish object classes from each
+		others.</p>
+	<p>
+		Therefore, an identifier prefix feature exists on the Serializer which
+		adds the prefix on serialization and removes it on deserialization. To
+		be set, just add an <em>@Converter\Entity</em> annotation to the
+		entity:
+	</p>
+	
+<pre>
+use Serquant\Converter\Mapping as Converter;
+ 
 /**
- * @Entity
- * @Table(name="users")
- */
+ * @Converter\Entity(prefix="/rest/user/")
+ */   
 class User
 {
-    /**
-     * @Column(name="id", type="integer")
-     * @Id
-     * @GeneratedValue(strategy="AUTO")
-     */
-    private $id;
+    ...
+}</pre>	
 
-    /** 
-     * @Column(name="name", type="string", length=20) 
-     */
-    private $name;
-
-    /**
-     * @OneToMany(
-     *     targetEntity="Phonenumber", 
-     *     mappedBy="user", 
-     *     cascade={"persist", "remove", "merge"}, 
-     *     orphanRemoval=true)
-     */
-    public $phonenumbers;
-
-    public function __construct() {
-        $this-&gt;phonenumbers = new ArrayCollection;
-    }
-
-    // ...
-    
-    /**
-     * Adds a phonenumber to the user.
-     *
-     * @param Phonenumber $phone
-     */
-    public function addPhonenumber(Phonenumber $phonenumber) {
-        $this-&gt;phonenumbers[] = $phonenumber;
-        $phone-&gt;setUser($this);
-    }
-
-    /**
-     * Set user phonenumbers.
-     *
-     * @param ArrayCollection $phonenumbers
-     */
-    public function setPhonenumbers($phonenumbers) {
-        foreach ($phonenumbers as $phonenumber) {
-            $this-&gt;addPhonenumber($phonenumber);
-        }
-    }
-}</pre>
 	<p>
 		<small> La conversion opposée est réalisée par le contrôleur,
 			via un script de vue, car c'est lui qui sait la forme attendue (JSON,
@@ -365,6 +406,149 @@ class User
 				serait-il judicieux que ce soit le contrôleur qui réalise le
 				transtypage en entrée.</em> </small>
 	</p>
+
+	<h5>
+		<a name="multivaluedProperties">Multivalue property notes</a>
+	</h5>
+
+	<p>For multivalued properties representing associations, adding a
+		value to the property may be done with the following code:</p>
+	<pre>
+class Car {
+    private $id;
+    private $brand;
+    // Accessors...
+}
+
+class Person {
+    private $id;
+    private $name;
+    private $cars;
+    // Accessors...
+}
+
+$car = new Car();
+$person-&gt;getCars()-&gt;add($car);
+</pre>
+	<p>
+		This is the simplest way to do it.<br />
+		<code>Serquant\Converter\Serializer#deserialize</code>
+		uses this
+		<code>add()</code>
+		method defined by the
+		<code>Collection</code>
+		interface.<br />It is <em>sufficient for unidirectional
+			association</em> but with bidirectional association, we also need to
+		update the other side:
+	</p>
+	<pre>
+class Car {
+    private $id;
+    private $brand;
+    private $owner; // now bidirectional
+    // Accessors...
+}
+
+class Person {
+    private $id;
+    private $name;
+    private $cars;
+    // Accessors...
+}
+
+$car = new Car();
+$person-&gt;getCars()-&gt;add($car);
+$car-&gt;setOwner($person);
+</pre>
+
+	<p>
+		As stated by <a
+			href="http://www.doctrine-project.org/docs/orm/2.0/en/reference/working-with-associations.html#association-management-methods">Doctrine
+			documentation</a>:
+	</p>
+	<blockquote>
+		<p>
+			It is generally a good idea to encapsulate proper association
+			management inside the entity classes. <br />This makes it easier to
+			use the class correctly and can encapsulate details about how the
+			association is maintained.
+		</p>
+	</blockquote>
+	<p>The code becomes;</p>
+	<pre>
+class Car {
+    private $id;
+    private $brand;
+    private $owner; // now bidirectional
+    // Accessors...
+}
+
+class Person {
+    private $id;
+    private $name;
+    private $cars;
+    // Accessors...
+    public function addCar(Car $car) {
+        $this-&gt;cars-&gt;add($car);
+        $car-&gt;setOwner($this);
+    }
+}
+
+$car = new Car();
+$person-&gt;addCar($car);
+</pre>
+
+	<p>
+		Unfortunately, Serquant can't infer the <em>addCar</em> method name
+		from the <em>$cars</em> property. The property name is plural but the
+		function name is singular (as it describes the action of adding <em>one</em>
+		item). To be able to use this method in
+		<code>Serquant\Converter\Serializer#deserialize</code>
+		, we should find the singular form of the property. But many words
+		have defective plural and some others ends in <em>s</em> even when
+		singular in meaning. <strong>An issue will be opened to
+			fulfill this requirement suggesting to add a <em>setter</em>
+			attribute to the <em>Property</em> association.</strong>
+	</p>
+
+	<h4>
+		<a name="validation">Validation</a>
+	</h4>
+
+	<ul>
+		<li>The process of validating an entity is done by the <code>Symfony\Component\Validator\Validator</code>
+			service.</li>
+		<li>Only entity properties wearing constraints metadata are
+			validated.</li>
+		<li>Constraints may be defined with annotations, YAML or XML
+			configuration files.</li>
+		<li>The supported constraints may be found <a
+			href="http://symfony.com/doc/2.0/book/validation.html#supported-constraints">
+				here</a>.</li>
+	</ul>
+
+	<pre>
+use Symfony\Component\Validator\Constraints as Assert;
+
+class User
+{
+    private $id;
+
+    /** 
+     * @Assert\MaxLength(50) 
+     */
+    private $name;
+
+    /**
+     * @Assert\Email(
+     *     message = "The email '{{ value }}' is not a valid email.",
+     *     checkMX = true
+     * )
+     */
+    private $email;
+
+    ...    
+}</pre>
 	<h2>
 		<a name="domain">Domain</a>
 	</h2>
@@ -452,11 +636,13 @@ class Customer
 	<ul>
 		<li>To retrieve the <strong>metadata driver</strong> from the
 			configuration:<br /> <code>$this-&gt;em-&gt;getConfiguration()-&gt;getMetadataDriverImpl()</code><br />
-			<em>There is no setter to do it otherwise.</em></li>
+			<em>There is no setter to do it otherwise.</em>
+		</li>
 		<li>To retrieve the <strong>database platform</strong> from the
 			database connection:<br /> <code>$this-&gt;em-&gt;getConnection()-&gt;getDatabasePlatform()</code><br />The
 			database platform is only needed to complete the ID generator
-			mapping.<br /> <em>There is no setter to do it otherwise.</em></li>
+			mapping.<br /> <em>There is no setter to do it otherwise.</em>
+		</li>
 		<li>To get the <strong>event manager</strong>:<br /> <code>$this-&gt;em-&gt;getEventManager()</code><br />The
 			event manager is used to trigger a listener if one is registered for
 			metadata loading.<br /> <em>There is no setter to do it
@@ -576,16 +762,18 @@ class Customer
 					qui renvoie à <code>UnitOfWork#doPersist($entity, $visited)</code>
 				</li>
 				<li>quand l'état est STATE_NEW, la fonction appelle <code>persistNew($class,
-						$entity)</code></li>
+						$entity)</code>
+				</li>
 				<li>la fonction invoque les événements liés au cycle de vie</li>
 				<li>la fonction génère, le cas échéant (assignation d'un
 					identifiant avant l'insertion), un identifiant et l'enregistre dans
-					les <em>entityIdentifiers</em></li>
-				<li>puis elle appelle <code>scheduleForInsert($entity)</code></li>
+					les <em>entityIdentifiers</em>
+				</li>
+				<li>puis elle appelle <code>scheduleForInsert($entity)</code>
+				</li>
 				<li>If the entity already has an identifier, it will be added
 					to the <em>identity map</em>.</li>
-			</ul>
-		</li>
+			</ul></li>
 		<li>Au moment du <code>EntityManager#flush()</code>, <code>UnitOfWork#commit()</code>
 			est appelée
 			<ul>
@@ -595,19 +783,20 @@ class Customer
 					qui réalise, grosso modo, les opérations suivantes :
 					<ul>
 						<li><code>$stmt =
-								$this->_conn->prepare($this->_getInsertSQL());</code>
-						</li>
+								$this->_conn->prepare($this->_getInsertSQL());</code></li>
 						<li><code>$insertData =
-								$this->_prepareInsertData($entity);</code></li>
+								$this->_prepareInsertData($entity);</code>
+						</li>
 						<li><code>$stmt->bindValue($paramIndex++, $value,
-								$this->_columnTypes[$column])</code></li>
-						<li><code>$stmt->execute();</code></li>
-					</ul></li>
-				<li>Les identifiants retournés après insertion sont utilisés
-					pour mettre à jour l'entité et les <em>entityIdentifiers</em>
+								$this->_columnTypes[$column])</code>
+						</li>
+						<li><code>$stmt->execute();</code>
+						</li>
+					</ul>
 				</li>
-			</ul>
-		</li>
+				<li>Les identifiants retournés après insertion sont utilisés
+					pour mettre à jour l'entité et les <em>entityIdentifiers</em></li>
+			</ul></li>
 	</ol>
 
 	<p>Côté Zend, les choses sont différentes :</p>
@@ -622,10 +811,12 @@ class Customer
 					méthode <code>Zend_Db_Table_Row_Abstract#_transformColumn()</code>
 					est surcharghée)</li>
 				<li>Puis la valeur transmise est assignée à la colonne <strong>sans
-						transtypage</strong></li>
+						transtypage</strong>
+				</li>
 				<li>Enfin, un indicateur est positionné pour signaler que la
 					valeur de la colonne a été modifiée</li>
-			</ol></li>
+			</ol>
+		</li>
 	</ol>
 
 	<h4>retrieve</h4>
@@ -677,7 +868,8 @@ class Customer
 		<li>si la clé a changé, effectue des updates en cascade sur les
 			tables dépendantes</li>
 		<li>si les données ont changé, réalise la modification en
-			appelant <code>Zend_Db_Table#update()</code></li>
+			appelant <code>Zend_Db_Table#update()</code>
+		</li>
 		<li>invoque une méthode qui est un point d'extension post-update</li>
 		<li>renvoie la clé</li>
 	</ul>
@@ -706,8 +898,7 @@ class Customer
 	<h4>principe des metadata chez Doctrine</h4>
 	<ol>
 		<li>Tout commence par l'instanciation d'une factory : <code>new
-				$metadataFactoryClassName;</code>
-		</li>
+				$metadataFactoryClassName;</code></li>
 		<li>Puis, les métadonnées sont obtenues par <code>ClassMetadataFactory#getMetadataFor(ltrim($entityName,
 				'\\'))</code><br />qui appelle <code>ClassMetadataFactory#loadMetadata($className)</code>.<br />
 			Cette dernière réalise les opérations suivantes :
@@ -735,12 +926,12 @@ class Customer
         
         return new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($reader, (array)$paths);
     }								</pre> <em><code>$path</code> est le chemin où se trouvent
-										les entités</em>
-								</li>
-							</ul></li>
-					</ol>
-				</li>
-			</ol></li>
+										les entités</em></li>
+							</ul>
+						</li>
+					</ol></li>
+			</ol>
+		</li>
 	</ol>
 
 	<h2>
@@ -760,8 +951,7 @@ $container-&gt;setDefinition('service_country', new Definition(
 &nbsp;&nbsp;&nbsp;&nbsp;new Reference('persistence_doctrine')
 &nbsp;&nbsp;)
 ));
-</pre>
-		</li>
+</pre></li>
 		<li>Write a default controller to prepare the GUI. This
 			controller must extend <code>Serquant\Controller\Action</code>. It
 			must define a protected <var>$serviceName</var> property matching the
