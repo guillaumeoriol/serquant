@@ -386,8 +386,8 @@ class User
 		be set, just add an <em>@Converter\Entity</em> annotation to the
 		entity:
 	</p>
-	
-<pre>
+
+	<pre>
 use Serquant\Converter\Mapping as Converter;
  
 /**
@@ -396,7 +396,7 @@ use Serquant\Converter\Mapping as Converter;
 class User
 {
     ...
-}</pre>	
+}</pre>
 
 	<p>
 		<small> La conversion opposée est réalisée par le contrôleur,
@@ -935,34 +935,35 @@ class Customer
 	</ol>
 
 	<h2>
-		<a name="developperGuide">Developper guide</a>
+		<a name="developperGuide">Developper's guide</a>
 	</h2>
 	<ol>
-		<li>Write the entity class.</li>
-		<li>Write a form for the new entity.</li>
-		<li>Write a service to manage the new entity. If a standard
+		<li>Write an entity class.</li>
+		<li>Write a form for the new entity.<br />To get a nice
+			presentation, this form may extend <code>Technema_Dojo_Form</code>.</li>
+		<li>Write a service to manage the new entity.<br />If a standard
 			service is sufficient, only add an entry to the <em>service
 				configuration file</em>: <pre>
 $container-&gt;setDefinition('service_country', new Definition(
 &nbsp;&nbsp;'\Serquant\Service\Crud',
 &nbsp;&nbsp;array(
 &nbsp;&nbsp;&nbsp;&nbsp;'\Domain\Entity\Country', 
-&nbsp;&nbsp;&nbsp;&nbsp;'\Domain\Form\Country', 
 &nbsp;&nbsp;&nbsp;&nbsp;new Reference('persistence_doctrine')
 &nbsp;&nbsp;)
 ));
 </pre></li>
-		<li>Write a default controller to prepare the GUI. This
-			controller must extend <code>Serquant\Controller\Action</code>. It
+		<li>Write a default controller to prepare the GUI.<br />This
+			controller must extend <code>Serquant\Controller\Action</code>.<br />It
 			must define a protected <var>$serviceName</var> property matching the
-			service name defined in the <em>service configuration file</em>. An
-			public <code>indexAction()</code> method must be implemented,
-			defining a Grid object that is assigned to a <var>$this-&gt;view-&gt;grid</var>
+			service name defined in the <em>service configuration file</em>.<br />A
+			public <code>indexAction()</code> method must be implemented to
+			render a grid along with the form written earlier. You may define a
+			Grid object that is assigned to a <var>$this-&gt;view-&gt;grid</var>
 			property.</li>
 		<li>Write a simple view script for the default controller that
-			will echo the <var>$this-&gt;grid</var> property.</li>
-		<li>Write a REST controller to manage entity data. This
-			controller must extend <code>\Serquant\Controller\Rest</code>. It
+			will echo <var>$this-&gt;grid</var>.</li>
+		<li>Write a REST controller to manage entity data.<br />This
+			controller must extend <code>Serquant\Controller\Rest</code>.<br />It
 			must define a protected <var>$serviceName</var> property matching the
 			service name previously defined in the <em>service configuration
 				file</em>.</li>
