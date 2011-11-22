@@ -283,4 +283,22 @@ class MoneyTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(2, $monies[0]->getAmount());
         $this->assertEquals(3, $monies[1]->getAmount());
     }
+
+    public function testAllocateWithRandomValues()
+    {
+        $count = rand(2, 20);
+        $ratios = array();
+        for ($i = 0; $i < $count; $i++) {
+            $ratios[] = rand(1, 100);
+        }
+        $money = Money::dollar(rand(100, 10000) / 100);
+
+        $monies = $money->allocate($ratios);
+        $message = 'Trying to allocate ' . $money->getAmount() . ' among ' . print_r($ratios, true);
+        $total = 0;
+        foreach ($monies as $element) {
+            $total += $element->getAmount();
+        }
+        $this->assertEquals($money->getAmount(), $total, $message);
+    }
 }

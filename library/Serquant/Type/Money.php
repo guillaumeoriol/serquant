@@ -298,19 +298,14 @@ class Money
         $remainder = $this->amount;
         $results = array();
         for ($i = 0; $i < $count; $i++) {
-            $results[$i] = new self($this->amount * $ratios[$i] / $total,
-                $this->currency, true);
+            // Truncate the result to avoid getting a negative remainder
+            $result = (integer)($this->amount * $ratios[$i] / $total);
+            $results[$i] = new self($result, $this->currency, true);
             $remainder -= $results[$i]->amount;
         }
 
-        if ($remainder > 0) {
-            for ($i = 0; $i < $remainder; $i++) {
-                $results[$i]->amount++;
-            }
-        } else if ($remainder < 0) {
-            for ($i = abs($remainder); $i > 0; $i--) {
-                $results[$i]->amount--;
-            }
+        for ($i = 0; $i < $remainder; $i++) {
+            $results[$i]->amount++;
         }
 
         return $results;
