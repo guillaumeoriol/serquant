@@ -193,6 +193,12 @@ class FloatConverterTest extends \PHPUnit_Framework_TestCase
         $converted = $this->converter->getAsDomainType($raw);
     }
 
+    public function testGetAsString()
+    {
+        $converted = $this->converter->getAsString(0.7);
+        $this->assertEquals("0.7", $converted);
+    }
+
     public function testGetAsStringWithNull()
     {
         $converted = $this->converter->getAsString(null);

@@ -242,6 +242,24 @@ class SerializerTest extends \PHPUnit_Framework_TestCase
         $violations = $serializer->deserialize($entity, $data);
     }
 
+    public function testDeserializeWithUninitializedMultivaluedProperty()
+    {
+        $serializer = new Serializer($this->factory);
+        $class = 'Serquant\Resource\Converter\PersonWithUninitializedCollection';
+        $entity = new $class;
+        $data = array(
+            'id' => '1',
+            'name' => 'Washington',
+            'cars' => array(
+                array('id' => '10', 'numberPlate' => 'AB-123-CD'),
+                array('id' => '11', 'numberPlate' => 'ZY-987-XW')
+            )
+        );
+
+        $this->setExpectedException('Serquant\Converter\Exception\RuntimeException');
+        $violations = $serializer->deserialize($entity, $data);
+    }
+
     public function testDeserializeWithMultivaluedProperty()
     {
         $serializer = new Serializer($this->factory);
@@ -315,6 +333,36 @@ class SerializerTest extends \PHPUnit_Framework_TestCase
     }
 
     // =========================================================================
+
+    public function testToJsonWithPublicProperties()
+    {
+        $serializer = new Serializer($this->factory);
+
+        $userClass = 'Serquant\Resource\Converter\UserWithPublicProperties';
+        $user = new $userClass;
+        $user->id = 1;
+        $user->status = null;
+        $user->username = 'Washington';
+
+        $expected = '{'
+                  .   '"id":"\/rest\/user\/1",'
+                  .   '"status":null,'
+                  .   '"username":"Washington"'
+                  . '}';
+
+        $this->assertEquals($expected, $serializer->toJson($user));
+    }
+
+    // =========================================================================
+
+    public function testToDomWithInvalidArgument()
+    {
+        $serializer = new Serializer($this->factory);
+        $entity = false;
+
+        $this->setExpectedException('Serquant\Converter\Exception\InvalidArgumentException');
+        $serializer->toXml($entity);
+    }
 
     public function testToDomWithPublicProperties()
     {

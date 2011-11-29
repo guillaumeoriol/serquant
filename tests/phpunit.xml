@@ -26,6 +26,9 @@
     <filter>
         <whitelist>
             <directory suffix=".php">../library/Serquant</directory>
+            <exclude>
+              <file>../library/Serquant/Persistence/File.php</file>
+            </exclude>
         </whitelist>
     </filter>
 </phpunit>

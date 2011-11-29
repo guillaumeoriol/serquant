@@ -56,9 +56,8 @@ class MoneyTest extends \PHPUnit_Framework_TestCase
         $currency = Currency::getInstance('EUR');
         $money = new Money(123, $currency);
 
-        $reflProp = new \ReflectionProperty($money, 'amount');
-        $reflProp->setAccessible(true);
-        $this->assertSame(12300, $reflProp->getValue($money));
+        $this->assertEquals(12300, $money->getAmount());
+        $this->assertSame($currency, $money->getCurrency());
     }
 
     public function testConstructWithFloatHavingNotApplicableFractionDigits()

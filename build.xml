@@ -1358,12 +1358,23 @@ tt|e |i |o r
         </exec>
     </target>
 
-    <target name="phpunit"
+    <target name="php-unit"
             description="run test suite with PHPUnit"
             depends="init">
         <echo>Launching PHPUnit</echo>
         <exec executable="${phpunit.executable}" failonerror="true">
             <arg line="--configuration ${tests.dir}/phpunit.xml.dist
+                       --verbose" />
+        </exec>
+    </target>
+
+    <target name="php-codecoverage"
+            description="run code coverage analysis with PHPUnit"
+            depends="init">
+        <echo>Launching PHPUnit for code coverage analysis</echo>
+        <exec executable="${phpunit.executable}" failonerror="true">
+            <arg line="--coverage-html ./build/report
+                       --configuration ${tests.dir}/phpunit.xml.dist
                        --verbose" />
         </exec>
     </target>

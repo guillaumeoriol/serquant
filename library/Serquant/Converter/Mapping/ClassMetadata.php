@@ -15,6 +15,7 @@ namespace Serquant\Converter\Mapping;
 use ReflectionClass;
 use ReflectionProperty;
 use Serquant\Converter\Exception\OutOfBoundsException;
+use Serquant\Converter\Exception\RuntimeException;
 use Serquant\Converter\Mapping\Property;
 
 /**
@@ -173,7 +174,9 @@ class ClassMetadata implements ClassMetadataInterface
     public function setIdentifier($name)
     {
         if ($this->isIdentifier($name)) {
-            throw new RuntimeException($message, $code, $previous);
+            throw new RuntimeException(
+                'Unable to set the identifier twice with property ' . $name
+            );
         }
         $this->identifier[] = $name;
     }
