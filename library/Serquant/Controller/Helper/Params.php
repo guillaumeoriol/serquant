@@ -20,7 +20,7 @@ namespace Serquant\Controller\Helper;
  * module bootstrap class):
  * <pre>
  * $helper = new \Serquant\Controller\Helper\Params();
- * Zend_Controller_Action_HelperBroker::addHelper($helper);
+ * \Zend_Controller_Action_HelperBroker::addHelper($helper);
  * </pre>
  *
  * Based on {@link http://weierophinney.net/matthew/archives/233-Responding-to-Different-Content-Types-in-RESTful-ZF-Apps.html

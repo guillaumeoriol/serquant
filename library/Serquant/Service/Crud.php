@@ -12,14 +12,14 @@
  */
 namespace Serquant\Service;
 
-use Serquant\Entity\Serializer,
-    Serquant\Persistence\Persistence,
-    Serquant\Service\Service,
-    Serquant\Service\Exception\InvalidArgumentException,
-    Serquant\Service\Exception\RuntimeException,
-    Serquant\Service\Result,
-    Symfony\Component\Validator\ConstraintViolation,
-    Symfony\Component\Validator\ConstraintViolationList;
+use Serquant\Entity\Serializer;
+use Serquant\Persistence\Persistence;
+use Serquant\Service\ServiceInterface;
+use Serquant\Service\Exception\InvalidArgumentException;
+use Serquant\Service\Exception\RuntimeException;
+use Serquant\Service\Result;
+use Symfony\Component\Validator\ConstraintViolation;
+use Symfony\Component\Validator\ConstraintViolationList;
 
 /**
  * Basic service layer implementing CRUD functions for persistent entities.
@@ -36,7 +36,7 @@ use Serquant\Entity\Serializer,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class Crud implements Service
+class Crud implements ServiceInterface
 {
     /**
      * Entity class name that is managed by this service layer.

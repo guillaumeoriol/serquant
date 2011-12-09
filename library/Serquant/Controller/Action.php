@@ -12,8 +12,8 @@
  */
 namespace Serquant\Controller;
 
-use Serquant\Controller\Exception\RuntimeException,
-    Serquant\Service\Service;
+use Serquant\Controller\Exception\RuntimeException;
+use Serquant\Service\ServiceInterface;
 
 /**
  * Regular Zend_Controller_Action controller enclosing a service layer.
@@ -28,7 +28,7 @@ class Action extends \Zend_Controller_Action
 {
     /**
      * Service layer
-     * @var \Serquant\Service\Service
+     * @var ServiceInterface
      */
     private $service;
 
@@ -42,19 +42,25 @@ class Action extends \Zend_Controller_Action
     /**
      * Get service layer.
      *
-     * @return \Serquant\Service\Service
+     * @return ServiceInterface
      */
     protected function getService()
     {
         if ($this->service === null) {
             $front = \Zend_Controller_Front::getInstance();
             $container = $front->getParam('bootstrap')->getContainer();
-            $this->service = $container->{$this->serviceName};
-            if (!($this->service instanceof Service)) {
+            try {
+                $this->service = $container->{$this->serviceName};
+                if (!($this->service instanceof ServiceInterface)) {
+                    throw new RuntimeException(
+                        "The provided service '{$this->serviceName}' must " .
+                        'implement the Serquant\Service\ServiceInterface, ' .
+                        'but ' . get_class($this->service) . ' does not.'
+                    );
+                }
+            } catch (\InvalidArgumentException $e) {
                 throw new RuntimeException(
-                    "The provided service '{$this->serviceName}' must " .
-                    'implement the Serquant\Service\Service interface ' .
-                    '(but ' . get_class($this->service) . ' does not).'
+                    "The service layer '{$this->serviceName}' does not exist."
                 );
             }
         }

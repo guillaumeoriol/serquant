@@ -190,6 +190,7 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
 
         $reader = AnnotationReaderFactory::get($config);
         $this->assertInstanceOf('Doctrine\Common\Annotations\CachedReader', $reader);
+        $this->assertAttributeInstanceOf('Doctrine\Common\Cache\ArrayCache', 'cache', $reader);
     }
 
     public function testGetWithArrayCacheDebug()
@@ -203,5 +204,25 @@ class AnnotationReaderFactoryTest extends \PHPUnit_Framework_TestCase
         $reader = AnnotationReaderFactory::get($config);
         $this->assertInstanceOf('Doctrine\Common\Annotations\CachedReader', $reader);
         $this->assertAttributeEquals(true, 'debug', $reader);
+    }
+
+    public function testGetWithMemcacheCache()
+    {
+        AnnotationRegistry::reset();
+        $config = array('cache' => 'memcache');
+
+        $reader = AnnotationReaderFactory::get($config);
+        $this->assertInstanceOf('Doctrine\Common\Annotations\CachedReader', $reader);
+        $this->assertAttributeInstanceOf('Doctrine\Common\Cache\MemcacheCache', 'cache', $reader);
+    }
+
+    public function testGetWithXcacheCache()
+    {
+        AnnotationRegistry::reset();
+        $config = array('cache' => 'xcache');
+
+        $reader = AnnotationReaderFactory::get($config);
+        $this->assertInstanceOf('Doctrine\Common\Annotations\CachedReader', $reader);
+        $this->assertAttributeInstanceOf('Doctrine\Common\Cache\XcacheCache', 'cache', $reader);
     }
 }

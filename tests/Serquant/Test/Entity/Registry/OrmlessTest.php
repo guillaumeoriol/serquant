@@ -10,7 +10,7 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Test\Persistence\Zend;
+namespace Serquant\Test\Entity\Registry;
 
 use Serquant\Entity\Registry\Ormless;
 
@@ -137,6 +137,34 @@ class OrmlessTest extends \Serquant\Resource\Persistence\ZendTestCase
         $registry = new Ormless($this->em->getMetadataFactory());
         $registry->put($entity1);
         $this->assertFalse($registry->put($entity2));
+    }
+
+    public function testPutEntityImplementingChangeTrackingPolicy()
+    {
+        $entity = new \Serquant\Resource\Persistence\Zend\UserWithNotifyPropertyChanged();
+        $entity->id = 1;
+        $entity->status = 'deprecated';
+        $entity->username = 'gw';
+        $entity->name = 'Washington';
+
+        $this->assertInstanceOf('Doctrine\Common\NotifyPropertyChanged', $entity);
+
+        $registry = new Ormless($this->em->getMetadataFactory());
+        $registry->put($entity);
+
+        $property = new \ReflectionProperty($entity, 'listeners');
+        $property->setAccessible(true);
+        $listeners = $property->getValue($entity);
+        $this->assertContains($registry, $listeners, print_r($listeners, true));
+    }
+
+    public function testPropertyChanged()
+    {
+        $entity = new \Serquant\Resource\Persistence\Zend\UserWithNotifyPropertyChanged();
+
+        $registry = new Ormless($this->em->getMetadataFactory());
+        $this->setExpectedException('Serquant\Entity\Exception\NotImplementedException');
+        $registry->propertyChanged($entity, 'name', 'old', 'new');
     }
 
     // -------------------------------------------------------------------------
@@ -334,6 +362,24 @@ class OrmlessTest extends \Serquant\Resource\Persistence\ZendTestCase
         $registry->put($entity2);
         $this->assertTrue($entity1 === $registry->tryGetByRow($className1, array('id' => 1)));
         $this->assertTrue($entity2 === $registry->tryGetByRow($className2, array('id' => 2)));
+    }
+
+    // -------------------------------------------------------------------------
+
+    public function testGetEntityIdentifier()
+    {
+        $className = 'Serquant\Resource\Persistence\Zend\User';
+        $entity = new $className;
+        $entity->id = 1;
+        $entity->status = 'deprecated';
+        $entity->username = 'gw';
+        $entity->name = 'Washington';
+
+        $registry = new Ormless($this->em->getMetadataFactory());
+        $registry->put($entity);
+        $id = $registry->getEntityIdentifier($entity);
+        $this->assertInternalType('array', $id);
+        $this->assertSame($entity, $registry->tryGetById($className, $id));
     }
 
     // -------------------------------------------------------------------------

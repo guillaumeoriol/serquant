@@ -918,7 +918,7 @@ class Customer
     public function newDefaultAnnotationDriver($paths = array())
     {
         $reader = new \Doctrine\Common\Annotations\AnnotationReader();
-        $reader->setDefaultAnnotationNamespace('Doctrine\ORM\Mapping\\');
+        $reader-&gt;setDefaultAnnotationNamespace('Doctrine\ORM\Mapping\\');
         
         return new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($reader, (array)$paths);
     }								</pre> <em><code>$path</code> est le chemin où se trouvent

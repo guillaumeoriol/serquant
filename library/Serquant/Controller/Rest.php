@@ -14,7 +14,7 @@ namespace Serquant\Controller;
 
 use Serquant\Controller\Exception\RuntimeException;
 use Serquant\Converter\SerializerInterface;
-use Serquant\Service\Service;
+use Serquant\Service\ServiceInterface;
 
 /**
  * Generic RESTful controller.
@@ -49,7 +49,7 @@ class Rest extends \Zend_Rest_Controller
 {
     /**
      * Service layer
-     * @var \Serquant\Service\Service
+     * @var ServiceInterface
      */
     private $service;
 
@@ -69,9 +69,9 @@ class Rest extends \Zend_Rest_Controller
     /**
      * Gets the service layer object.
      *
-     * @return Service
+     * @return ServiceInterface
      * @throws RuntimeException A RuntimeException is thrown if the service
-     * is missing or if it does not implement the Service interface.
+     * is missing or if it does not implement the ServiceInterface.
      */
     protected function getService()
     {
@@ -80,10 +80,10 @@ class Rest extends \Zend_Rest_Controller
             $container = $front->getParam('bootstrap')->getContainer();
             try {
                 $this->service = $container->{$this->serviceName};
-                if (!($this->service instanceof Service)) {
+                if (!($this->service instanceof ServiceInterface)) {
                     throw new RuntimeException(
                         "The provided service '{$this->serviceName}' must " .
-                        'implement the Serquant\Service\Service interface, ' .
+                        'implement the Serquant\Service\ServiceInterface, ' .
                         'but ' . get_class($this->service) . ' does not.'
                     );
                 }
@@ -91,7 +91,6 @@ class Rest extends \Zend_Rest_Controller
                 throw new RuntimeException(
                     "The service layer '{$this->serviceName}' does not exist."
                 );
-
             }
         }
         return $this->service;
@@ -158,6 +157,10 @@ class Rest extends \Zend_Rest_Controller
      * domain service layer.
      *
      * @return void The view script shall return HTTP 200 on success.
+     * This action defines the following properties of the view object:
+     * response => Zend_Controller_Request_Abstract,
+     * result => Serquant\Service\Result,
+     * serializer => Serquant\Converter\Serializer.
      */
     public function indexAction()
     {
@@ -180,6 +183,10 @@ class Rest extends \Zend_Rest_Controller
      * identified by the <var>id</var> value.
      *
      * @return void The view script shall return HTTP 200 on success.
+     * This action defines the following properties of the view object:
+     * response => Zend_Controller_Request_Abstract,
+     * result => Serquant\Service\Result,
+     * serializer => Serquant\Converter\Serializer.
      */
     public function getAction()
     {
@@ -209,6 +216,10 @@ class Rest extends \Zend_Rest_Controller
      * header (see section 14.30)."
      *
      * @return void The view script shall return HTTP 201 on success.
+     * This action defines the following properties of the view object:
+     * response => Zend_Controller_Request_Abstract,
+     * result => Serquant\Service\Result,
+     * serializer => Serquant\Converter\Serializer.
      */
     public function postAction()
     {
@@ -239,6 +250,10 @@ class Rest extends \Zend_Rest_Controller
      *
      * @return void The view script shall return HTTP 200 or 204 on success,
      * wheter the updated entity is returned or not.
+     * This action defines the following properties of the view object:
+     * response => Zend_Controller_Request_Abstract,
+     * result => Serquant\Service\Result,
+     * serializer => Serquant\Converter\Serializer.
      */
     public function putAction()
     {
@@ -274,6 +289,10 @@ class Rest extends \Zend_Rest_Controller
      *
      * @return void The view script shall return HTTP 200 or 204 on success,
      * whether the deleted entity is returned or not.
+     * This action defines the following properties of the view object:
+     * response => Zend_Controller_Request_Abstract,
+     * result => Serquant\Service\Result,
+     * serializer => Serquant\Converter\Serializer.
      */
     public function deleteAction()
     {
@@ -284,6 +303,7 @@ class Rest extends \Zend_Rest_Controller
 
         $this->view->response = $this->getResponse();
         $this->view->result = $result;
+        $this->view->serializer = $this->getSerializer();
     }
 
     /**
@@ -298,6 +318,10 @@ class Rest extends \Zend_Rest_Controller
      * that was designed for a slightly different purpose.
      *
      * @return void The view script shall return HTTP 200 on success.
+     * This action defines the following properties of the view object:
+     * response => Zend_Controller_Request_Abstract,
+     * result => Serquant\Service\Result,
+     * serializer => Serquant\Converter\Serializer.
      */
     public function newAction()
     {

@@ -12,11 +12,14 @@
  */
 namespace Serquant\Entity\Registry;
 
-use Doctrine\DBAL\Platforms\AbstractPlatform,
-    Doctrine\DBAL\Types\Type,
-    Doctrine\ORM\Mapping\ClassMetadataFactory,
-    Serquant\Doctrine\Exception\InvalidArgumentException,
-    Serquant\Entity\Registry\Registrable;
+use Doctrine\Common\NotifyPropertyChanged;
+use Doctrine\Common\PropertyChangedListener;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\Mapping\ClassMetadataFactory;
+use Serquant\Doctrine\Exception\InvalidArgumentException;
+use Serquant\Entity\Exception\NotImplementedException;
+use Serquant\Entity\Registry\Registrable;
 
 /**
  * Registry of all loaded entities for non-ORM persistence layer.
@@ -40,7 +43,7 @@ use Doctrine\DBAL\Platforms\AbstractPlatform,
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class Ormless implements Registrable
+class Ormless implements Registrable, PropertyChangedListener
 {
     /**
      * Factory used to retrieve metadata of entity classes.
@@ -291,5 +294,20 @@ class Ormless implements Registrable
         unset($this->originalEntityData[$oid]);
         unset($this->hashToIdMap[$oid]);
         return true;
+    }
+
+    /**
+     * Notifies this UnitOfWork of a property change in an entity.
+     *
+     * @param object $entity The entity that owns the property.
+     * @param string $propertyName The name of the property that changed.
+     * @param mixed $oldValue The old value of the property.
+     * @param mixed $newValue The new value of the property.
+     * @return void
+     * @todo Add default implementation
+     */
+    public function propertyChanged($entity, $propertyName, $oldValue, $newValue)
+    {
+        throw new NotImplementedException('This method is not yet implemented');
     }
 }

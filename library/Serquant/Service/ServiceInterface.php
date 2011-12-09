@@ -29,7 +29,7 @@ namespace Serquant\Service;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-interface Service
+interface ServiceInterface
 {
     /**
      * Retrieve a collection of entities matching the specified query

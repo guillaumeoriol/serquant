@@ -22,8 +22,8 @@ class User
 {
     /**
      * @Converter\Property(type="integer")
-     * @Id @Column(type="integer")
-     * @GeneratedValue
+     * @Id @GeneratedValue(strategy="NONE")
+     * @Column(type="integer")
      */
     public $id;
 

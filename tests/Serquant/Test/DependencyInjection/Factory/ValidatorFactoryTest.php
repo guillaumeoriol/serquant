@@ -90,4 +90,29 @@ class ValidatorFactoryTest extends \PHPUnit_Framework_TestCase
         $validator = ValidatorFactory::get($config);
         $this->assertInstanceOf('Symfony\Component\Validator\ValidatorInterface', $validator);
     }
+
+    public function testGetWithStaticMethodLoader()
+    {
+        $config = array('staticMethod' => 'loadValidatorMetadata');
+        $validator = ValidatorFactory::get($config);
+        $this->assertInstanceOf('Symfony\Component\Validator\ValidatorInterface', $validator);
+    }
+/*
+    public function testSetClassMetadataFactory()
+    {
+        $config = array('mappingFiles' => array(TEST_PATH . '/Serquant/Resource/config/validation.yml'));
+        $validator = ValidatorFactory::get($config);
+
+        $property = new \ReflectionProperty('Serquant\DependencyInjection\Factory\ValidatorFactory', 'defaultContext');
+        $property->setAccessible(true);
+        $originalContext = $property->getValue($validator);
+
+        $reader = \Serquant\DependencyInjection\Factory\AnnotationReaderFactory::get(array());
+        $loader = new \Symfony\Component\Validator\Mapping\Loader\AnnotationLoader($reader);
+        $factory = new \Symfony\Component\Validator\Mapping\ClassMetadataFactory($loader);
+        $validator->setClassMetadataFactory($factory);
+
+        $this->assertSame($originalContext, $property->getValue($validator));
+    }
+*/
 }

@@ -13,13 +13,11 @@
 namespace Serquant\DependencyInjection\Factory;
 
 use Symfony\Component\Validator\ConstraintValidatorFactory;
-use Symfony\Component\Validator\ConstraintValidatorFactoryInterface;
 use Symfony\Component\Validator\ValidatorContext;
 use Symfony\Component\Validator\ValidatorContextInterface;
 use Symfony\Component\Validator\ValidatorInterface;
 use Symfony\Component\Validator\Exception\MappingException;
 use Symfony\Component\Validator\Mapping\ClassMetadataFactory;
-use Symfony\Component\Validator\Mapping\ClassMetadataFactoryInterface;
 use Symfony\Component\Validator\Mapping\Loader\AnnotationLoader;
 use Symfony\Component\Validator\Mapping\Loader\LoaderChain;
 use Symfony\Component\Validator\Mapping\Loader\StaticMethodLoader;
@@ -37,14 +35,8 @@ use Serquant\DependencyInjection\Factory\AnnotationReaderFactory;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class ValidatorFactory implements ValidatorContextInterface
+class ValidatorFactory
 {
-    /**
-     * Holds the context with the default configuration
-     * @var ValidatorContextInterface
-     */
-    protected $defaultContext;
-
     /**
      * Factory method to be called by the service container in order to get
      * a validator instance.
@@ -146,41 +138,9 @@ class ValidatorFactory implements ValidatorContextInterface
     }
 
     /**
-     * Overrides the class metadata factory of the default context and returns
-     * the new context
-     *
-     * @param ClassMetadataFactoryInterface $metadataFactory Metadata factory
-     * instance
-     * @return ValidatorContextInterface The preconfigured validator context
-     */
-    public function setClassMetadataFactory(
-        ClassMetadataFactoryInterface $metadataFactory
-    ) {
-        $context = clone $this->defaultContext;
-
-        return $context->setClassMetadataFactory($metadataFactory);
-    }
-
-    /**
-     * Overrides the constraint validator factory of the default context and
-     * returns the new context
-     *
-     * @param ConstraintValidatorFactoryInterface $validatorFactory Validator
-     * factory instance
-     * @return ValidatorContextInterface The preconfigured validator context
-     */
-    public function setConstraintValidatorFactory(
-        ConstraintValidatorFactoryInterface $validatorFactory
-    ) {
-        $context = clone $this->defaultContext;
-
-        return $context->setConstraintValidatorFactory($validatorFactory);
-    }
-
-    /**
      * Creates a new validator with the settings stored in the default context
      *
-     * @return ValidatorInterface  The new validator
+     * @return ValidatorInterface The new validator
      */
     public function getValidator()
     {
