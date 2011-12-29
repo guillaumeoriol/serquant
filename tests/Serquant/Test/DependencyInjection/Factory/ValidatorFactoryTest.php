@@ -15,6 +15,15 @@ namespace Serquant\Test\DependencyInjection\Factory;
 use Serquant\DependencyInjection\Factory\ValidatorFactory;
 use Symfony\Component\Validator\Validator;
 
+/**
+ * Test class for the ValidatorFactory.
+ *
+ * @category Serquant
+ * @package  Test
+ * @author   Guillaume Oriol <goriol@serquant.com>
+ * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
+ * @link     http://www.serquant.com/
+ */
 class ValidatorFactoryTest extends \PHPUnit_Framework_TestCase
 {
     public function testGetWithEmptyMappingFiles()

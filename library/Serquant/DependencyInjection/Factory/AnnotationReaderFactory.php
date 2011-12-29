@@ -5,7 +5,7 @@
  * PHP version 5.3
  *
  * @category Serquant
- * @package  Factory
+ * @package  DependencyInjection
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
@@ -30,7 +30,7 @@ use Serquant\DependencyInjection\Exception\InvalidArgumentException;
  * time a file is parsed.
  *
  * @category Serquant
- * @package  Factory
+ * @package  DependencyInjection
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
