@@ -214,6 +214,23 @@ class ClassMetadata implements ClassMetadataInterface
     }
 
     /**
+     * Merges the identifier prefix of the given metadata into this object
+     * along with the list of properties that make up the identifier.
+     *
+     * @param ClassMetadata $source The source metadata
+     * @return void
+     */
+    public function mergeIdentifierPrefix(ClassMetadata $source)
+    {
+        if ($source->identifierPrefix) {
+            $this->identifierPrefix = $source->identifierPrefix;
+        }
+        if (!empty($source->identifier)) {
+            $this->identifier = $source->identifier;
+        }
+    }
+
+    /**
      * Adds a conversion property to the class metadata
      *
      * @param string $name Property name

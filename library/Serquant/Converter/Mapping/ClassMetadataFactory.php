@@ -112,7 +112,9 @@ class ClassMetadataFactory implements ClassMetadataFactoryInterface
 
         // Include properties from the parent class
         if ($parent = $metadata->getReflectionClass()->getParentClass()) {
-            $metadata->mergeProperties($this->getClassMetadata($parent->getName()));
+            $parentMetadata = $this->getClassMetadata($parent->getName());
+            $metadata->mergeProperties($parentMetadata);
+            $metadata->mergeIdentifierPrefix($parentMetadata);
         }
 
         $this->loader->loadClassMetadata($metadata);
