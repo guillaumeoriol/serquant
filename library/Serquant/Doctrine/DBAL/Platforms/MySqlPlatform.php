@@ -37,11 +37,11 @@ class MySqlPlatform extends \Doctrine\DBAL\Platforms\MySqlPlatform
     {
         if (!empty($field['length']) && is_numeric($field['length'])) {
             $length = $field['length'];
-            if ($length <= 255) {
+            if ($length < 256) {
                 return 'TINYBLOB';
-            } else if ($length <= 65532) {
+            } else if ($length < 65536) {
                 return 'BLOB';
-            } else if ($length <= 16777215) {
+            } else if ($length < 16777216) {
                 return 'MEDIUMBLOB';
             }
         }
