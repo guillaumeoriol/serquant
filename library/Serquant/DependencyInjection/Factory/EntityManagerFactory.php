@@ -384,7 +384,9 @@ class EntityManagerFactory
             }
 
             foreach ($customTypes as $name => $className) {
-                Type::addType($name, $className);
+                if (!Type::hasType($name)) {
+                    Type::addType($name, $className);
+                }
             }
         }
     }
