@@ -399,22 +399,22 @@ class Crud implements ServiceInterface
      */
     protected function getSanitizedException(\Exception $exception)
     {
-        $id = '';
+        $id = ':';
         $message = $exception->getMessage() . PHP_EOL
                  . $exception->getTraceAsString();
 
         $front = \Zend_Controller_Front::getInstance();
         if ($bootstrap = $front->getParam('bootstrap')) {
             if ($container = $bootstrap->getContainer()) {
-                if ($log = $container->log) {
-                    $id = '[errorId:' . uniqid('shield-', true) . ']';
-                    $log->err($id . PHP_EOL . $message);
-                    $message = '(details may be found in the application log)';
+                if (isset($container->log)) {
+                    $id = ' [errorId:' . uniqid('shield-', true) . ']:';
+                    $container->log->err('Details of' . $id . PHP_EOL . $message);
+                    $message = 'details may be found in the application log under given errorId';
                 }
             }
         }
 
-        return 'An error has occurred while running service '
-            . $id . PHP_EOL . $message . ":\n";
+        return 'An error has occurred while running service'
+            . $id . PHP_EOL . $message . PHP_EOL;
     }
 }
