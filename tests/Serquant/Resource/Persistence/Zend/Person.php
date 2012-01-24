@@ -13,7 +13,7 @@
 namespace Serquant\Resource\Persistence\Zend;
 
 /**
- * @Entity
+ * @Entity(repositoryClass="\Serquant\Resource\Persistence\Zend\Db\Table\Person")
  * @InheritanceType("SINGLE_TABLE")
  * @DiscriminatorColumn(name="person_type", type="string")
  * @DiscriminatorMap({"person" = "Person", "employee" = "Employee"})

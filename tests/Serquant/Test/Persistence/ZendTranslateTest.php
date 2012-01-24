@@ -17,17 +17,44 @@ use Serquant\Persistence\Zend\Db\Table;
 class ZendTranslateTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
-
     private $em;
-
     private $persister;
+
+    private function setupDatabase()
+    {
+        $dataSet = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
+            dirname(__FILE__) . '/fixture/users.yaml'
+        );
+
+        $this->db = $this->getTestAdapter();
+        $connection = new \Zend_Test_PHPUnit_Db_Connection($this->db, null);
+        $tester = new \Zend_Test_PHPUnit_Db_SimpleTester($connection);
+        $tester->setupDatabase($dataSet);
+    }
 
     protected function setUp()
     {
-        $this->db = $this->getTestAdapter();
-        \Zend_Db_Table::setDefaultAdapter($this->db);
+        $this->setupDatabase();
         $this->em = $this->getTestEntityManager();
         $this->persister = new \Serquant\Persistence\Zend($this->em);
+    }
+
+    public function testTranslateWithEmptyExpressions()
+    {
+        $method = new \ReflectionMethod($this->persister, 'translate');
+        $method->setAccessible(true);
+
+        $entityName = 'Serquant\Resource\Persistence\Zend\User';
+        $expressions = array();
+
+        list ($query, $pageNumber, $pageSize) = $method->invoke($this->persister, $entityName, $expressions);
+        $this->assertInstanceOf('Zend_Db_Select', $query);
+        $this->assertEquals(
+        	"SELECT `users`.* FROM `users`",
+            $query->__toString()
+        );
+        $this->assertNull($pageNumber);
+        $this->assertNull($pageSize);
     }
 
     public function testTranslateWithUnimplementedOperator()
@@ -103,5 +130,67 @@ class ZendTranslateTest extends \Serquant\Resource\Persistence\ZendTestCase
 
         list ($query) = $method->invoke($this->persister, $entityName, $expressions);
         $this->assertEquals("SELECT `users`.* FROM `users` ORDER BY `name` DESC", (string)$query);
+    }
+
+    public function testTranslateWithLimitOperator()
+    {
+        $entityName = 'Serquant\Resource\Persistence\Zend\User';
+        $expressions = array('limit(30,10)');
+
+        $method = new \ReflectionMethod($this->persister, 'translate');
+        $method->setAccessible(true);
+
+        list ($query, $pageNumber, $pageSize) = $method->invoke($this->persister, $entityName, $expressions);
+        $this->assertInstanceOf('Zend_Db_Select', $query);
+        $this->assertEquals(4, $pageNumber);
+        $this->assertEquals(10, $pageSize);
+    }
+
+    public function testTranslateWithAlternateComparisonSyntax()
+    {
+        $entityName = 'Serquant\Resource\Persistence\Zend\User';
+        $expressions = array('username' => 'fred', 'status' => 'deprecated');
+
+        $method = new \ReflectionMethod($this->persister, 'translate');
+        $method->setAccessible(true);
+
+        list ($query) = $method->invoke($this->persister, $entityName, $expressions);
+        $this->assertInstanceOf('Zend_Db_Select', $query);
+        $this->assertEquals(
+        	"SELECT `users`.* FROM `users` WHERE (username = 'fred') AND (status = 'deprecated')",
+            $query->__toString()
+        );
+    }
+
+    public function testTranslateWithAlternateComparisonSyntaxIncludingWildcard()
+    {
+        $entityName = 'Serquant\Resource\Persistence\Zend\User';
+        $expressions = array('username' => 'f*', 'status' => 'deprecated');
+
+        $method = new \ReflectionMethod($this->persister, 'translate');
+        $method->setAccessible(true);
+
+        list ($query) = $method->invoke($this->persister, $entityName, $expressions);
+        $this->assertInstanceOf('Zend_Db_Select', $query);
+        $this->assertEquals(
+        	"SELECT `users`.* FROM `users` WHERE (username like 'f%') AND (status = 'deprecated')",
+            $query->__toString()
+        );
+    }
+
+    public function testTranslateWithAlternateComparisonSyntaxOnAssociation()
+    {
+        $entityName = 'Serquant\Resource\Persistence\Zend\User';
+        $expressions = array('username' => 'a');
+
+        $method = new \ReflectionMethod($this->persister, 'translate');
+        $method->setAccessible(true);
+
+        list ($query) = $method->invoke($this->persister, $entityName, $expressions);
+        $this->assertInstanceOf('Zend_Db_Select', $query);
+        $this->assertEquals(
+        	"SELECT `users`.* FROM `users` WHERE (username = 'a')",
+            $query->__toString()
+        );
     }
 }

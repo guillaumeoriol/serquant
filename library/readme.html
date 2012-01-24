@@ -52,7 +52,8 @@ li pre {
 }
 
 blockquote {
-	width: 46em; margin-left : 2em;
+	width: 46em;
+	margin-left: 2em;
 	padding: 1px 0 1px 1em;
 	border-left: 4px solid #0080C0;
 	background-color: #F0F0F0;
@@ -773,7 +774,7 @@ class Customer
 		<code>DateTime</code>
 		class in the Domain Model and must be converted to a string with a
 		specific representation (
-		<code>Y-m-d H:i:s</code>
+		<code>'Y-m-d H:i:s'</code>
 		) to be stored in a MySQL database.
 	</p>
 	<p>
@@ -781,14 +782,43 @@ class Customer
 			href="http://martinfowler.com/eaaCatalog/metadataMapping.html">Metadata
 			Mapping</a>. However, in his PoEAA book, Fowler explains that <q>The
 			simplest, and often best, way to do this is with explicit code, which
-			requires a mapper class for each domain object.</q>. For this reason, it
+			requires a mapper class for each domain object</q>. For this reason, it
 		is always possible to use explicit code by implementing the
 		<code>Persistence</code>
-		interface of the Persistence package for a particular entity, and pass
-		that specific persister to the Crud constructor:<br />
-		<code>$service = new Crud('Customer', 'CustomerForm',
-			$persister);</code>
+		interface of the
+		<code>Persistence</code>
+		package for a particular entity, and pass that specific persister to
+		the
+		<code>Crud</code>
+		constructor:
 	</p>
+	<pre>
+class CustomPersister implements Persistence 
+{
+    // ...
+}
+
+$customPersister = new CustomPersister();
+$service = new Crud('User', $customPersister);
+</pre>
+	<p>
+		Two kinds of persisters may be used in the application. The first one
+		is
+		<code>Serquant\Persistence\Doctrine</code>
+		(a thin adapter around Doctrine). Doctrine is the most advanced ORM in
+		PHP (based on Hibernate). The second one is
+		<code>Serquant\Persistence\Zend</code> (a pseudo-ORM using Zend_Db_Table
+		for data access).
+	</p>
+	
+    <h3>
+        <a name="persistenceZend">Zend persister</a>
+    </h3>
+    
+    <p>This persister has the following <em>limitations</em>:</p>
+    <ul>
+        <li>it doesn't manage one-to-one bidirectional associations</li>
+    </ul>
 	<p>
 		To avoid reinventing the wheel, we use Doctrine implementation of the
 		Metadata Mapping. When the annotations are used, one can find this

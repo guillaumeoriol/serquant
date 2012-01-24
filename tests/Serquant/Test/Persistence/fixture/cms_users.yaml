@@ -1,0 +1,31 @@
+cms_users:
+  -
+    id: 1
+    status: "available"
+    username: "a"
+    name: "Alice"
+    account_id: 5
+  -
+    id: 2
+    status: "available"
+    username: "b"
+    name: "Bill"
+    account_id: 2
+  -
+    id: 3
+    status: "offline"
+    username: "c"
+    name: "Cameron"
+    account_id: 3
+  -
+    id: 4
+    status: "invisible"
+    username: "d"
+    name: "David"
+    account_id: 4
+  -
+    id: 5
+    status: "gone"
+    username: "e"
+    name: "Emma"
+    account_id:

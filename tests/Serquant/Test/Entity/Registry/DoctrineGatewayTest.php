@@ -13,6 +13,7 @@
 namespace Serquant\Test\Entity\Registry;
 
 use Serquant\Entity\Registry\DoctrineGateway;
+use Serquant\Resource\Persistence\Doctrine\Entity\EntityWithApplicationAssignedId;
 
 /**
  * DoctrineGateway test class
@@ -27,8 +28,6 @@ class DoctrineGatewayTest extends \Doctrine\Tests\OrmTestCase
 {
     private $em;
 
-    private $uow;
-
     protected function setUp()
     {
         $this->em = $this->_getTestEntityManager();
@@ -36,18 +35,17 @@ class DoctrineGatewayTest extends \Doctrine\Tests\OrmTestCase
 
     public function testGetEntityIdentifier()
     {
-        $entityName = '\Serquant\Resource\Persistence\Doctrine\Entity\User';
-        $entity = new $entityName;
+        $entity = new EntityWithApplicationAssignedId;
         $entity->id = 1;
-        $entity->status = 'deprecated';
-        $entity->username = 'gw';
-        $entity->name = 'Washington';
+        $entity->name = 'whatever';
         $this->em->persist($entity);
+        // Do not flush the persist operation as we only want to store the
+        // entity in the registry of loaded entities.
 
         $gateway = new DoctrineGateway($this->em->getUnitOfWork());
 
         $id = $gateway->getEntityIdentifier($entity);
         $this->assertInternalType('array', $id);
-        $this->assertContains(1, $id);
+        $this->assertEquals($entity->id, current($id));
     }
 }

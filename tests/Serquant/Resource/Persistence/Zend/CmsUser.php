@@ -1,12 +1,12 @@
 <?php
-
-namespace Serquant\Resource\Persistence\Doctrine\Entity;
+namespace Serquant\Resource\Persistence\Zend;
 
 use Doctrine\Common\Collections\ArrayCollection;
 
 /**
- * @Entity
- * @Table(name="cms_users")
+ * CmsUser
+ *
+ * @Entity(repositoryClass="Serquant\Resource\Persistence\Zend\Db\Table\CmsUser")
  */
 class CmsUser
 {
@@ -85,12 +85,6 @@ class CmsUser
 
     public function getPhonenumbers() {
         return $this->phonenumbers;
-    }
-
-    public function setPhonenumbers($phonenumbers) {
-        foreach ($phonenumbers as $phonenumber) {
-            $this->addPhonenumber($phonenumber);
-        }
     }
 
     public function removePhonenumber($index) {

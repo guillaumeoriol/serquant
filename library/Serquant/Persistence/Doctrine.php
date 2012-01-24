@@ -12,14 +12,14 @@
  */
 namespace Serquant\Persistence;
 
-use Doctrine\ORM\EntityManager,
-    Doctrine\ORM\UnitOfWork,
-    DoctrineExtensions\Paginate\PaginationAdapter,
-    Serquant\Entity\Registry\DoctrineGateway,
-    Serquant\Persistence\Persistence,
-    Serquant\Persistence\Exception\NoResultException,
-    Serquant\Persistence\Exception\NonUniqueResultException,
-    Serquant\Persistence\Exception\RuntimeException;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\UnitOfWork;
+use DoctrineExtensions\Paginate\PaginationAdapter;
+use Serquant\Entity\Registry\DoctrineGateway;
+use Serquant\Persistence\Persistence;
+use Serquant\Persistence\Exception\NoResultException;
+use Serquant\Persistence\Exception\NonUniqueResultException;
+use Serquant\Persistence\Exception\RuntimeException;
 
 /**
  * Persistence layer using Doctrine ORM to persist entities.
@@ -101,7 +101,7 @@ class Doctrine implements Persistence
      *
      * @param string $entityName Class name of the entity
      * @param array $expressions RQL query
-     * @return \Doctrine\ORM\Query Output Doctrine query
+     * @return array consisting of Doctrine\ORM\Query, page number and page size
      * @throws RuntimeException If non-implemented operator is used, if the sort
      * order is not specified or if a parenthesis-enclosed group syntax is used.
      * @todo This function could be built on a ABNF parser that would use
@@ -113,7 +113,8 @@ class Doctrine implements Persistence
     {
         $pageNumber = $pageSize = null;
         if (count($expressions) === 0) {
-            return array("select e from $entityName e", $pageNumber, $pageSize);
+            $query = $this->entityManager->createQuery("select e from $entityName e");
+            return array($query, $pageNumber, $pageSize);
         }
 
         $select = array();
@@ -214,8 +215,7 @@ class Doctrine implements Persistence
     {
         list ($query) = $this->translate($entityName, $expressions);
 
-        $entities = $query->getResult();
-        return $entities;
+        return $query->getResult();
     }
 
     /**

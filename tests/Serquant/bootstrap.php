@@ -15,6 +15,7 @@ $loader->registerNamespaces(array(
     'Serquant\Resource' => TEST_PATH, // Test resources (entities, etc.)
     'Serquant' => APPLICATION_ROOT . '/library',
     'Doctrine' => TEST_PATH . '/library',
+    'DoctrineExtensions' => TEST_PATH . '/library',
     'Symfony' => TEST_PATH . '/library'
 ));
 $loader->registerPrefix('Zend_', TEST_PATH . '/library');

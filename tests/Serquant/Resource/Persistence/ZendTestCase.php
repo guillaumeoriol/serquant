@@ -38,6 +38,7 @@ abstract class ZendTestCase extends \PHPUnit_Framework_TestCase
             'port'     => UNIT_TESTS_DB_PORT
         );
         $adapter = \Zend_Db::factory(UNIT_TESTS_DB_ADAPTER, $constants);
+        \Zend_Db_Table::setDefaultAdapter($adapter);
         return $adapter;
     }
 

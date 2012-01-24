@@ -60,7 +60,7 @@ class Ormless implements Registrable, PropertyChangedListener
     private $identityMap = array();
 
     /**
-     * Map betweend the entity hash and the entity identifier.
+     * Map between the entity hash and the entity identifier.
      * @var array
      */
     private $hashToIdMap = array();
@@ -250,6 +250,42 @@ class Ormless implements Registrable, PropertyChangedListener
                     = Type::getType($field['type'])
                         ->convertToDatabaseValue($actualValue, $platform);
             }
+        }
+
+        foreach ($class->associationMappings as $fieldName => $association) {
+            if ($association['type'] & $class::TO_ONE) {
+                $targetClass = $this->metadataFactory->getMetadataFor(
+                    $association['targetEntity']
+                );
+                $orgTarget = $class->reflFields[$fieldName]->getValue($original);
+                $actualTarget = $class->reflFields[$fieldName]->getValue($entity);
+                if (($orgTarget !== null) || ($actualTarget !== null)) {
+                    if ($actualTarget === null) {
+                        foreach ($targetClass->getIdentifierFieldNames() as $name) {
+                            $changeSet[$targetClass->columnNames[$name]] = null;
+                        }
+                    } else {
+                        if ($orgTarget === null) {
+                            $diff = $targetClass->getIdentifierValues($actualTarget);
+                        } else {
+                            $diff = array_diff(
+                                $targetClass->getIdentifierValues($actualTarget),
+                                $targetClass->getIdentifierValues($orgTargetId)
+                            );
+                        }
+                        foreach ($diff as $name => $value) {
+                            $field = $targetClass->fieldMappings[$name];
+                            $changeSet[$field['columnName']] = Type::getType($field['type'])
+                                ->convertToDatabaseValue($value, $platform);
+                        }
+                    }
+                }
+            }
+            // By design, TO_MANY associations are not processed: to do so,
+            // we should configure entities for transitive persistence (ie
+            // cascading persistence operations). As no transitive persistence
+            // is implemented in the Zend persister, it is the responsibility
+            // of the application to persist related entities.
         }
         return $changeSet;
     }

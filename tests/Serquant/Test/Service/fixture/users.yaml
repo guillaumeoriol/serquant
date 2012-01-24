@@ -1,0 +1,22 @@
+users:
+  -
+    id: 1
+    status: "available"
+    username: "a"
+    name: "Alice"
+  -
+    id: 2
+    status: "available"
+    username: "b"
+    name: "Bob"
+  -
+    id: 3
+    status: "gone"
+    username: "c"
+    name: "Cameron"
+  -
+    id: 4
+    status: "offline"
+    username: "d"
+    name: "David"
+      

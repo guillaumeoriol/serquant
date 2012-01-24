@@ -1,0 +1,9 @@
+issues:
+  -
+    id: 1
+    title: "Issue #1"
+    person_id: 1
+  -
+    id: 2
+    title: "Issue #2"
+    person_id: 1

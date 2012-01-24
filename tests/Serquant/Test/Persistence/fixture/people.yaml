@@ -1,0 +1,72 @@
+people:
+# Deuxième République
+  -
+    id: 1
+    first_name: "Louis-Napoléon"
+    last_name: "Bonaparte"
+# Troisième République
+  -
+    id: 2
+    first_name: "Adolphe"
+    last_name: "Thiers"
+  -
+    id: 3
+    first_name: "Patrice"
+    last_name: "Mac Mahon, de"
+  -
+    id: 4
+    first_name: "Jules"
+    last_name: "Grévy"
+  -
+    id: 5
+    first_name: "Sadi"
+    last_name: "Carnot"
+  -
+    id: 6
+    first_name: "Jean"
+    last_name: "Casimir-Perier"
+  -
+    id: 7
+    first_name: "Félix"
+    last_name: "Faure"
+  -
+    id: 8
+    first_name: "Émile"
+    last_name: "Loubet"
+  -
+    id: 9
+    first_name: "Armand"
+    last_name: "Fallières"
+  -
+    id: 10
+    first_name: "Raymond"
+    last_name: "Poincaré"
+  -
+    id: 11
+    first_name: "Paul"
+    last_name: "Deschanel"
+  -
+    id: 12
+    first_name: "Alexandre"
+    last_name: "Millerand"
+  -
+    id: 13
+    first_name: "Gaston"
+    last_name: "Doumergue"
+  -
+    id: 14
+    first_name: "Paul"
+    last_name: "Doumer"
+  -
+    id: 15
+    first_name: "Albert"
+    last_name: "Lebrun"
+# Quatrième République    
+  -
+    id: 16
+    first_name: "Vincent"
+    last_name: "Auriol"
+  -
+    id: 17
+    first_name: "René"
+    last_name: "Coty"

@@ -1,0 +1,11 @@
+cms_phonenumbers:
+  -
+    phonenumber: "0160947030"
+    user_id: 1
+  -
+    phonenumber: "0610947030"
+    user_id: 1
+  -
+    phonenumber: "0123456789"
+    user_id: 2
+    

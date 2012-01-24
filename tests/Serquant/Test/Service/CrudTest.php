@@ -58,7 +58,6 @@ class CrudTestValidatorStubReturningViolations
 class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
 {
     private $em;
-
     private $persister;
 
     protected function setUp()
@@ -91,6 +90,7 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
 
     /**
      * @covers \Serquant\Service\Crud::fetchAll
+     * @covers \Serquant\Service\Exception\RuntimeException
      */
     public function testFetchAllThrowingException()
     {

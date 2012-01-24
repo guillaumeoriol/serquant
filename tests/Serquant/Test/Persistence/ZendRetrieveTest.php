@@ -17,43 +17,14 @@ use Serquant\Persistence\Zend\Db\Table;
 class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
-
     private $em;
-
     private $persister;
 
     protected function setUp()
     {
         $this->db = $this->getTestAdapter();
-        \Zend_Db_Table::setDefaultAdapter($this->db);
         $this->em = $this->getTestEntityManager();
         $this->persister = new \Serquant\Persistence\Zend($this->em);
-    }
-
-    public function testLoadEntity()
-    {
-        $data = array(
-            'id' => 1,
-            'first_name' => 'George',
-            'last_name' => 'Washington'
-        );
-
-        $entityName = 'Serquant\Resource\Persistence\Zend\Person';
-
-        $method = new \ReflectionMethod($this->persister, 'loadEntity');
-        $method->setAccessible(true);
-        $entity = $method->invoke($this->persister, $entityName, $data);
-        $this->assertEquals($data['id'], $entity->getId());
-        $this->assertEquals($data['first_name'], $entity->getFirstName());
-        $this->assertEquals($data['last_name'], $entity->getLastName());
-
-        // When the entity is already present in the registry,
-        // it is just returned as it is and not populated with given values
-        $data['last_name'] = 'Adams';
-        $entity = $method->invoke($this->persister, $entityName, $data);
-        $this->assertEquals($data['id'], $entity->getId());
-        $this->assertEquals($data['first_name'], $entity->getFirstName());
-        $this->assertNotEquals($data['last_name'], $entity->getLastName());
     }
 
     public function testRetrieveAlreadyLoadedEntity()
@@ -110,16 +81,19 @@ class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
         $this->persister->retrieve($className, 1);
     }
 
+    /**
+     * @covers \Serquant\Persistence\Zend::retrieve
+     */
     public function testRetrieveNotLoadedEntity()
     {
-        $data = array(
+        $row = array(
             'id' => 1,
             'first_name' => 'George',
             'last_name' => 'Washington'
         );
 
         $entityName = 'Serquant\Resource\Persistence\Zend\Person';
-        $row = new \Zend_Db_Table_Row(array('data' => $data));
+        $row = new \Zend_Db_Table_Row(array('data' => $row));
 
         $table = $this->getMock('Zend_Db_Table');
         $table->expects($this->any())
@@ -129,8 +103,8 @@ class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
         $this->persister->setTableGateway($entityName, $table);
 
         $entity = $this->persister->retrieve($entityName, 1);
-        $this->assertEquals($data['id'], $entity->getId());
-        $this->assertEquals($data['first_name'], $entity->getFirstName());
-        $this->assertEquals($data['last_name'], $entity->getLastName());
+        $this->assertEquals($row['id'], $entity->getId());
+        $this->assertEquals($row['first_name'], $entity->getFirstName());
+        $this->assertEquals($row['last_name'], $entity->getLastName());
     }
 }

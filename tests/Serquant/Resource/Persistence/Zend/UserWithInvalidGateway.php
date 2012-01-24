@@ -10,38 +10,28 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Resource\Persistence\Doctrine\Entity;
-
-use Serquant\Converter\Mapping as Converter;
+namespace Serquant\Resource\Persistence\Zend;
 
 /**
- * @Entity
- * @Table(name="users")
+ * @Entity(repositoryClass="\Serquant\Resource\Persistence\Zend\User")
  */
-class User
+class UserWithInvalidGateway
 {
     /**
-     * @Converter\Property(type="integer")
-     * @Id @GeneratedValue(strategy="AUTO")
+     * @Id
      * @Column(type="integer")
+     * @GeneratedValue
      */
     public $id;
-
     /**
-     * @Converter\Property(type="string")
      * @Column(type="string", length=50)
-     * @validation:MaxLength(20)
      */
     public $status;
-
     /**
-     * @Converter\Property(type="string")
      * @Column(type="string", length=255, unique=true)
      */
     public $username;
-
     /**
-     * @Converter\Property(type="string")
      * @Column(type="string", length=255)
      */
     public $name;
@@ -65,4 +55,3 @@ class User
         return $this->name;
     }
 }
-

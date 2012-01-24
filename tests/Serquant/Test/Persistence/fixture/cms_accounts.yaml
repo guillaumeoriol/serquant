@@ -1,0 +1,21 @@
+cms_accounts:
+  -
+    id: 1
+    bank: "BNP Paribas"
+    account_number: "12345678901"
+  -
+    id: 2
+    bank: "Crédit agricole"
+    account_number: "23456789012"
+  -
+    id: 3
+    bank: "Société générale"
+    account_number: "34567890123"
+  -
+    id: 4
+    bank: "BPCE"
+    account_number: "45678901234"
+  -
+    id: 5
+    bank: "Crédit mutuel-CIC"
+    account_number: "56789012345"

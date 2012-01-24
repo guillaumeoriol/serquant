@@ -1,12 +1,10 @@
 <?php
-
-namespace Serquant\Resource\Persistence\Doctrine\Entity;
+namespace Serquant\Resource\Persistence\Zend;
 
 /**
  * CmsAccount
  *
- * @Entity
- * @Table(name="cms_accounts")
+ * @Entity(repositoryClass="Serquant\Resource\Persistence\Zend\Db\Table\CmsAccount")
  */
 class CmsAccount
 {

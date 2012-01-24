@@ -1,0 +1,20 @@
+cms_addresses:
+  -
+    id: 1
+    country: "France"
+    zip: "75000"
+    city: "Paris"
+    user_id: 4
+  -
+    id: 2
+    country: "France"
+    zip: "69000"
+    city: "Lyon"
+    user_id: 3
+  -
+    id: 3
+    country: "France"
+    zip: "13000"
+    city: "Marseille"
+    user_id: 1
+    

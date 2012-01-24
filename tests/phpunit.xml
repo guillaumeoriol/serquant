@@ -7,7 +7,7 @@
          syntaxcheck="false">
 
     <php>
-      <const name="UNIT_TESTS_DB_ADAPTER" value="PDO_MYSQL"/>
+      <const name="UNIT_TESTS_DB_ADAPTER" value="pdo_mysql"/>
       <const name="UNIT_TESTS_DB_HOST" value="localhost" />
       <const name="UNIT_TESTS_DB_USERNAME" value="user" />
       <const name="UNIT_TESTS_DB_PASSWORD" value="password" />

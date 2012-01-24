@@ -12,19 +12,19 @@
  */
 namespace Serquant\Persistence;
 
-use Doctrine\Common\Annotations\AnnotationReader,
-    Doctrine\DBAL\Platforms\AbstractPlatform,
-    Doctrine\DBAL\Types\Type,
-    Doctrine\ORM\EntityManager,
-    Doctrine\ORM\Mapping\ClassMetadata,
-    Doctrine\ORM\Mapping\Driver\AnnotationDriver,
-    Serquant\Paginator\Adapter\DbSelect,
-    Serquant\Entity\Registry\Ormless,
-    Serquant\Persistence\Persistence,
-    Serquant\Persistence\Exception\InvalidArgumentException,
-    Serquant\Persistence\Exception\NoResultException,
-    Serquant\Persistence\Exception\NonUniqueResultException,
-    Serquant\Persistence\Exception\RuntimeException;
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
+use Serquant\Paginator\Adapter\DbSelect;
+use Serquant\Entity\Registry\Ormless;
+use Serquant\Persistence\Persistence;
+use Serquant\Persistence\Exception\InvalidArgumentException;
+use Serquant\Persistence\Exception\NoResultException;
+use Serquant\Persistence\Exception\NonUniqueResultException;
+use Serquant\Persistence\Exception\RuntimeException;
 
 /**
  * Persistence layer using Zend_Db package to persist entities.
@@ -55,7 +55,7 @@ class Zend implements Persistence
 
     /**
      * Registry of the loaded entities
-     * @var Ormless
+     * @var \Serquant\Entity\Registry\Registrable
      */
     private $loadedEntities;
 
@@ -117,23 +117,10 @@ class Zend implements Persistence
             throw new InvalidArgumentException(
                 'The entity argument should either be an entity name or ' .
                 'an instance of an entity class. ' . gettype($entity) .
-                ' type provided.'
+                ' type provided.', 1
             );
         }
         return $entity;
-    }
-
-    /**
-     * Get class metadata of the given entity
-     *
-     * @param string|object $entityName Name or instance of the entity
-     * @return \Doctrine\ORM\Mapping\ClassMetadata
-     */
-    protected function getEntityMetadata($entityName)
-    {
-        return $this->entityManager->getClassMetadata(
-            $this->normalizeEntityName($entityName)
-        );
     }
 
     /**
@@ -162,7 +149,7 @@ class Zend implements Persistence
     {
         $entityName = $this->normalizeEntityName($entityName);
         if (!isset($this->gateways[$entityName])) {
-            $entityMetadata = $this->getEntityMetadata($entityName);
+            $entityMetadata = $this->getClassMetadata($entityName);
             $className = $entityMetadata->customRepositoryClassName;
 
             if ($className === null) {
@@ -170,7 +157,7 @@ class Zend implements Persistence
                     $entityName . ' should define a table gateway class ' .
                     'with the \'repository class\' attribute of the entity ' .
                     '(such as the following annotation: ' .
-                    '@Entity(repositoryClass="<classname>").'
+                    '@Entity(repositoryClass="<classname>").', 2
                 );
             }
 
@@ -178,7 +165,7 @@ class Zend implements Persistence
             if (!($gateway instanceof \Zend_Db_Table_Abstract)) {
                 throw new InvalidArgumentException(
                     "Class $className is not an instance of "
-                    . 'Zend_Db_Table_Abstract.'
+                    . 'Zend_Db_Table_Abstract.', 3
                 );
             }
             $this->gateways[$entityName] = $gateway;
@@ -198,24 +185,24 @@ class Zend implements Persistence
      *
      * @param string $entityName Entity name
      * @param array $expressions RQL query
-     * @return array List of Zend_Db_Select, page number and page size
+     * @return array consisting of Zend_Db_Select, page number and page size
      * @throws RuntimeException If non-implemented operator is used, if the sort
      * order is not specified or if a parenthesis-enclosed group syntax is used.
      */
     protected function translate($entityName, array $expressions)
     {
         $pageNumber = $pageSize = null;
-        if (count($expressions) === 0) {
-            return array($this->select(), $pageNumber, $pageSize);
-        }
-
         $table = $table = $this->getTableGateway($entityName);
         $select = $table->select();
+        if (count($expressions) === 0) {
+            return array($select, $pageNumber, $pageSize);
+        }
+
         $columns = array();
         $orderBy = array();
         $limitStart = $limitCount = null;
 
-        $class = $this->getEntityMetadata($entityName);
+        $class = $this->getClassMetadata($entityName);
         $platform = $this->entityManager->getConnection()->getDatabasePlatform();
 
         foreach ($expressions as $key => $value) {
@@ -262,11 +249,18 @@ class Zend implements Persistence
                         'or(operator,operator,...)'
                     );
                 }
-                $column = $class->columnNames[$key];
-                if (false === strpos($value, '*')) {
-                    $select->where("$column = ?", $value);
-                } else {
-                    $select->where("$column like ?", str_replace('*', '%', $value));
+                $column = null;
+                if ($class->hasField($key)) {
+                    $column = $class->columnNames[$key];
+                } else if ($class->hasAssociation($key)) {
+                    $column = $class->getSingleAssociationJoinColumnName($key);
+                }
+                if ($column) {
+                    if (false === strpos($value, '*')) {
+                        $select->where("$column = ?", $value);
+                    } else {
+                        $select->where("$column like ?", str_replace('*', '%', $value));
+                    }
                 }
             }
         }
@@ -453,7 +447,7 @@ class Zend implements Persistence
             return $entity;
         }
 
-        $class = $this->getEntityMetadata($entityName);
+        $class = $this->getClassMetadata($entityName);
         $platform = $this->entityManager->getConnection()->getDatabasePlatform();
         $data = $this->convertToPhpValues($row, $class, $platform);
 
@@ -499,7 +493,7 @@ class Zend implements Persistence
      */
     protected function getWhereClause($entity)
     {
-        $class = $this->getEntityMetadata($entity);
+        $class = $this->getClassMetadata(get_class($entity));
         if ($class->isIdentifierComposite) {
             $id = array();
             foreach ($class->identifier as $idField) {
@@ -526,7 +520,7 @@ class Zend implements Persistence
      */
     public function create($entity)
     {
-        $class = $this->getEntityMetadata($entity);
+        $class = $this->getClassMetadata(get_class($entity));
         $platform = $this->entityManager->getConnection()->getDatabasePlatform();
         $data = $this->convertToDatabaseValues($entity, $class, $platform);
 
@@ -576,7 +570,14 @@ class Zend implements Persistence
         }
 
         $table = $this->getTableGateway($entityName);
-        $rowset = $table->find($id);
+        if (is_array($id)) {
+            $rowset = call_user_func_array(
+                array($table, 'find'),
+                array_values($id)
+            );
+        } else {
+            $rowset = $table->find($id);
+        }
 
         $count = count($rowset);
         if ($count === 0) {
@@ -619,21 +620,20 @@ class Zend implements Persistence
 
         $table = $this->getTableGateway($entity);
         $platform = $this->entityManager->getConnection()->getDatabasePlatform();
-        $count = $table->update(
-            $this->loadedEntities->computeChangeSet($entity, $platform),
-            $this->getWhereClause($entity)
-        );
-        if ($count === 0) {
-            throw new NoResultException(
-                'No entity matching the given identity was updated.'
-            );
-        } else if ($count > 1) {
-            throw new NonUniqueResultException(
-                $count . ' entities matching the given identity were updated.'
-            );
-        }
+        if ($changeSet = $this->loadedEntities->computeChangeSet($entity, $platform)) {
+            $count = $table->update($changeSet, $this->getWhereClause($entity));
+            if ($count === 0) {
+                throw new NoResultException(
+                    'No entity matching the given identity was updated.'
+                );
+            } else if ($count > 1) {
+                throw new NonUniqueResultException(
+                    $count . ' entities matching the given identity were updated.'
+                );
+            }
 
-        $this->loadedEntities->commitChangeSet($entity);
+            $this->loadedEntities->commitChangeSet($entity);
+        }
     }
 
     /**

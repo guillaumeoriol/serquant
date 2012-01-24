@@ -17,15 +17,12 @@ use Serquant\Persistence\Zend\Db\Table;
 class ZendDeleteTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
-
     private $em;
-
     private $persister;
 
     protected function setUp()
     {
         $this->db = $this->getTestAdapter();
-        \Zend_Db_Table::setDefaultAdapter($this->db);
         $this->em = $this->getTestEntityManager();
         $this->persister = new \Serquant\Persistence\Zend($this->em);
     }
