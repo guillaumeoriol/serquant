@@ -12,7 +12,6 @@
  */
 namespace Serquant\Test\Persistence;
 
-use Serquant\Entity\Registry\DoctrineGateway;
 use Serquant\Persistence\Doctrine;
 
 /**
@@ -49,32 +48,6 @@ class DoctrineTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
         $this->setupDatabase();
         $this->em = $this->getTestEntityManager();
         $this->persister = new Doctrine($this->em);
-    }
-
-    public function testGetEntityRegistryWithoutLoadedEntities()
-    {
-        // If the registry is not already set, a new one will be constructed
-        $registry = $this->persister->getEntityRegistry();
-        $this->assertInstanceOf('Serquant\Entity\Registry\DoctrineGateway', $registry);
-
-        $entity = new $this->entityName;
-
-        // getEntityIdentifier will raise an undefined index error as the entity
-        // does not exist in the registry
-        $this->setExpectedException('PHPUnit_Framework_Error');
-        $id = $registry->getEntityIdentifier($entity);
-    }
-
-    public function testGetEntityRegistryWithLoadedEntities()
-    {
-        $gateway = new DoctrineGateway($this->em->getUnitOfWork());
-
-        $property = new \ReflectionProperty($this->persister, 'loadedEntities');
-        $property->setAccessible(true);
-        $property->setValue($this->persister, $gateway);
-
-        // If a registry is already set, it will be returned
-        $this->assertSame($gateway, $this->persister->getEntityRegistry());
     }
 
     public function testFetchAll()

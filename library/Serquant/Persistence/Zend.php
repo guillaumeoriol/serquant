@@ -53,7 +53,7 @@ class Zend implements Persistence
 
     /**
      * Map of the loaded entities
-     * @var \Serquant\Entity\Registry\Registrable
+     * @var IdentityMap
      */
     private $loadedMap;
 
@@ -67,16 +67,6 @@ class Zend implements Persistence
         $this->config = $config;
         $this->gateways = array();
         $this->loadedMap = new IdentityMap();
-    }
-
-    /**
-     * Gets the registry of loaded entities
-     *
-     * @return \Serquant\Entity\Registry\Registrable Entity registry
-     */
-    public function getEntityRegistry()
-    {
-        return $this->loadedMap;
     }
 
     /**

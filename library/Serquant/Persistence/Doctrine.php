@@ -15,7 +15,6 @@ namespace Serquant\Persistence;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\UnitOfWork;
 use DoctrineExtensions\Paginate\PaginationAdapter;
-use Serquant\Entity\Registry\DoctrineGateway;
 use Serquant\Persistence\Persistence;
 use Serquant\Persistence\Exception\NoResultException;
 use Serquant\Persistence\Exception\NonUniqueResultException;
@@ -39,12 +38,6 @@ class Doctrine implements Persistence
     private $entityManager;
 
     /**
-     * Registry of the loaded entities
-     * @var DoctrineGateway
-     */
-    private $loadedEntities;
-
-    /**
      * Service constructor
      *
      * @param EntityManager $em Entity manager used for data mapping
@@ -62,21 +55,6 @@ class Doctrine implements Persistence
     public function getMetadataFactory()
     {
         return $this->entityManager->getMetadataFactory();
-    }
-
-    /**
-     * Get registry of loaded entities.
-     *
-     * @return \Serquant\Entity\Registry\Registrable Entity registry
-     */
-    public function getEntityRegistry()
-    {
-        if ($this->loadedEntities === null) {
-            $this->loadedEntities = new DoctrineGateway(
-                $this->entityManager->getUnitOfWork()
-            );
-        }
-        return $this->loadedEntities;
     }
 
     /**

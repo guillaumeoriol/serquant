@@ -1350,7 +1350,7 @@ tt|e |i |o r
             depends="init">
         <echo>Checking ${source.root.dir} against ${phpcs.standard} coding standard</echo>
         <exec executable="${phpcs.executable}"
-              output="${build.dir}/checkstyle.xml">
+              output="${build.dir}/codesniffer/checkstyle.xml">
             <arg line="--report=checkstyle
                        --standard=${phpcs.standard}
                        --warning-severity=1
@@ -1373,7 +1373,7 @@ tt|e |i |o r
             depends="init">
         <echo>Launching PHPUnit for code coverage analysis</echo>
         <exec executable="${phpunit.executable}" failonerror="true">
-            <arg line="--coverage-html ./build/report
+            <arg line="--coverage-html ${build.dir}/codecoverage
                        --configuration ${tests.dir}/phpunit.xml.dist
                        --verbose" />
         </exec>
@@ -1393,9 +1393,9 @@ tt|e |i |o r
             depends="init">
         <echo>Running PHP_Depend to generate design quality metrics</echo>
         <exec executable="${phpdepend.executable}">
-            <arg line="--summary-xml=./build/depend/summary.xml
-                       --jdepend-chart=./build/depend/jdepend.svg
-                       --overview-pyramid=./build/depend/pyramid.svg
+            <arg line="--summary-xml=${build.dir}/depend/summary.xml
+                       --jdepend-chart=${build.dir}/depend/jdepend.svg
+                       --overview-pyramid=${build.dir}/depend/pyramid.svg
                        ${basedir}/${source.root.dir}" />
         </exec>
     </target>

@@ -55,7 +55,7 @@ class DbSelectTest extends \Serquant\Resource\Persistence\ZendTestCase
     /**
      * @covers \Serquant\Paginator\Adapter\DbSelect::getItems
      */
-    public function testGetEntityRegistry()
+    public function testGetItems()
     {
         $entityName = 'Serquant\Resource\Persistence\Zend\Person';
         $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\Person;

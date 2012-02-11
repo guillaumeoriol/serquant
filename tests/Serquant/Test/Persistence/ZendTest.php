@@ -12,25 +12,23 @@
  */
 namespace Serquant\Test\Persistence;
 
-use Serquant\Persistence\Zend\Db\Table;
-
 class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
-    private $em;
     private $persister;
-    private $entityName;
 
     private function setupDatabase()
     {
-        $this->entityName = 'Serquant\Resource\Persistence\Zend\Issue';
-
         $dataSets = array();
+
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
             dirname(__FILE__) . '/fixture/people.yaml'
         );
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
             dirname(__FILE__) . '/fixture/issues.yaml'
+        );
+        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
+            dirname(__FILE__) . '/fixture/cars.yaml'
         );
 
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
@@ -59,119 +57,351 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     protected function setUp()
     {
         $this->setupDatabase();
-        $this->em = $this->getTestEntityManager();
-        $this->persister = new \Serquant\Persistence\Zend($this->em);
+        $this->persister = new \Serquant\Persistence\Zend();
     }
 
-    public function testGetMetadataFactory()
-    {
-        $factory = $this->persister->getMetadataFactory();
-        $this->assertInstanceOf('Doctrine\ORM\Mapping\ClassMetadataFactory', $factory);
-    }
-
-    public function testGetEntityRegistry()
-    {
-        $registry = $this->persister->getEntityRegistry();
-        $this->assertInstanceOf('Serquant\Entity\Registry\Registrable', $registry);
-    }
-
-    public function testGetClassMetadata()
-    {
-        $metadata = $this->persister->getClassMetadata($this->entityName);
-        $this->assertInstanceOf('Doctrine\ORM\Mapping\ClassMetadata', $metadata);
-    }
-
+    /**
+     * @covers \Serquant\Persistence\Zend::normalizeEntityName
+     * @covers \Serquant\Persistence\Exception\InvalidArgumentException
+     */
     public function testNormalizeEntityName()
     {
+        $entityName = 'Serquant\Resource\Persistence\Zend\User';
+
         $method = new \ReflectionMethod($this->persister, 'normalizeEntityName');
         $method->setAccessible(true);
 
-        $result = $method->invoke($this->persister, $this->entityName);
-        $this->assertEquals($this->entityName, $result);
+        $result = $method->invoke($this->persister, $entityName);
+        $this->assertEquals($entityName, $result);
 
-        $object = new $this->entityName;
+        $object = new $entityName;
         $result = $method->invoke($this->persister, $object);
-        $this->assertEquals($this->entityName, $result);
+        $this->assertEquals($entityName, $result);
 
-        $this->setExpectedException('InvalidArgumentException');
+        $this->setExpectedException('InvalidArgumentException', null, 10);
         $result = $method->invoke($this->persister, 1);
     }
 
-    public function testGetTableGatewayWithoutGateway()
+    /**
+     * @covers \Serquant\Persistence\Zend::setTableGateway
+     */
+    public function testSetTableGatewayFromInstanceOfWrongClass()
     {
-        $method = new \ReflectionMethod($this->persister, 'getTableGateway');
-        $method->setAccessible(true);
-
-        $entityName = 'Serquant\Resource\Persistence\Zend\UserWithoutGateway';
-        $this->setExpectedException(
-        	'Serquant\Persistence\Exception\InvalidArgumentException',
-            null,
-            2
-        );
-        $gateway = $method->invoke($this->persister, $entityName);
+        $this->setExpectedException('RuntimeException', null, 20);
+        $this->persister->setTableGateway('whatever', new \stdClass());
     }
 
-    public function testGetTableGatewayWithInvalidGateway()
+    public function testSetTableGatewayFromInstanceOfRightClass()
     {
-        $method = new \ReflectionMethod($this->persister, 'getTableGateway');
-        $method->setAccessible(true);
+        $name = 'whatever';
+        $gatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+        $gateway = new $gatewayClass;
 
-        $entityName = 'Serquant\Resource\Persistence\Zend\UserWithInvalidGateway';
-        $this->setExpectedException(
-        	'Serquant\Persistence\Exception\InvalidArgumentException',
-            null,
-            3
+        // Build a new persister to have an empty gateway map
+        $persister = new \Serquant\Persistence\Zend();
+        $persister->setTableGateway($name, $gateway);
+
+        // Check that the given gateway can now been retrieved...
+        $actual = $persister->getTableGateway($name);
+        $this->assertInstanceOf($gatewayClass, $actual);
+        // ...and now has a reference to the persister
+        $this->assertAttributeSame($persister, 'persister', $actual);
+    }
+
+    public function testSetTableGatewayFromClass()
+    {
+        $name = 'whatever';
+        $gatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+
+        // Build a new persister to have an empty gateway map
+        $persister = new \Serquant\Persistence\Zend();
+        $persister->setTableGateway($name, $gatewayClass);
+
+        // Check that the given gateway can now been retrieved...
+        $actual = $persister->getTableGateway($name);
+        $this->assertInstanceOf($gatewayClass, $actual);
+        // ...and now has a reference to the persister
+        $this->assertAttributeSame($persister, 'persister', $actual);
+    }
+
+    /**
+     * @covers \Serquant\Persistence\Zend::getTableGateway
+     * @covers \Serquant\Persistence\Exception\InvalidArgumentException
+     */
+    public function testGetTableGatewayFromClassWithoutGateway()
+    {
+        $entityName = 'Serquant\Resource\Persistence\Zend\User';
+        $this->setExpectedException('InvalidArgumentException', null, 30);
+        $gateway = $this->persister->getTableGateway($entityName);
+    }
+
+    public function testGetTableGatewayFromInstanceWithoutGateway()
+    {
+        $entityName = 'Serquant\Resource\Persistence\Zend\User';
+        $entity = new $entityName;
+        $this->setExpectedException('InvalidArgumentException', null, 30);
+        $gateway = $this->persister->getTableGateway($entityName);
+    }
+
+    public function testGetTableGatewayFromClass()
+    {
+        $name = 'whatever';
+        $gatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+
+        // Build a new persister to have an empty gateway map
+        $persister = new \Serquant\Persistence\Zend(array($name => $gatewayClass));
+
+        // Check that the given gateway can now been retrieved...
+        $actual = $persister->getTableGateway($name);
+        $this->assertInstanceOf($gatewayClass, $actual);
+        // ...and now has a reference to the persister
+        $this->assertAttributeSame($persister, 'persister', $actual);
+    }
+
+    /**
+     * @covers \Serquant\Persistence\Zend::loadEntity
+     */
+    public function testLoadEntityFromGateway()
+    {
+        $id = 1;
+        $name = 'member';
+
+        $entityName = 'Serquant\Resource\Persistence\Zend\Role';
+        $expected = new $entityName;
+        $expected->setId($id);
+        $expected->setName($name);
+
+        $row = array(
+            'id' => $id,
+            'name' => $name
         );
-        $gateway = $method->invoke($this->persister, $entityName);
+
+        $loadedMapProp = new \ReflectionProperty($this->persister, 'loadedMap');
+        $loadedMapProp->setAccessible(true);
+        $loadedMap = $loadedMapProp->getValue($this->persister);
+
+        // Be sure the entity is not already in the identity map
+        $this->assertNull($loadedMap->get($entityName, array($id)));
+
+        $gateway = $this->getMock('Serquant\Resource\Persistence\Zend\Db\Table\Role', array('loadEntity'));
+        $gateway->expects($this->any())
+                ->method('loadEntity')
+                ->will($this->returnValue($expected));
+        $this->persister->setTableGateway($entityName, $gateway);
+
+        $actual = $this->persister->loadEntity($entityName, $row);
+        // Verify we get an entity with the right values
+        $this->assertInstanceOf($entityName, $actual);
+        $this->assertEquals($expected, $actual);
+        // and check this entity has been stored in the identity map
+        $this->assertSame($actual, $loadedMap->get($entityName, array($id)));
+    }
+
+    public function testLoadEntityFromRegistry()
+    {
+        $id = 1;
+        $name = 'member';
+
+        $entityName = 'Serquant\Resource\Persistence\Zend\Role';
+        $expected = new $entityName;
+        $expected->setId($id);
+        $expected->setName($name);
+
+        $row = array(
+            'id' => $id,
+            'name' => $name
+        );
+
+        $loadedMapProp = new \ReflectionProperty($this->persister, 'loadedMap');
+        $loadedMapProp->setAccessible(true);
+        $loadedMap = $loadedMapProp->getValue($this->persister);
+
+        // Put the entity in the identity map
+        $loadedMap->put($expected, array($id));
+        // and be sure it is
+        $this->assertNotNull($loadedMap->get($entityName, array($id)));
+
+        $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\Role;
+        $this->persister->setTableGateway($entityName, $gateway);
+
+        $actual = $this->persister->loadEntity($entityName, $row);
+        // Verify we get an entity
+        $this->assertInstanceOf($entityName, $actual);
+        // which is the exact same object that we put previously
+        $this->assertSame($expected, $actual);
+    }
+
+    /**
+     * @covers \Serquant\Persistence\Zend::loadEntities
+     */
+    public function testLoadEntities()
+    {
+        $id = 1;
+        $name = 'member';
+
+        $entityName = 'Serquant\Resource\Persistence\Zend\Role';
+        $expected = new $entityName;
+        $expected->setId($id);
+        $expected->setName($name);
+
+        $row = array(
+            'id' => $id,
+            'name' => $name
+        );
+
+        $rows = array($row);
+
+        $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\Role;
+        $this->persister->setTableGateway($entityName, $gateway);
+
+        $entities = $this->persister->loadEntities($entityName, $rows);
+        $this->assertInternalType('array', $entities);
+        $this->assertInstanceOf($entityName, $entities[0]);
+        $this->assertEquals($expected, $entities[0]);
     }
 
     /**
      * @covers \Serquant\Persistence\Zend::fetchAll
+     * @covers \Serquant\Persistence\Exception\InvalidArgumentException
      */
-    public function testFetchAll()
+    public function testFetchAllWithoutGateway()
     {
-        $entities = $this->persister->fetchAll($this->entityName, array());
+        $entityName = 'Serquant\Resource\Persistence\Zend\User';
+
+        $this->setExpectedException('InvalidArgumentException', null, 30);
+        $entities = $this->persister->fetchAll($entityName, array());
+    }
+
+    public function testFetchAllWithoutAssociation()
+    {
+        $entityName = 'Serquant\Resource\Persistence\Zend\User';
+        $gatewayName = 'Serquant\Resource\Persistence\Zend\Db\Table\User';
+        $this->persister->setTableGateway($entityName, $gatewayName);
+
+        $entities = $this->persister->fetchAll($entityName, array());
         $this->assertInternalType('array', $entities);
         foreach ($entities as $entity) {
-            $this->assertInstanceOf($this->entityName, $entity);
+            $this->assertInstanceOf($entityName, $entity);
         }
     }
 
+    public function testFetchAllWithoutFetchJoin()
+    {
+        $issueEntityClass = 'Serquant\Resource\Persistence\Zend\Issue';
+        $issueGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\IssueWithoutFetchJoin';
+        $this->persister->setTableGateway($issueEntityClass, $issueGatewayClass);
+
+        $personEntityClass = 'Serquant\Resource\Persistence\Zend\Person';
+        $personGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+        $this->persister->setTableGateway($personEntityClass, $personGatewayClass);
+
+        $entities = $this->persister->fetchAll($issueEntityClass, array());
+        $this->assertInternalType('array', $entities);
+
+        foreach ($entities as $entity) {
+            $this->assertInstanceOf($issueEntityClass, $entity);
+            $this->assertInstanceOf('Serquant\Resource\Persistence\Zend\PersonProxy', $entity->getReporter());
+        }
+    }
+
+    public function testFetchAllWithOneToOneMandatoryAssociation()
+    {
+        $issueEntityClass = 'Serquant\Resource\Persistence\Zend\Issue';
+        $issueGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Issue';
+        $this->persister->setTableGateway($issueEntityClass, $issueGatewayClass);
+
+        $personEntityClass = 'Serquant\Resource\Persistence\Zend\Person';
+        $personGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+        $this->persister->setTableGateway($personEntityClass, $personGatewayClass);
+
+        $entities = $this->persister->fetchAll($issueEntityClass, array());
+        $this->assertInternalType('array', $entities);
+
+        $this->assertInstanceOf($issueEntityClass, $entities[0]);
+        $this->assertInstanceOf($personEntityClass, $entities[0]->getReporter());
+
+        $this->assertInstanceOf($issueEntityClass, $entities[1]);
+        $this->assertInstanceOf($personEntityClass, $entities[1]->getReporter());
+    }
+
+    public function testFetchAllWithOneToOneOptionalAssociation()
+    {
+        $carEntityClass = 'Serquant\Resource\Persistence\Zend\Car';
+        $carGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Car';
+        $this->persister->setTableGateway($carEntityClass, $carGatewayClass);
+
+        $personEntityClass = 'Serquant\Resource\Persistence\Zend\Person';
+        $personGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+        $this->persister->setTableGateway($personEntityClass, $personGatewayClass);
+
+        $entities = $this->persister->fetchAll($carEntityClass, array());
+        $this->assertInternalType('array', $entities);
+
+        $this->assertInstanceOf($carEntityClass, $entities[0]);
+        $this->assertNull($entities[0]->getOwner());
+
+        $this->assertInstanceOf($carEntityClass, $entities[1]);
+        $this->assertInstanceOf($personEntityClass, $entities[1]->getOwner());
+    }
+
+    /**
+     * @covers \Serquant\Persistence\Zend::fetchOne
+     */
     public function testFetchOneThrowingNoResultException()
     {
+        $issueEntityClass = 'Serquant\Resource\Persistence\Zend\Issue';
+        $issueGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Issue';
+        $this->persister->setTableGateway($issueEntityClass, $issueGatewayClass);
+
         $this->setExpectedException('Serquant\Persistence\Exception\NoResultException');
         $entity = $this->persister->fetchOne(
-            $this->entityName,
+            $issueEntityClass,
             array('title' => 'missing')
         );
     }
 
     public function testFetchOneThrowingNonUniqueResultException()
     {
+        $issueEntityClass = 'Serquant\Resource\Persistence\Zend\Issue';
+        $issueGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Issue';
+        $this->persister->setTableGateway($issueEntityClass, $issueGatewayClass);
+
         $this->setExpectedException('Serquant\Persistence\Exception\NonUniqueResultException');
         $entity = $this->persister->fetchOne(
-            $this->entityName,
+            $issueEntityClass,
             array('reporter' => 1)
         );
     }
 
-    /**
-     * @covers \Serquant\Persistence\Zend::fetchOne
-     */
     public function testFetchOne()
     {
+        $personEntityClass = 'Serquant\Resource\Persistence\Zend\Person';
+        $personGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+        $this->persister->setTableGateway($personEntityClass, $personGatewayClass);
+
         $entity = $this->persister->fetchOne(
-            $this->entityName,
+            $personEntityClass,
             array('id' => 1)
         );
-        $this->assertInstanceOf($this->entityName, $entity);
-        $this->assertEquals(1, $entity->id);
+        $this->assertInstanceOf($personEntityClass, $entity);
+        $this->assertEquals(1, $entity->getId());
     }
 
+    /**
+     * @covers \Serquant\Persistence\Zend::fetchPage
+     */
     public function testFetchPageWithoutLimit()
     {
+        $issueEntityClass = 'Serquant\Resource\Persistence\Zend\Issue';
+        $issueGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Issue';
+        $this->persister->setTableGateway($issueEntityClass, $issueGatewayClass);
+
+        $personEntityClass = 'Serquant\Resource\Persistence\Zend\Person';
+        $personGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+        $this->persister->setTableGateway($personEntityClass, $personGatewayClass);
+
         $paginator = $this->persister->fetchPage(
-            $this->entityName,
+            $issueEntityClass,
             array('reporter' => 1)
         );
         $this->assertInstanceOf('\Zend_Paginator', $paginator);
@@ -179,131 +409,37 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     public function testFetchPageWithLimit()
     {
+        $issueEntityClass = 'Serquant\Resource\Persistence\Zend\Issue';
+        $issueGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Issue';
+        $this->persister->setTableGateway($issueEntityClass, $issueGatewayClass);
+
+        $personEntityClass = 'Serquant\Resource\Persistence\Zend\Person';
+        $personGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+        $this->persister->setTableGateway($personEntityClass, $personGatewayClass);
+
         $paginator = $this->persister->fetchPage(
-            $this->entityName,
+            $issueEntityClass,
             array('reporter' => 1, 'limit(0,10)')
         );
         $this->assertInstanceOf('\Zend_Paginator', $paginator);
     }
 
-    public function testConvertToDatabaseValuesWithoutAssociation()
+    /**
+     * @covers \Serquant\Persistence\Zend::fetchPairs
+     */
+    public function testFetchPairs()
     {
-        $entityName = 'Serquant\Resource\Persistence\Zend\UserWithConvertibleProperties';
-        $entity = new $entityName;
-        $entity->id = 123;
-        $entity->active = true;
-        $entity->createdOn = new \DateTime('2000-01-01');
+        $personEntityClass = 'Serquant\Resource\Persistence\Zend\Person';
+        $personGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+        $this->persister->setTableGateway($personEntityClass, $personGatewayClass);
 
-        $class = $this->persister->getClassMetadata($entityName);
-        $platform = $this->em->getConnection()->getDatabasePlatform();
-
-        $method = new \ReflectionMethod($this->persister, 'convertToDatabaseValues');
-        $method->setAccessible(true);
-        $this->assertEquals(
-            array('identifier' => 123, 'is_active' => 1, 'created_on' => '2000-01-01'),
-            $method->invoke($this->persister, $entity, $class, $platform)
+        $actual = $this->persister->fetchPairs(
+            $personEntityClass,
+            'id',
+            'lastName',
+            array('lastName' => 'D*')
         );
-    }
-
-    public function testConvertToDatabaseValuesWithOneToOneAssociationThatIsNull()
-    {
-        $userClass = 'Serquant\Resource\Persistence\Zend\CmsUser';
-        $user = new $userClass;
-        $user->id = 20;
-        $user->status = 'online';
-        $user->username = 'j';
-        $user->name = 'Joe';
-
-        $class = $this->persister->getClassMetadata($userClass);
-        $platform = $this->em->getConnection()->getDatabasePlatform();
-
-        $method = new \ReflectionMethod($this->persister, 'convertToDatabaseValues');
-        $method->setAccessible(true);
-        $this->assertEquals(
-            array('id' => 20, 'status' => 'online', 'username' => 'j', 'name' => 'Joe'),
-            $method->invoke($this->persister, $user, $class, $platform)
-        );
-    }
-
-    public function testConvertToPhpValuesWithoutAssociation()
-    {
-        $expected = array(
-            'id' => 123,
-            'active' => true,
-            'createdOn' => new \DateTime('2000-01-01')
-        );
-
-        $row = array(
-            'identifier' => 123,
-            'is_active' => 1,
-            'created_on' => '2000-01-01'
-        );
-
-        $entityName = 'Serquant\Resource\Persistence\Zend\UserWithConvertibleProperties';
-        $class = $this->persister->getClassMetadata($entityName);
-        $platform = $this->em->getConnection()->getDatabasePlatform();
-
-        $method = new \ReflectionMethod($this->persister, 'convertToPhpValues');
-        $method->setAccessible(true);
-        $this->assertEquals(
-            $expected,
-            $method->invoke($this->persister, $row, $class, $platform)
-        );
-    }
-
-    public function testConvertToPhpValuesWithOneToOneAssociationThatIsNull()
-    {
-        $expected = array(
-            'id' => 10,
-            'status' => 'online',
-            'username' => 'j',
-            'name' => 'Joe'
-        );
-
-        $row = array(
-            'id' => 10,
-            'status' => 'online',
-            'username' => 'j',
-            'name' => 'Joe'
-        );
-
-        $entityName = 'Serquant\Resource\Persistence\Zend\CmsUser';
-        $class = $this->persister->getClassMetadata($entityName);
-        $platform = $this->em->getConnection()->getDatabasePlatform();
-
-        $method = new \ReflectionMethod($this->persister, 'convertToPhpValues');
-        $method->setAccessible(true);
-        $this->assertEquals(
-            $expected,
-            $method->invoke($this->persister, $row, $class, $platform)
-        );
-    }
-
-    public function testLoadEntityFromRegistry()
-    {
-        $row = array(
-            'id' => 1,
-            'first_name' => 'George',
-            'last_name' => 'Washington'
-        );
-
-        $entityName = 'Serquant\Resource\Persistence\Zend\Person';
-
-        $method = new \ReflectionMethod($this->persister, 'loadEntity');
-        $method->setAccessible(true);
-        $entity = $method->invoke($this->persister, $entityName, $row);
-
-        $this->assertEquals($row['id'], $entity->getId());
-        $this->assertEquals($row['first_name'], $entity->getFirstName());
-        $this->assertEquals($row['last_name'], $entity->getLastName());
-
-        // When the entity is already present in the registry,
-        // it is just returned as is and not populated with given values
-        $row['last_name'] = 'Adams';
-        $entity = $method->invoke($this->persister, $entityName, $row);
-
-        $this->assertEquals($row['id'], $entity->getId());
-        $this->assertEquals($row['first_name'], $entity->getFirstName());
-        $this->assertNotEquals($row['last_name'], $entity->getLastName());
+        $this->assertInternalType('array', $actual);
+        $this->assertEquals(array(11 => 'Deschanel', 13 => 'Doumergue', 14 => 'Doumer'), $actual);
     }
 }

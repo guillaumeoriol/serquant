@@ -12,28 +12,51 @@
  */
 namespace Serquant\Test\Persistence;
 
-use Serquant\Persistence\Zend\Db\Table;
-
 class ZendDeleteTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
-    private $em;
     private $persister;
+
+    private function setupDatabase()
+    {
+        $dataSets = array();
+
+        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
+            dirname(__FILE__) . '/fixture/people.yaml'
+        );
+        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
+            dirname(__FILE__) . '/fixture/issues.yaml'
+        );
+        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
+            dirname(__FILE__) . '/fixture/roles.yaml'
+        );
+
+        $data = new \PHPUnit_Extensions_Database_DataSet_CompositeDataSet(
+            $dataSets
+        );
+
+        $this->db = $this->getTestAdapter();
+        $connection = new \Zend_Test_PHPUnit_Db_Connection($this->db, null);
+        $tester = new \Zend_Test_PHPUnit_Db_SimpleTester($connection);
+        $tester->setupDatabase($data);
+    }
 
     protected function setUp()
     {
-        $this->db = $this->getTestAdapter();
-        $this->em = $this->getTestEntityManager();
-        $this->persister = new \Serquant\Persistence\Zend($this->em);
+        $this->setupDatabase();
+        $this->persister = new \Serquant\Persistence\Zend();
     }
 
+    /**
+     * @covers \Serquant\Persistence\Zend::delete
+     */
     public function testDeleteOnEntityNotManaged()
     {
         $className = 'Serquant\Resource\Persistence\Zend\Person';
         $entity = new $className;
-        $entity->id = 1;
-        $entity->firstName = 'George';
-        $entity->lastName = 'Washington';
+        $entity->setId(1);
+        $entity->setFirstName('Louis-Napoléon');
+        $entity->setLastName('Bonaparte');
 
         $this->setExpectedException('Serquant\Persistence\Exception\RuntimeException');
         $this->persister->delete($entity);
@@ -41,70 +64,85 @@ class ZendDeleteTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     public function testDeleteNoEntityThrowsNoResultException()
     {
-        $className = 'Serquant\Resource\Persistence\Zend\Person';
-        $entity = new $className;
-        $entity->id = 1;
-        $entity->firstName = 'George';
-        $entity->lastName = 'Washington';
-
-        $table = $this->getMock('Zend_Db_Table');
-        $table->expects($this->any())
+        // Force Table#delete to say zero row was deleted
+        $gateway = $this->getMock('Serquant\Resource\Persistence\Zend\Db\Table\Person', array('delete'));
+        $gateway->expects($this->any())
               ->method('delete')
               ->will($this->returnValue(0));
-        $this->persister->setTableGateway($className, $table);
 
-        $property = new \ReflectionProperty($this->persister, 'loadedEntities');
+        // Create an entity
+        $personEntityClass = 'Serquant\Resource\Persistence\Zend\Person';
+        $this->persister->setTableGateway($personEntityClass, $gateway);
+
+        $id = 1;
+        $person = new $personEntityClass;
+        $person->setId($id);
+        $person->setFirstName('Louis-Napoléon');
+        $person->setLastName('Bonaparte');
+
+        // Put it in the registry of managed entities
+        $property = new \ReflectionProperty($this->persister, 'loadedMap');
         $property->setAccessible(true);
-        $loadedEntities = $property->getValue($this->persister);
-        $loadedEntities->put($entity);
+        $loadedMap = $property->getValue($this->persister);
+        $loadedMap->put($person, array($id));
 
         $this->setExpectedException('Serquant\Persistence\Exception\NoResultException');
-        $this->persister->delete($entity);
+        $this->persister->delete($person);
     }
 
     public function testDeleteMultipleEntitiesThrowsNonUniqueResultException()
     {
-        $className = 'Serquant\Resource\Persistence\Zend\Person';
-        $entity = new $className;
-        $entity->id = 1;
-        $entity->firstName = 'George';
-        $entity->lastName = 'Washington';
-
-        $table = $this->getMock('Zend_Db_Table');
-        $table->expects($this->any())
+        // Force Table#delete to say several rows were deleted
+        $gateway = $this->getMock('Serquant\Resource\Persistence\Zend\Db\Table\Person', array('delete'));
+        $gateway->expects($this->any())
               ->method('delete')
               ->will($this->returnValue(2));
-        $this->persister->setTableGateway($className, $table);
 
-        $property = new \ReflectionProperty($this->persister, 'loadedEntities');
+        // Create an entity
+        $personEntityClass = 'Serquant\Resource\Persistence\Zend\Person';
+        $this->persister->setTableGateway($personEntityClass, $gateway);
+
+        $id = 1;
+        $person = new $personEntityClass;
+        $person->setId($id);
+        $person->setFirstName('Louis-Napoléon');
+        $person->setLastName('Bonaparte');
+
+        // Put it in the registry of managed entities
+        $property = new \ReflectionProperty($this->persister, 'loadedMap');
         $property->setAccessible(true);
-        $loadedEntities = $property->getValue($this->persister);
-        $loadedEntities->put($entity);
+        $loadedMap = $property->getValue($this->persister);
+        $loadedMap->put($person, array($id));
 
         $this->setExpectedException('Serquant\Persistence\Exception\NonUniqueResultException');
-        $this->persister->delete($entity);
+        $this->persister->delete($person);
     }
 
     public function testDeleteEntity()
     {
-        $className = 'Serquant\Resource\Persistence\Zend\Person';
-        $entity = new $className;
-        $entity->id = 1;
-        $entity->firstName = 'George';
-        $entity->lastName = 'Washington';
-
-        $table = $this->getMock('Zend_Db_Table');
-        $table->expects($this->any())
+        // Force Table#delete to say everything is ok
+        $gateway = $this->getMock('Serquant\Resource\Persistence\Zend\Db\Table\Person', array('delete'));
+        $gateway->expects($this->any())
               ->method('delete')
               ->will($this->returnValue(1));
-        $this->persister->setTableGateway($className, $table);
 
-        $loadedEntitiesProp = new \ReflectionProperty($this->persister, 'loadedEntities');
-        $loadedEntitiesProp->setAccessible(true);
-        $loadedEntities = $loadedEntitiesProp->getValue($this->persister);
-        $loadedEntities->put($entity);
+        // Create an entity
+        $personEntityClass = 'Serquant\Resource\Persistence\Zend\Person';
+        $this->persister->setTableGateway($personEntityClass, $gateway);
 
-        $this->persister->delete($entity);
-        $this->assertFalse($loadedEntities->hasEntity($entity));
+        $id = 1;
+        $person = new $personEntityClass;
+        $person->setId($id);
+        $person->setFirstName('Louis-Napoléon');
+        $person->setLastName('Bonaparte');
+
+        // Put it in the registry of managed entities
+        $property = new \ReflectionProperty($this->persister, 'loadedMap');
+        $property->setAccessible(true);
+        $loadedMap = $property->getValue($this->persister);
+        $loadedMap->put($person, array($id));
+
+        $this->persister->delete($person);
+        $this->assertFalse($loadedMap->has($person));
     }
 }

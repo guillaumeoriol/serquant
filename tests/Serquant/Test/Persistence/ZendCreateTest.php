@@ -12,47 +12,50 @@
  */
 namespace Serquant\Test\Persistence;
 
-use Serquant\Persistence\Zend\Db\Table;
-
 class ZendCreateTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
-    private $em;
     private $persister;
+
+    private function setupDatabase()
+    {
+        $dataSets = array();
+
+        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
+            dirname(__FILE__) . '/fixture/people.yaml'
+        );
+
+        $data = new \PHPUnit_Extensions_Database_DataSet_CompositeDataSet(
+            $dataSets
+        );
+
+        $this->db = $this->getTestAdapter();
+        $connection = new \Zend_Test_PHPUnit_Db_Connection($this->db, null);
+        $tester = new \Zend_Test_PHPUnit_Db_SimpleTester($connection);
+        $tester->setupDatabase($data);
+    }
 
     protected function setUp()
     {
-        $this->db = $this->getTestAdapter();
-        $this->em = $this->getTestEntityManager();
-        $this->persister = new \Serquant\Persistence\Zend($this->em);
+        $this->setupDatabase();
+        $this->persister = new \Serquant\Persistence\Zend();
     }
 
-    public function testCreateSetupEntityId()
+    /**
+     * @covers \Serquant\Persistence\Zend::create
+     */
+    public function testCreate()
     {
-        $className = 'Serquant\Resource\Persistence\Zend\User';
-        $entity = new $className;
-        $entity->status = 'deprecated';
-        $entity->username = 'gw';
-        $entity->name = 'Washington';
+        $personEntityClass = 'Serquant\Resource\Persistence\Zend\Person';
+        $personGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+        $this->persister->setTableGateway($personEntityClass, $personGatewayClass);
 
-        $row = $this->getMock('Zend_Db_Table_Row');
-        $row->expects($this->any())
-            ->method('save')
-            ->will($this->returnValue(1));
-
-        $table = $this->getMock('Zend_Db_Table');
-        $table->expects($this->any())
-              ->method('createRow')
-              ->will($this->returnValue($row));
-
-        $this->persister->setTableGateway($className, $table);
+        $entity = new $personEntityClass;
+        $entity->setFirstName('Charles');
+        $entity->setLastName('de Gaulle');
+        $this->assertNull($entity->getId());
 
         $this->persister->create($entity);
         $this->assertNotNull($entity->getId());
-
-        $property = new \ReflectionProperty($this->persister, 'loadedEntities');
-        $property->setAccessible(true);
-        $loadedEntities = $property->getValue($this->persister);
-        $this->assertTrue($loadedEntities->hasEntity($entity));
     }
 }

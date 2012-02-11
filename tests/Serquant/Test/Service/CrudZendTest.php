@@ -47,6 +47,9 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
         $this->persister = new \Serquant\Persistence\Zend($this->em);
     }
 
+    /**
+     * @group Zend
+     */
     public function testFetchPairsWithExistingSelectOperator()
     {
         $this->setExpectedException('InvalidArgumentException');
@@ -56,6 +59,9 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
         $service->fetchPairs('id', 'name', array('select(id,name)'));
     }
 
+    /**
+     * @group Zend
+     */
     public function testFetchPairsWithZendPersister()
     {
         $entityName = 'Serquant\Resource\Persistence\Zend\User';
@@ -77,6 +83,7 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     /**
      * @group issue-6
+     * @group Zend
      */
     public function testFetchPairsOnDifferentServicesWithSameZendPersister()
     {

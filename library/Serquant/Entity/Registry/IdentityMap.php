@@ -40,7 +40,7 @@ use Serquant\Entity\Exception\NotImplementedException;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class IdentityMap implements Registrable, PropertyChangedListener
+class IdentityMap implements PropertyChangedListener
 {
     /**
      * Identity map of the managed entities.
