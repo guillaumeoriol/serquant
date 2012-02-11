@@ -1,0 +1,10 @@
+permissions:
+  -
+    role: 12
+    resource: 34
+  -
+    role: 12
+    resource: 5
+  -
+    role: 6
+    resource: 34

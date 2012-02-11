@@ -10,10 +10,10 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Resource\Persistence\Zend\Db\Table;
+namespace Serquant\Resource\Persistence\Zend;
 
 /**
- * CmsAddress gateway
+ * Class to test one-level inheritance
  *
  * @category Serquant
  * @package  Resource
@@ -21,18 +21,17 @@ namespace Serquant\Resource\Persistence\Zend\Db\Table;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-
-class CmsAddress extends \Zend_Db_Table_Abstract
+class PersonSubclass extends Person
 {
-    /**
-     * Table name
-     * @var string
-     */
-    protected $_name = 'cms_addresses';
+    private $birthDate;
 
-    /**
-     * Primary key
-     * @var string
-     */
-    protected $_primary = 'id';
+    public function getBirthDate()
+    {
+        return $this->birthDate;
+    }
+
+    public function setBirthDate($birthDate)
+    {
+        $this->birthDate = $birthDate;
+    }
 }

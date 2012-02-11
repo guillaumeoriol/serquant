@@ -10,7 +10,7 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Resource\Persistence\Zend;
+namespace Serquant\Resource\Converter;
 
 /**
  * @Entity

@@ -13,10 +13,14 @@
 namespace Serquant\Resource\Persistence\Zend\Db\Table;
 
 use Doctrine\DBAL\Types\Type;
-use Serquant\Persistence\Zend\Db\Table;
 
 /**
- * Table data gateway for the Issue entity
+ * Table data gateway for Issue entity performing regular join.
+ *
+ * As stated by Doctrine documentation:
+ *   A join (be it an inner or outer join) becomes a "fetch join" as soon
+ *   as fields of the joined entity appear in the SELECT part of the query
+ *   outside of an aggregate function. Otherwise its a "regular join".
  *
  * @category Serquant
  * @package  Resource
@@ -24,36 +28,8 @@ use Serquant\Persistence\Zend\Db\Table;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class Issue extends Table
+class IssueWithoutFetchJoin extends Issue
 {
-    /**
-     * Table name
-     * @var string
-     */
-    protected $_name = 'issues';
-
-    /**
-     * Primary key
-     * @var string
-     */
-    protected $_primary = 'id';
-
-    protected $entityName = 'Serquant\Resource\Persistence\Zend\Issue';
-
-    protected $columnNames = array(
-        'id' => 'i.id',
-        'title' => 'i.title',
-        'reporter' => 'i.person_id',
-        'lastname' => 'p.last_name'
-    );
-
-    protected $fieldNames = array(
-        'id' => 'id',
-        'title' => 'title',
-        'person_id' => 'reporter',
-        'last_name' => 'lastname'
-    );
-
     public function loadEntity(array $row)
     {
         $entity = $this->newInstance();
@@ -68,23 +44,13 @@ class Issue extends Table
 
         if ($row['person_id'] !== null) {
             $reporterGateway = $this->getPersister()->getTableGateway('Serquant\Resource\Persistence\Zend\Person');
-            $reporter = $reporterGateway->loadEntity(array(
-            	'id' => $row['person_id'],
-                'first_name' => $row['first_name'],
-                'last_name' => $row['last_name']
-            ));
+            $reporter = $reporterGateway->loadEntity(array('id' => $row['person_id']));
             $props['reporter']->setValue($entity, $reporter);
         }
 
         return $entity;
     }
 
-    /**
-     * Returns an instance of a Zend_Db_Table_Select object.
-     *
-     * @param bool $withFromPart Whether or not to include the from part of the select based on the table
-     * @return Zend_Db_Table_Select
-     */
     public function select($withFromPart = self::SELECT_WITHOUT_FROM_PART)
     {
         $select = $this->_db->select();
@@ -92,21 +58,8 @@ class Issue extends Table
                ->joinLeft(
                     array('p' => 'people'),
                     'i.person_id = p.id',
-                    '*'
-               );
-        return $select;
-    }
-
-    public function selectPairs($id, $label)
-    {
-        $select = $this->_db->select();
-        $select->from(array('i' => 'issues'), array($id, $label))
-               ->joinLeft(
-                    array('p' => 'people'),
-                    'i.person_id = p.id',
                     array()
                );
         return $select;
-
     }
 }

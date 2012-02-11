@@ -24,14 +24,6 @@ namespace Serquant\Persistence;
 interface Persistence
 {
     /**
-     * Get metadata of the given class
-     *
-     * @param string $className Name of the entity class
-     * @return \Doctrine\ORM\Mapping\ClassMetadata
-     */
-    public function getClassMetadata($className);
-
-    /**
      * Fetch all entities matching the specified criteria.
      *
      * Filtering, ranging and sorting criteria may be specified through the

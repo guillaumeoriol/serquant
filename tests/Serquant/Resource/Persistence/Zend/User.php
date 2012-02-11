@@ -13,44 +13,52 @@
 namespace Serquant\Resource\Persistence\Zend;
 
 /**
- * @Entity(repositoryClass="\Serquant\Resource\Persistence\Zend\Db\Table\User")
+ * Use case of an entity having transient property
+ *
+ * @category Serquant
+ * @package  Resource
+ * @author   Guillaume Oriol <goriol@serquant.com>
+ * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
+ * @link     http://www.serquant.com/
  */
 class User
 {
-    /**
-     * @Id
-     * @Column(type="integer")
-     * @GeneratedValue
-     */
-    public $id;
-    /**
-     * @Column(type="string", length=50)
-     */
-    public $status;
-    /**
-     * @Column(type="string", length=255, unique=true)
-     */
-    public $username;
-    /**
-     * @Column(type="string", length=255)
-     */
-    public $name;
+    private $id;
 
-    public $transientProperty;
+    private $status;
 
-    public function __construct() {
+    private $username;
+
+    private $name;
+
+    private $transientProperty;
+
+    public function setId($id) {
+        $this->id = $id;
     }
 
     public function getId() {
         return $this->id;
     }
 
+    public function setStatus($status) {
+        $this->status = $status;
+    }
+
     public function getStatus() {
         return $this->status;
     }
 
+    public function setUsername($username) {
+        $this->username = $username;
+    }
+
     public function getUsername() {
         return $this->username;
+    }
+
+    public function setName($name) {
+        $this->name = $name;
     }
 
     public function getName() {
@@ -60,5 +68,4 @@ class User
     public function getTransientProperty() {
         return $this->transientProperty;
     }
-
 }

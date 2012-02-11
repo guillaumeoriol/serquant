@@ -66,8 +66,8 @@ class ClassMetadataFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testGetClassMetadataWithInheritance()
     {
-        $parentClass = 'Serquant\Resource\Persistence\Zend\Informer';
-        $class = 'Serquant\Resource\Persistence\Zend\SubclassA';
+        $parentClass = 'Serquant\Resource\Converter\Informer';
+        $class = 'Serquant\Resource\Converter\SubclassA';
         $factory = new ClassMetadataFactory($this->loader);
         $metadata = $factory->getClassMetadata($class);
         $this->assertInstanceOf('Serquant\Converter\Mapping\ClassMetadataInterface', $metadata);

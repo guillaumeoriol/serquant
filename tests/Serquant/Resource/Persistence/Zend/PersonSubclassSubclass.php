@@ -13,30 +13,25 @@
 namespace Serquant\Resource\Persistence\Zend;
 
 /**
- * Entity written to test convertToDatabaseValues
+ * Class to test multiple-level inheritance
  *
  * @category Serquant
  * @package  Resource
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
- * @Entity
  */
-class UserWithConvertibleProperties
+class PersonSubclassSubclass extends PersonSubclass
 {
-    /**
-     * @Column(type="integer", name="identifier")
-     * @Id
-     */
-    public $id;
+    private $mainHobby;
 
-    /**
-     * @Column(type="boolean", name="is_active")
-     */
-    public $active;
+    public function getMainHobby()
+    {
+        return $this->mainHobby;
+    }
 
-    /**
-     * @Column(type="date", name="created_on")
-     */
-    public $createdOn;
+    public function setMainHobby($mainHobby)
+    {
+        $this->mainHobby = $mainHobby;
+    }
 }

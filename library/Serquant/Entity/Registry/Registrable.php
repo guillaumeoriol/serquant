@@ -35,5 +35,5 @@ interface Registrable
      * @param object $entity Entity to get identifier value from
      * @return array The identifier value
      */
-    public function getEntityIdentifier($entity);
+//    public function getEntityIdentifier($entity);
 }

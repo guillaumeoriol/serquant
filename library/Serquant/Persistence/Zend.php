@@ -12,19 +12,14 @@
  */
 namespace Serquant\Persistence;
 
-use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Types\Type;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
+use Serquant\Entity\Registry\IdentityMap;
 use Serquant\Paginator\Adapter\DbSelect;
-use Serquant\Entity\Registry\Ormless;
 use Serquant\Persistence\Persistence;
 use Serquant\Persistence\Exception\InvalidArgumentException;
 use Serquant\Persistence\Exception\NoResultException;
 use Serquant\Persistence\Exception\NonUniqueResultException;
 use Serquant\Persistence\Exception\RuntimeException;
+use Serquant\Persistence\Zend\Db\Table;
 
 /**
  * Persistence layer using Zend_Db package to persist entities.
@@ -42,67 +37,50 @@ use Serquant\Persistence\Exception\RuntimeException;
 class Zend implements Persistence
 {
     /**
-     * Entity manager
-     * @var EntityManager
+     * Map of table data gateway names
+     * The key is the entity class and the value is the gateway class
+     * @var array
      */
-    private $entityManager;
+    private $config;
 
     /**
-     * Table data gateways
-     * @var array Array of Zend_Db_Table_Abstract elements
+     * Map of table data gateways.
+     * The key is the entity name and the value an instance of
+     * {@link Serquant\Persistence\Zend\Db\Table} (i.e. the gateway)
+     * @var array
      */
     private $gateways;
 
     /**
-     * Registry of the loaded entities
+     * Map of the loaded entities
      * @var \Serquant\Entity\Registry\Registrable
      */
-    private $loadedEntities;
+    private $loadedMap;
 
     /**
-     * Service constructor
+     * Constructs a persister
      *
-     * @param EntityManager $em Entity manager used for data mapping
+     * @param array $config Map between entity name and gateway name
      */
-    public function __construct(EntityManager $em)
+    public function __construct(array $config = array())
     {
-        $this->entityManager = $em;
-        $this->loadedEntities = new Ormless($em->getMetadataFactory());
+        $this->config = $config;
+        $this->gateways = array();
+        $this->loadedMap = new IdentityMap();
     }
 
     /**
-     * Get metadata factory
-     *
-     * @return ClassMetadataFactory Metadata factory
-     */
-    public function getMetadataFactory()
-    {
-        return $this->entityManager->getMetadataFactory();
-    }
-
-    /**
-     * Get registry of loaded entities.
+     * Gets the registry of loaded entities
      *
      * @return \Serquant\Entity\Registry\Registrable Entity registry
      */
     public function getEntityRegistry()
     {
-        return $this->loadedEntities;
+        return $this->loadedMap;
     }
 
     /**
-     * Get metadata of the given class
-     *
-     * @param string $className Name of the entity class
-     * @return \Doctrine\ORM\Mapping\ClassMetadata
-     */
-    public function getClassMetadata($className)
-    {
-        return $this->getMetadataFactory()->getMetadataFor($className);
-    }
-
-    /**
-     * Normalizes the given argument to return an entity name.
+     * Normalizes the given argument to return an entity name
      *
      * @param string|object $entity Name or instance of the entity
      * @return string The normalized entity name
@@ -117,166 +95,105 @@ class Zend implements Persistence
             throw new InvalidArgumentException(
                 'The entity argument should either be an entity name or ' .
                 'an instance of an entity class. ' . gettype($entity) .
-                ' type provided.', 1
+                ' type provided.', 10
             );
         }
         return $entity;
     }
 
     /**
-     * Set the table data gateway corresponding to an entity.
+     * Sets the table data gateway corresponding to an entity name
      *
      * This function permits to inject a stub gateway for testing purpose.
      *
      * @param string|object $entityName Name or instance of the entity
-     * @param \Zend_Db_Table_Abstract $table Table data gateway
+     * @param Table $gateway Table data gateway
      * @return void
      */
-    public function setTableGateway($entityName, \Zend_Db_Table_Abstract $table)
+    public function setTableGateway($entityName, $gateway)
     {
-        $this->gateways[$this->normalizeEntityName($entityName)] = $table;
+        if (is_string($gateway)) {
+            $gateway = new $gateway;
+        }
+
+        if (!$gateway instanceof Table) {
+            throw new RuntimeException(
+                get_class($gateway) .
+                ' is not an instance of Serquant\Persistence\Zend\Db\Table', 20
+            );
+        }
+
+        $gateway->setPersister($this);
+        $this->gateways[$this->normalizeEntityName($entityName)] = $gateway;
     }
 
     /**
-     * Get the table gateway corresponding to an entity.
+     * Gets the table data gateway corresponding to an entity
      *
      * @param string|object $entityName Name or instance of the entity
-     * @return \Zend_Db_Table_Abstract
+     * @return Table
      * @throws InvalidArgumentException If the table gateway is not defined
      * in the entity metadata.
      */
-    protected function getTableGateway($entityName)
+    public function getTableGateway($entityName)
     {
         $entityName = $this->normalizeEntityName($entityName);
         if (!isset($this->gateways[$entityName])) {
-            $entityMetadata = $this->getClassMetadata($entityName);
-            $className = $entityMetadata->customRepositoryClassName;
-
-            if ($className === null) {
+            if (!isset($this->config[$entityName])) {
                 throw new InvalidArgumentException(
-                    $entityName . ' should define a table gateway class ' .
-                    'with the \'repository class\' attribute of the entity ' .
-                    '(such as the following annotation: ' .
-                    '@Entity(repositoryClass="<classname>").', 2
+                    'No table data gateway was found matching ' . $entityName, 30
                 );
             }
-
-            $gateway = new $className;
-            if (!($gateway instanceof \Zend_Db_Table_Abstract)) {
-                throw new InvalidArgumentException(
-                    "Class $className is not an instance of "
-                    . 'Zend_Db_Table_Abstract.', 3
-                );
-            }
-            $this->gateways[$entityName] = $gateway;
+            $this->setTableGateway($entityName, $this->config[$entityName]);
         }
         return $this->gateways[$entityName];
     }
 
     /**
-     * Translates a RQL ({@link https://github.com/kriszyp/rql Resource Query
-     * Language}) query into a {@link
-     * http://framework.zend.com/manual/en/zend.db.select.html Zend_Db_Select}
-     * query.
+     * Loads an entity from a database row
      *
-     * Filtering, ranging and sorting criteria may be specified through the
-     * expression array as defined by the {@link Service#fetchAll()} method
-     * of the domain service layer.
-     *
-     * @param string $entityName Entity name
-     * @param array $expressions RQL query
-     * @return array consisting of Zend_Db_Select, page number and page size
-     * @throws RuntimeException If non-implemented operator is used, if the sort
-     * order is not specified or if a parenthesis-enclosed group syntax is used.
+     * @param string $entityName Entity class name
+     * @param array $row Associative array holding database row
+     * @return object
      */
-    protected function translate($entityName, array $expressions)
+    public function loadEntity($entityName, array $row)
     {
-        $pageNumber = $pageSize = null;
-        $table = $table = $this->getTableGateway($entityName);
-        $select = $table->select();
-        if (count($expressions) === 0) {
-            return array($select, $pageNumber, $pageSize);
+        // Following is a rewriting of a paragraph from Martin Fowler's book
+        // [PoEAA, p. 172]:
+        // "The Identity Map is checked twice, once in the Zend#retrieve
+        // function, and once here. There is a reason for this madness. I need
+        // to check the map in the finder because, if the object is already
+        // there, I can save myself a trip to database. But I also need to check
+        // here because I may have queries that I cant't be sure or resolving in
+        // the Identity Map."
+        $gateway = $this->getTableGateway($entityName);
+        $pk = $gateway->getPrimaryKey($row);
+        $entity = $this->loadedMap->get($entityName, $pk);
+        if ($entity) {
+            return $entity;
         }
 
-        $columns = array();
-        $orderBy = array();
-        $limitStart = $limitCount = null;
+        $entity = $gateway->loadEntity($row);
 
-        $class = $this->getClassMetadata($entityName);
-        $platform = $this->entityManager->getConnection()->getDatabasePlatform();
+        $this->loadedMap->put($entity, $pk);
+        return $entity;
+    }
 
-        foreach ($expressions as $key => $value) {
-            if (is_int($key)) {
-                // Regular operator syntax
-                if (preg_match('/^select\((.*)\)$/', $value, $matches)) {
-                    $fields = explode(',', $matches[1]);
-                    foreach ($fields as $field) {
-                        $columns[] = $class->columnNames[$field];
-                    }
-                } else if (preg_match('/^sort\((.*)\)$/', $value, $matches)) {
-                    $fields = explode(',', $matches[1]);
-                    foreach ($fields as $field) {
-                        if ('-' === substr($field, 0, 1)) {
-                            $orderBy[] = $class->columnNames[substr($field, 1)]
-                                       . ' DESC';
-                        } else {
-                            // We don't check anymore if the first character
-                            // is a '+' symbol as the PHP engine automatically
-                            // processes $_GET and $_REQUEST superglobals with
-                            // urldecode(), thus changing any plus symbol into
-                            // a space, and dojo.store.JsonRest doesn't encode
-                            // the '+' it adds for sorting.
-                            $orderBy[] = $class->columnNames[substr($field, 1)]
-                                       . ' ASC';
-                        }
-                    }
-                } else if (preg_match(
-                    '/^limit\(([0-9]+),([0-9]+)\)$/', $value, $matches
-                )) {
-                    $limitStart = (int) $matches[1];
-                    $limitCount = (int) $matches[2];
-                } else {
-                    throw new RuntimeException(
-                        "Operator $value not implemented."
-                    );
-                }
-            } else {
-                // Alternate comparison syntax
-                if ('(' === substr($key, 0, 1)) {
-                    throw new RuntimeException(
-                        'Parenthesis-enclosed group syntax not supported. ' .
-                        'Use regular operator syntax instead: ' .
-                        'or(operator,operator,...)'
-                    );
-                }
-                $column = null;
-                if ($class->hasField($key)) {
-                    $column = $class->columnNames[$key];
-                } else if ($class->hasAssociation($key)) {
-                    $column = $class->getSingleAssociationJoinColumnName($key);
-                }
-                if ($column) {
-                    if (false === strpos($value, '*')) {
-                        $select->where("$column = ?", $value);
-                    } else {
-                        $select->where("$column like ?", str_replace('*', '%', $value));
-                    }
-                }
-            }
+    /**
+     * Loads an array of entities from an array of rows
+     *
+     * @param string $entityName Entity class name
+     * @param array $rows Array of rows, each of which is an associative array
+     * of column name-value
+     * @return array Entities
+     */
+    public function loadEntities($entityName, array $rows)
+    {
+        $entities = array();
+        foreach ($rows as $row) {
+            $entities[] = $this->loadEntity($entityName, $row);
         }
-
-        if (count($columns) > 0) {
-            $select->from($table, $columns);
-        }
-        if (count($orderBy) > 0) {
-            $select->order($orderBy);
-        }
-
-        if (($limitStart !== null) && ($limitCount !== null)) {
-            $pageNumber = ($limitStart / $limitCount) + 1;
-            $pageSize = $limitCount;
-        }
-        return array($select, $pageNumber, $pageSize);
+        return $entities;
     }
 
     /**
@@ -288,7 +205,8 @@ class Zend implements Persistence
      */
     public function fetchAll($entityName, array $expressions)
     {
-        list ($select) = $this->translate($entityName, $expressions);
+        $gateway = $this->getTableGateway($entityName);
+        list ($select) = $gateway->translate($expressions);
         $data = $select->query()->fetchAll(\Zend_Db::FETCH_ASSOC);
 
         return $this->loadEntities($entityName, $data);
@@ -307,17 +225,18 @@ class Zend implements Persistence
      */
     public function fetchOne($entityName, array $expressions)
     {
-        list ($select) = $this->translate($entityName, $expressions);
+        $gateway = $this->getTableGateway($entityName);
+        list ($select) = $gateway->translate($expressions);
         $data = $select->query()->fetchAll(\Zend_Db::FETCH_ASSOC);
 
         $count = count($data);
         if ($count === 0) {
             throw new NoResultException(
-                'No entity matching the given criteria was found.'
+                'No entity matching the given criteria was found.', 40
             );
         } else if ($count > 1) {
             throw new NonUniqueResultException(
-                'Several entities matching the given criteria were found.'
+                'Several entities matching the given criteria were found.', 41
             );
         }
 
@@ -333,8 +252,9 @@ class Zend implements Persistence
      */
     public function fetchPage($entityName, array $expressions)
     {
+        $gateway = $this->getTableGateway($entityName);
         list ($select, $pageNumber, $pageSize)
-            = $this->translate($entityName, $expressions);
+            = $gateway->translate($expressions);
 
         $adapter = new DbSelect($select, $this, $entityName);
         $paginator = new \Zend_Paginator($adapter);
@@ -352,7 +272,7 @@ class Zend implements Persistence
      * @param string $idProperty Property name representing the identifier.
      * @param string $labelProperty Property name representing the label.
      * @param array $expressions Fetch criteria.
-     * @return array Array consisting of id/label pairs.
+     * @return array Array consisting of id-label pairs.
      */
     public function fetchPairs(
         $entityName,
@@ -360,156 +280,12 @@ class Zend implements Persistence
         $labelProperty,
         array $expressions
     ) {
-        list ($select) = $this->translate($entityName, $expressions);
-        $table = $this->getTableGateway($entityName);
-        return $table->getAdapter()->fetchPairs($select);
-    }
-
-    /**
-     * Convert an entity into an associative array of database values.
-     *
-     * The output is an associative array whose keys are column names.
-     *
-     * @param object $entity The entity to convert
-     * @param ClassMetadata $class Entity metadata
-     * @param AbstractPlatform $platform Database platform
-     * @return array The converted data
-     */
-    protected function convertToDatabaseValues(
-        $entity,
-        ClassMetadata $class,
-        AbstractPlatform $platform
-    ) {
-        $data = array();
-        foreach ($class->fieldMappings as $fieldName => $field) {
-            $value = $class->reflFields[$fieldName]->getValue($entity);
-            $data[$field['columnName']] = Type::getType($field['type'])
-                ->convertToDatabaseValue($value, $platform);
-        }
-
-        return $data;
-    }
-
-    /**
-     * Convert database values into PHP values.
-     *
-     * The input is an associative array whose keys are column names.<br>
-     * The output is an associative array whose keys are entity field names.
-     *
-     * @param array $row Associative array of database values
-     * @param ClassMetadata $class Entity metadata
-     * @param AbstractPlatform $platform Database platform
-     * @return array The converted data
-     */
-    protected function convertToPhpValues(
-        array $row,
-        ClassMetadata $class,
-        AbstractPlatform $platform
-    ) {
-        $data = array();
-        foreach ($row as $column => $value) {
-            if (isset($class->fieldNames[$column])) {
-                $field = $class->fieldNames[$column];
-                if (isset($data[$field])) {
-                    $data[$column] = $value;
-                } else {
-                    $data[$field]
-                        = Type::getType($class->fieldMappings[$field]['type'])
-                            ->convertToPHPValue($value, $platform);
-                }
-            } else {
-                $data[$column] = $value;
-            }
-        }
-
-        return $data;
-    }
-
-    /**
-     * Load an entity from a database row.
-     *
-     * @param string $entityName Entity class name
-     * @param array $row Associative array holding database values
-     * @return object Entity
-     */
-    protected function loadEntity($entityName, array $row)
-    {
-        // Following is a rewriting of a paragraph from Martin Fowler's book
-        // [PoEAA, p. 172]:
-        // "The Identity Map is checked twice, once in the Zend#retrieve
-        // function, and once here. There is a reason for this madness. I need
-        // to check the map in the finder because, if the object is already
-        // there, I can save myself a trip to database. But I also need to check
-        // here because I may have queries that I cant't be sure or resolving in
-        // the Identity Map."
-        $entity = $this->loadedEntities->tryGetByRow($entityName, $row);
-        if ($entity) {
-            return $entity;
-        }
-
-        $class = $this->getClassMetadata($entityName);
-        $platform = $this->entityManager->getConnection()->getDatabasePlatform();
-        $data = $this->convertToPhpValues($row, $class, $platform);
-
-        $entity = $class->newInstance();
-        foreach ($data as $field => $value) {
-            if (isset($class->fieldMappings[$field])) {
-                $class->reflFields[$field]->setValue($entity, $value);
-            }
-        }
-
-        $this->loadedEntities->put($entity);
-        return $entity;
-    }
-
-    /**
-     * Load an array of entities from a row array
-     *
-     * This function is public because of the pagination adapter.
-     *
-     * @param string $entityName Entity class name
-     * @param array $rows Array of rows, each of which is an associative array
-     * whose keys are column names
-     * @return array Entities
-     */
-    public function loadEntities($entityName, array $rows)
-    {
-        $entities = array();
-        foreach ($rows as $row) {
-            $entities[] = $this->loadEntity($entityName, $row);
-        }
-        return $entities;
-    }
-
-    /**
-     * Returns an array representing the WHERE clause identifying the entity.
-     *
-     * For its <var>$where</var> parameter, Zend_Db_Table#update expects an
-     * associative array like: <code>array('id = ?' => 1)</code>.
-     * Based on \Doctrine\ORM\Mapping\ClassMetadata#getIdentifierValues
-     *
-     * @param object $entity Entity to get identity from
-     * @return array Array representing the WHERE clause.
-     */
-    protected function getWhereClause($entity)
-    {
-        $class = $this->getClassMetadata(get_class($entity));
-        if ($class->isIdentifierComposite) {
-            $id = array();
-            foreach ($class->identifier as $idField) {
-                $value = $class->reflFields[$idField]->getValue($entity);
-                if ($value !== null) {
-                    $id[$idField . ' = ?'] = $value;
-                }
-            }
-            return $id;
-        } else {
-            $value = $class->reflFields[$class->identifier[0]]->getValue($entity);
-            if ($value !== null) {
-                return array($class->identifier[0] . ' = ?' => $value);
-            }
-            return array();
-        }
+        $gateway = $this->getTableGateway($entityName);
+        list ($select) = $gateway->translate(
+            $expressions,
+            $gateway->selectPairs($idProperty, $labelProperty)
+        );
+        return $gateway->getAdapter()->fetchPairs($select);
     }
 
     /**
@@ -520,36 +296,12 @@ class Zend implements Persistence
      */
     public function create($entity)
     {
-        $class = $this->getClassMetadata(get_class($entity));
-        $platform = $this->entityManager->getConnection()->getDatabasePlatform();
-        $data = $this->convertToDatabaseValues($entity, $class, $platform);
+        $gateway = $this->getTableGateway($entity);
+        $row = $gateway->loadRow($entity);
+        $id = $gateway->insert($row);
+        $gateway->updateEntityIdentifier($entity, $id);
 
-        // @todo Implement id generation when the identifier is not generated
-        // by the storage system.
-
-        $table = $this->getTableGateway($entity);
-        $row = $table->createRow($data);
-        $primaryKey = $row->save();
-
-        // Update the entity's identity
-        $idGen = $class->idGenerator;
-        if ($idGen->isPostInsertGenerator()) {
-            // The primary key is either an associative array if the key
-            // is compound, or a scalar if the key is a single column.
-            if (!is_array($primaryKey)) {
-                $primaryKey = array($class->identifier[0] => $primaryKey);
-            }
-            foreach ($primaryKey as $column => $value) {
-                if (isset($class->fieldNames[$column])) {
-                    $field = $class->fieldNames[$column];
-                    $value = Type::getType($class->fieldMappings[$field]['type'])
-                        ->convertToPHPValue($value, $platform);
-                    $class->reflFields[$field]->setValue($entity, $value);
-                }
-            }
-        }
-
-        $this->loadedEntities->put($entity);
+        $this->loadedMap->put($entity, $id);
     }
 
     /**
@@ -564,36 +316,35 @@ class Zend implements Persistence
      */
     public function retrieve($entityName, $id)
     {
-        $entity = $this->loadedEntities->tryGetById($entityName, $id);
+        $entity = $this->loadedMap->get($entityName, (array) $id);
         if ($entity) {
             return $entity;
         }
 
-        $table = $this->getTableGateway($entityName);
+        $gateway = $this->getTableGateway($entityName);
         if (is_array($id)) {
             $rowset = call_user_func_array(
-                array($table, 'find'),
+                array($gateway, 'find'),
                 array_values($id)
             );
         } else {
-            $rowset = $table->find($id);
+            $rowset = $gateway->find($id);
         }
 
         $count = count($rowset);
         if ($count === 0) {
             throw new NoResultException(
-                'No entity matching the given identity was found.'
+                'No entity matching the given identity was found.', 50
             );
         } else if ($count > 1) {
             throw new NonUniqueResultException(
-                $count . ' entities matching the given identity were found.'
+                $count . ' entities matching the given identity were found.', 51
             );
         }
 
         // Create the entity from the row
         $row = $rowset->current();
-        $entity = $this->loadEntity($entityName, $row->toArray());
-        return $entity;
+        return $this->loadEntity($entityName, $row->toArray());
     }
 
     /**
@@ -611,28 +362,28 @@ class Zend implements Persistence
      */
     public function update($entity)
     {
-        if (false === $this->loadedEntities->hasEntity($entity)) {
+        if (false === $this->loadedMap->has($entity)) {
             throw new RuntimeException(
                 'Unable to update an entity (of class ' . get_class($entity) .
-                ') that is not managed.'
+                ') that is not managed. Did you forget to retrieve it?', 60
             );
         }
 
-        $table = $this->getTableGateway($entity);
-        $platform = $this->entityManager->getConnection()->getDatabasePlatform();
-        if ($changeSet = $this->loadedEntities->computeChangeSet($entity, $platform)) {
-            $count = $table->update($changeSet, $this->getWhereClause($entity));
+        $gateway = $this->getTableGateway($entity);
+        $original = $this->loadedMap->getOriginal($entity);
+        if ($changeSet = $gateway->computeChangeSet($original, $entity)) {
+            $count = $gateway->update($changeSet, $this->loadedMap->getId($entity));
             if ($count === 0) {
                 throw new NoResultException(
-                    'No entity matching the given identity was updated.'
+                    'No entity matching the given identity was updated.', 61
                 );
             } else if ($count > 1) {
                 throw new NonUniqueResultException(
-                    $count . ' entities matching the given identity were updated.'
+                    $count . ' entities matching the given identity were updated.', 62
                 );
             }
 
-            $this->loadedEntities->commitChangeSet($entity);
+            $this->loadedMap->commit($entity);
         }
     }
 
@@ -648,25 +399,25 @@ class Zend implements Persistence
      */
     public function delete($entity)
     {
-        if (false === $this->loadedEntities->hasEntity($entity)) {
+        if (false === $this->loadedMap->has($entity)) {
             throw new RuntimeException(
                 'Unable to delete an entity (of class ' . get_class($entity) .
-                ') that is not managed.'
+                ') that is not managed. Did you forget to retrieve it?', 70
             );
         }
 
-        $table = $this->getTableGateway($entity);
-        $count = $table->delete($this->getWhereClause($entity));
+        $gateway = $this->getTableGateway($entity);
+        $count = $gateway->delete($this->loadedMap->getId($entity));
         if ($count === 0) {
             throw new NoResultException(
-                'No entity matching the given identity was deleted.'
+                'No entity matching the given identity was deleted.', 71
             );
         } else if ($count > 1) {
             throw new NonUniqueResultException(
-                $count . ' entities matching the given identity were deleted.'
+                $count . ' entities matching the given identity were deleted.', 72
             );
         }
 
-        $this->loadedEntities->remove($entity);
+        $this->loadedMap->remove($entity);
     }
 }

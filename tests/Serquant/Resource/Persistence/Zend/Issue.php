@@ -13,31 +13,30 @@
 namespace Serquant\Resource\Persistence\Zend;
 
 /**
- * @Entity(repositoryClass="\Serquant\Resource\Persistence\Zend\Db\Table\Issue")
+ * Entity having a mandatory one-to-one association (reporter)
+ *
+ * @category Serquant
+ * @package  Resource
+ * @author   Guillaume Oriol <goriol@serquant.com>
+ * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
+ * @link     http://www.serquant.com/
  */
 class Issue
 {
-    /**
-     * @Id
-     * @Column(type="integer")
-     * @GeneratedValue
-     */
-    public $id;
+    private $id;
 
-    /**
-     * @Column(type="string", length=50)
-     */
-    public $title;
+    private $title;
 
-    /**
-     * @OneToOne(targetEntity="Person")
-     * @JoinColumn(name="person_id", referencedColumnName="id")
-     */
-    public $reporter;
+    private $reporter;
 
     public function getId()
     {
         return $this->id;
+    }
+
+    public function setId($id)
+    {
+        $this->id = $id;
     }
 
     public function getTitle()
@@ -45,8 +44,18 @@ class Issue
         return $this->title;
     }
 
+    public function setTitle($title)
+    {
+        $this->title = $title;
+    }
+
     public function getReporter()
     {
         return $this->reporter;
+    }
+
+    public function setReporter(Person $reporter)
+    {
+        $this->reporter = $reporter;
     }
 }

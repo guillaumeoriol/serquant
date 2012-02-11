@@ -13,18 +13,18 @@
 namespace Serquant\Resource\Persistence\Zend;
 
 /**
- * @Entity(repositoryClass="\Serquant\Resource\Persistence\Zend\Db\Table\Role")
+ * Use case of entity participating in association
+ *
+ * @category Serquant
+ * @package  Resource
+ * @author   Guillaume Oriol <goriol@serquant.com>
+ * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
+ * @link     http://www.serquant.com/
  */
 class Role
 {
-    /**
-     * @Id
-     * @Column(name="id", type="integer")
-     * @GeneratedValue(strategy="AUTO")
-     */
     private $id;
 
-    /** @Column(name="name", type="string", length=20) */
     private $name;
 
     /**

@@ -5,22 +5,26 @@
  * PHP version 5.3
  *
  * @category Serquant
- * @package  Doctrine
+ * @package  Entity
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Doctrine;
+namespace Serquant\Entity\Exception;
+
+use Serquant\Entity\Exception;
 
 /**
- * Marker interface for exceptions found in this component.
+ * Exception thrown if an argument does not match with the expected value.
  *
  * @category Serquant
- * @package  Doctrine
+ * @package  Entity
  * @author   Guillaume Oriol <goriol@serquant.com>
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-interface Exception
+class InvalidArgumentException
+    extends \InvalidArgumentException
+    implements Exception
 {
 }

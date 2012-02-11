@@ -1387,4 +1387,16 @@ tt|e |i |o r
             <arg line="${phpdoctor.executable} ${conf.dir}/phpdoctor.ini" />
         </exec>
     </target>
+    
+    <target name="php-depend"
+            description="generate design quality metrics with PHP_Depend"
+            depends="init">
+        <echo>Running PHP_Depend to generate design quality metrics</echo>
+        <exec executable="${phpdepend.executable}">
+            <arg line="--summary-xml=./build/depend/summary.xml
+                       --jdepend-chart=./build/depend/jdepend.svg
+                       --overview-pyramid=./build/depend/pyramid.svg
+                       ${basedir}/${source.root.dir}" />
+        </exec>
+    </target>
 </project>

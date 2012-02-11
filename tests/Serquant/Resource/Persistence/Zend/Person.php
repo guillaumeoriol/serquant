@@ -13,34 +13,45 @@
 namespace Serquant\Resource\Persistence\Zend;
 
 /**
- * @Entity(repositoryClass="\Serquant\Resource\Persistence\Zend\Db\Table\Person")
- * @InheritanceType("SINGLE_TABLE")
- * @DiscriminatorColumn(name="person_type", type="string")
- * @DiscriminatorMap({"person" = "Person", "employee" = "Employee"})
+ * Use case of basic entity
+ *
+ * @category Serquant
+ * @package  Resource
+ * @author   Guillaume Oriol <goriol@serquant.com>
+ * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
+ * @link     http://www.serquant.com/
  */
 class Person
 {
-    /**
-     * @Id
-     * @GeneratedValue(strategy="AUTO")
-     * @Column(name="id", type="integer")
-     */
-    public $id;
+    private $id;
 
-    /** @Column(name="first_name", type="string", length=50, nullable=true) */
-    public $firstName;
+    private $firstName;
 
-    /** @Column(name="last_name", type="string", length=50, nullable=true) */
-    public $lastName;
+    private $lastName;
+
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
 
     public function getId()
     {
         return $this->id;
     }
 
+    public function setFirstName($firstName)
+    {
+        $this->firstName = $firstName;
+    }
+
     public function getFirstName()
     {
         return $this->firstName;
+    }
+
+    public function setLastName($lastName)
+    {
+        $this->lastName = $lastName;
     }
 
     public function getLastName()

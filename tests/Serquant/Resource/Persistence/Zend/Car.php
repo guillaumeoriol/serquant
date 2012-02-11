@@ -10,10 +10,10 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Resource\Persistence\Zend\Db\Table;
+namespace Serquant\Resource\Persistence\Zend;
 
 /**
- * CmsAccount gateway
+ * Entity having an optional one-to-one association (owner)
  *
  * @category Serquant
  * @package  Resource
@@ -21,18 +21,29 @@ namespace Serquant\Resource\Persistence\Zend\Db\Table;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-
-class CmsAccount extends \Zend_Db_Table_Abstract
+class Car
 {
-    /**
-     * Table name
-     * @var string
-     */
-    protected $_name = 'cms_accounts';
+    private $id;
 
-    /**
-     * Primary key
-     * @var string
-     */
-    protected $_primary = 'id';
+    private $owner;
+
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
+
+    public function getOwner()
+    {
+        return $this->owner;
+    }
+
+    public function setOwner(Person $owner)
+    {
+        $this->owner = $owner;
+    }
 }
