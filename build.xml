@@ -375,7 +375,7 @@ tt|e |i |o r
 
     <target name="db.deploy.dev"
             description="deploy database on DEV server"
-            depends="input.bypass.target.dev,init.properties">
+            depends="input.bypass.target.dev,init">
         <echo>Starting deploy database on DEV server</echo>
         <exec dir="${bat.location}" executable="${bat.location}/${bat.file}">
             <arg value="/c" />
@@ -390,7 +390,7 @@ tt|e |i |o r
 
     <target name="db.deploy.test"
             description="deploy database on TEST server"
-            depends="input.bypass.target.test,init.properties">
+            depends="input.bypass.target.test,init">
         <echo>Starting deploy database on TEST server</echo>
         <exec dir="${bat.location}" executable="${bat.location}/${bat.file}">
             <arg value="/c" />
@@ -405,7 +405,7 @@ tt|e |i |o r
 
     <target name="db.deploy.prod"
             description="deploy database on PROD server"
-            depends="input.bypass.target.prod,init.properties">
+            depends="input.bypass.target.prod,init">
         <echo>Starting deploy database on PROD server</echo>
         <exec dir="${bat.location}" executable="${bat.location}/${bat.file}">
             <arg value="/c" />
@@ -417,7 +417,6 @@ tt|e |i |o r
             <arg value="-p" />
         </exec>
     </target>
-
 
     <!-- ################################################################### -->
 
@@ -1361,7 +1360,7 @@ tt|e |i |o r
     <target name="php-unit"
             description="run test suite with PHPUnit"
             depends="init">
-        <echo>Launching PHPUnit</echo>
+        <echo>Launching PHPUnit for unit testing</echo>
         <exec executable="${phpunit.executable}" failonerror="true">
             <arg line="--configuration ${tests.dir}/phpunit.xml.dist
                        --verbose" />
@@ -1397,6 +1396,18 @@ tt|e |i |o r
                        --jdepend-chart=${build.dir}/depend/jdepend.svg
                        --overview-pyramid=${build.dir}/depend/pyramid.svg
                        ${basedir}/${source.root.dir}" />
+        </exec>
+    </target>
+    
+    <target name="php-md"
+            description="generate report based on raw metrics measured by PHP_Depend"
+            depends="init">
+        <echo>Running PHPMD to generate a design report</echo>
+        <exec executable="${phpmd.executable}">
+            <arg line="${basedir}/${source.root.dir}
+                       xml
+                       codesize,design,naming,unusedcode
+                       --reportfile ${build.dir}/phpmd/report.xml" />
         </exec>
     </target>
 </project>
