@@ -1410,4 +1410,24 @@ tt|e |i |o r
                        --reportfile ${build.dir}/phpmd/report.xml" />
         </exec>
     </target>
+    
+    <target name="php-cpd"
+            description="phpcpd is a Copy/Paste Detector (CPD) for PHP code"
+            depends="init">
+        <echo>Running phpcpd to detect copy/paste in the code</echo>
+        <exec executable="${phpcpd.executable}">
+            <arg line="--log-pmd ${build.dir}/phpcpd/report.xml
+                       ${basedir}/${source.root.dir}" />
+        </exec>
+    </target>
+    
+    <target name="php-dcd"
+            description="phpdcd is a Dead Code Detector (DCD) for PHP code"
+            depends="init">
+        <echo>Running phpdcd to detect dead code</echo>
+        <exec executable="${phpdcd.executable}">
+            <arg line="--suffixes php
+                       ${basedir}/${source.root.dir}" />
+        </exec>
+    </target>
 </project>

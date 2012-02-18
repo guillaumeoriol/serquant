@@ -2,6 +2,7 @@
 build/
 config/
 doc/
+tests/
 .*
 build.xml
 README.*
