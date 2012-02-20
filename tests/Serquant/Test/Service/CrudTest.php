@@ -212,19 +212,6 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
     /**
      * @covers \Serquant\Service\Crud::fetchPairs
      */
-    public function testFetchPairsThrowingInvalidArgumentException()
-    {
-        $entityName = null;
-        $stub = $this->getMockBuilder('Serquant\Persistence\Doctrine')
-                     ->setConstructorArgs(array($this->em))
-                     ->getMock();
-
-        $service = new Crud($entityName, $stub);
-
-        $this->setExpectedException('Serquant\Service\Exception\InvalidArgumentException');
-        $service->fetchPairs('id', 'name', array('select(id,name)'));
-    }
-
     public function testFetchPairsThrowingRuntimeException()
     {
         $entityName = null;

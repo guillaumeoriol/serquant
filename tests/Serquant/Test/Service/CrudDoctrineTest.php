@@ -40,15 +40,6 @@ class CrudDoctrineTest extends \Serquant\Resource\Persistence\OrmFunctionalTestC
         $this->persister = new Doctrine($this->em);
     }
 
-    public function testFetchPairsWithExistingSelectOperator()
-    {
-        $this->setExpectedException('InvalidArgumentException');
-
-        $entityName = null;
-        $service = new Crud($entityName, $this->persister);
-        $service->fetchPairs('id', 'name', array('select(id,name)'));
-    }
-
     public function testFetchPairsWithDoctrinePersister()
     {
         $entityName = 'Serquant\Resource\Persistence\Doctrine\Entity\CmsAccount';

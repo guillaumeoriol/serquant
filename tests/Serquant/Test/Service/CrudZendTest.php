@@ -18,7 +18,6 @@ use Serquant\Service\Crud;
 class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
-    private $em;
     private $persister;
 
     private function setupDatabase()
@@ -43,28 +42,14 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     protected function setUp()
     {
         $this->setupDatabase();
-        $this->em = $this->getTestEntityManager();
-        $this->persister = new \Serquant\Persistence\Zend($this->em);
+        $this->persister = new \Serquant\Persistence\Zend();
     }
 
-    /**
-     * @group Zend
-     */
-    public function testFetchPairsWithExistingSelectOperator()
-    {
-        $this->setExpectedException('InvalidArgumentException');
-
-        $entityName = null;
-        $service = new Crud($entityName, $this->persister);
-        $service->fetchPairs('id', 'name', array('select(id,name)'));
-    }
-
-    /**
-     * @group Zend
-     */
     public function testFetchPairsWithZendPersister()
     {
         $entityName = 'Serquant\Resource\Persistence\Zend\User';
+        $gatewayName = 'Serquant\Resource\Persistence\Zend\Db\Table\User';
+        $this->persister->setTableGateway($entityName, $gatewayName);
 
         $service = new Crud($entityName, $this->persister);
         $result = $service->fetchPairs('id', 'name', array());
@@ -88,7 +73,11 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     public function testFetchPairsOnDifferentServicesWithSameZendPersister()
     {
         $entityName1 = 'Serquant\Resource\Persistence\Zend\User';
+        $gatewayName1 = 'Serquant\Resource\Persistence\Zend\Db\Table\User';
         $entityName2 = 'Serquant\Resource\Persistence\Zend\Person';
+        $gatewayName2 = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
+        $this->persister->setTableGateway($entityName1, $gatewayName1);
+        $this->persister->setTableGateway($entityName2, $gatewayName2);
 
         $service1 = new Crud($entityName1, $this->persister);
         $result1 = $service1->fetchPairs('id', 'name', array());
