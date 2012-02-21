@@ -38,11 +38,12 @@ class ZendCreateTest extends \Serquant\Resource\Persistence\ZendTestCase
     protected function setUp()
     {
         $this->setupDatabase();
-        $this->persister = new \Serquant\Persistence\Zend();
+        $evm = new \Doctrine\Common\EventManager();
+        $this->persister = new \Serquant\Persistence\Zend(array(), $evm);
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend::create
+     * @covers Serquant\Persistence\Zend::create
      */
     public function testCreate()
     {

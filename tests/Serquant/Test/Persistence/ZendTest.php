@@ -57,12 +57,13 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     protected function setUp()
     {
         $this->setupDatabase();
-        $this->persister = new \Serquant\Persistence\Zend();
+        $evm = new \Doctrine\Common\EventManager();
+        $this->persister = new \Serquant\Persistence\Zend(array(), $evm);
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend::normalizeEntityName
-     * @covers \Serquant\Persistence\Exception\InvalidArgumentException
+     * @covers Serquant\Persistence\Zend::normalizeEntityName
+     * @covers Serquant\Persistence\Exception\InvalidArgumentException
      */
     public function testNormalizeEntityName()
     {
@@ -83,7 +84,7 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend::setTableGateway
+     * @covers Serquant\Persistence\Zend::setTableGateway
      */
     public function testSetTableGatewayFromInstanceOfWrongClass()
     {
@@ -98,7 +99,8 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
         $gateway = new $gatewayClass;
 
         // Build a new persister to have an empty gateway map
-        $persister = new \Serquant\Persistence\Zend();
+        $evm = new \Doctrine\Common\EventManager();
+        $persister = new \Serquant\Persistence\Zend(array(), $evm);
         $persister->setTableGateway($name, $gateway);
 
         // Check that the given gateway can now been retrieved...
@@ -114,7 +116,8 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
         $gatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
 
         // Build a new persister to have an empty gateway map
-        $persister = new \Serquant\Persistence\Zend();
+        $evm = new \Doctrine\Common\EventManager();
+        $persister = new \Serquant\Persistence\Zend(array(), $evm);
         $persister->setTableGateway($name, $gatewayClass);
 
         // Check that the given gateway can now been retrieved...
@@ -125,8 +128,8 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend::getTableGateway
-     * @covers \Serquant\Persistence\Exception\InvalidArgumentException
+     * @covers Serquant\Persistence\Zend::getTableGateway
+     * @covers Serquant\Persistence\Exception\InvalidArgumentException
      */
     public function testGetTableGatewayFromClassWithoutGateway()
     {
@@ -149,7 +152,8 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
         $gatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
 
         // Build a new persister to have an empty gateway map
-        $persister = new \Serquant\Persistence\Zend(array($name => $gatewayClass));
+        $evm = new \Doctrine\Common\EventManager();
+        $persister = new \Serquant\Persistence\Zend(array($name => $gatewayClass), $evm);
 
         // Check that the given gateway can now been retrieved...
         $actual = $persister->getTableGateway($name);
@@ -159,7 +163,7 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend::loadEntity
+     * @covers Serquant\Persistence\Zend::loadEntity
      */
     public function testLoadEntityFromGateway()
     {
@@ -232,7 +236,7 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend::loadEntities
+     * @covers Serquant\Persistence\Zend::loadEntities
      */
     public function testLoadEntities()
     {
@@ -261,8 +265,8 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend::fetchAll
-     * @covers \Serquant\Persistence\Exception\InvalidArgumentException
+     * @covers Serquant\Persistence\Zend::fetchAll
+     * @covers Serquant\Persistence\Exception\InvalidArgumentException
      */
     public function testFetchAllWithoutGateway()
     {
@@ -345,7 +349,7 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend::fetchOne
+     * @covers Serquant\Persistence\Zend::fetchOne
      */
     public function testFetchOneThrowingNoResultException()
     {
@@ -388,7 +392,7 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend::fetchPage
+     * @covers Serquant\Persistence\Zend::fetchPage
      */
     public function testFetchPageWithoutLimit()
     {
@@ -425,7 +429,7 @@ class ZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend::fetchPairs
+     * @covers Serquant\Persistence\Zend::fetchPairs
      */
     public function testFetchPairs()
     {

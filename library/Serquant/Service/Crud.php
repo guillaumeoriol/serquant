@@ -168,16 +168,6 @@ class Crud implements ServiceInterface
     public function fetchPairs($idProperty = 'id', $labelProperty = 'name',
         array $expressions = array()
     ) {
-        foreach ($expressions as $key => $value) {
-            if (is_int($key) && (preg_match('/^select\((.*)\)$/', $value))) {
-                throw new InvalidArgumentException(
-                    'The specified array of expressions already has a '
-                    . "'select' operator: '" . print_r($value, true) . "'"
-                );
-            }
-        }
-        $expressions[] = "select($idProperty,$labelProperty)";
-
         try {
             $data = $this->persister->fetchPairs(
                 $this->entityName, $idProperty, $labelProperty, $expressions
