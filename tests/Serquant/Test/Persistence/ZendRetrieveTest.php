@@ -43,11 +43,12 @@ class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
     protected function setUp()
     {
         $this->setupDatabase();
-        $this->persister = new \Serquant\Persistence\Zend();
+        $evm = new \Doctrine\Common\EventManager();
+        $this->persister = new \Serquant\Persistence\Zend(array(), $evm);
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend::retrieve
+     * @covers Serquant\Persistence\Zend::retrieve
      */
     public function testRetrieveAlreadyLoadedEntity()
     {
@@ -105,7 +106,11 @@ class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
             'last_name' => $lastName
         );
         $row = new \Zend_Db_Table_Row(array('data' => $row));
-        $gateway = $this->getMock('Serquant\Persistence\Zend\Db\Table', array('find', 'loadEntity'));
+        $gateway = $this->getMock(
+        	'Serquant\Persistence\Zend\Db\Table',
+            array('find', 'loadEntity'),
+            array(array(), new \Doctrine\Common\EventManager())
+        );
         $gateway->expects($this->any())
                 ->method('find')
                 ->will($this->returnValue(new \ArrayIterator(array($row))));
@@ -116,7 +121,11 @@ class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
         $expected->setFirstName($firstName);
         $expected->setLastName($lastName);
 
-        $persister = $this->getMock('Serquant\Persistence\Zend', array('loadEntity'));
+        $persister = $this->getMock(
+        	'Serquant\Persistence\Zend',
+            array('loadEntity'),
+            array(array(), new \Doctrine\Common\EventManager())
+        );
         $persister->expects($this->any())
                   ->method('loadEntity')
                   ->will($this->returnValue($expected));

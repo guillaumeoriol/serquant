@@ -72,11 +72,13 @@ class EventManagerFactory
      * parameters:
      *   event_manager_config:
      *     listeners:
-     *       - events: postDelete
+     *       -
+     *         events: postDelete
      *         listener: My\Listener\CascadeDelete
-     *       - events:
-     *         - postCreate
-     *         - postUpdate
+     *       -
+     *         events:
+     *           - postCreate
+     *           - postUpdate
      *         listener: My\Listener\Informer
      *     subscribers:
      *       - My\Subscriber\Logger
@@ -101,6 +103,7 @@ class EventManagerFactory
      * Adds listeners to the event manager
      *
      * @param array $listeners Listeners
+     * @return void
      * @throws InvalidArgumentException if one of the given listeners is not
      * a string nor an object or if it is an object of the wrong class
      */
@@ -134,6 +137,7 @@ class EventManagerFactory
      * Adds subscribers to the event manager
      *
      * @param array $subscribers Subscribers
+     * @return void
      * @throws InvalidArgumentException if one of the given subscribers is not
      * a string nor an object or if it is an object of the wrong class
      */

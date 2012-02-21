@@ -89,8 +89,8 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
     }
 
     /**
-     * @covers \Serquant\Service\Crud::fetchAll
-     * @covers \Serquant\Service\Exception\RuntimeException
+     * @covers Serquant\Service\Crud::fetchAll
+     * @covers Serquant\Service\Exception\RuntimeException
      */
     public function testFetchAllThrowingException()
     {
@@ -130,7 +130,7 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
     }
 
     /**
-     * @covers \Serquant\Service\Crud::fetchOne
+     * @covers Serquant\Service\Crud::fetchOne
      */
     public function testFetchOneThrowingException()
     {
@@ -170,7 +170,7 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
     }
 
     /**
-     * @covers \Serquant\Service\Crud::fetchPage
+     * @covers Serquant\Service\Crud::fetchPage
      */
     public function testFetchPageThrowingException()
     {
@@ -210,7 +210,7 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
     }
 
     /**
-     * @covers \Serquant\Service\Crud::fetchPairs
+     * @covers Serquant\Service\Crud::fetchPairs
      */
     public function testFetchPairsThrowingRuntimeException()
     {
@@ -250,7 +250,7 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
     }
 
     /**
-     * @covers \Serquant\Service\Crud::getDefault
+     * @covers Serquant\Service\Crud::getDefault
      */
     public function testGetDefaultThrowingException()
     {
@@ -285,7 +285,7 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
     }
 
     /**
-     * @covers \Serquant\Service\Crud::delete
+     * @covers Serquant\Service\Crud::delete
      */
     public function testDeleteWithoutId()
     {
@@ -341,7 +341,7 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
     }
 
     /**
-     * @covers \Serquant\Service\Crud::retrieve
+     * @covers Serquant\Service\Crud::retrieve
      */
     public function testRetrieveWithoutId()
     {
@@ -438,7 +438,7 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
     }
 
     /**
-     * @covers \Serquant\Service\Crud::create
+     * @covers Serquant\Service\Crud::create
      */
     public function testCreateThrowingException()
     {
@@ -533,7 +533,7 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
     }
 
     /**
-     * @covers \Serquant\Service\Crud::update
+     * @covers Serquant\Service\Crud::update
      */
     public function testUpdateWithoutId()
     {
@@ -655,7 +655,7 @@ class CrudTest extends \Serquant\Resource\Persistence\OrmFunctionalTestCase
     }
 
     /**
-     * @covers \Serquant\Service\Crud::getSanitizedException
+     * @covers Serquant\Service\Crud::getSanitizedException
      */
     public function testGetSanitizedExceptionWithoutLog()
     {

@@ -48,11 +48,12 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     protected function setUp()
     {
         $this->setupDatabase();
-        $this->persister = new \Serquant\Persistence\Zend();
+        $evm = new \Doctrine\Common\EventManager();
+        $this->persister = new \Serquant\Persistence\Zend(array(), $evm);
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::hasColumn
+     * @covers Serquant\Persistence\Zend\Db\Table::hasColumn
      */
     public function testHasColumn()
     {
@@ -66,7 +67,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::getColumn
+     * @covers Serquant\Persistence\Zend\Db\Table::getColumn
      */
     public function testGetColumn()
     {
@@ -80,7 +81,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::hasField
+     * @covers Serquant\Persistence\Zend\Db\Table::hasField
      */
     public function testHasField()
     {
@@ -94,7 +95,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::getField
+     * @covers Serquant\Persistence\Zend\Db\Table::getField
      */
     public function testGetField()
     {
@@ -108,7 +109,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::setPersister
+     * @covers Serquant\Persistence\Zend\Db\Table::setPersister
      */
     public function testSetPersister()
     {
@@ -122,7 +123,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::getPersister
+     * @covers Serquant\Persistence\Zend\Db\Table::getPersister
      */
     public function testGetPersisterMissing()
     {
@@ -134,7 +135,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::selectPairs
+     * @covers Serquant\Persistence\Zend\Db\Table::selectPairs
      */
     public function testSelectPairsWithInvalidProperty()
     {
@@ -151,7 +152,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::getDatabasePlatform
+     * @covers Serquant\Persistence\Zend\Db\Table::getDatabasePlatform
      */
     public function testGetDatabasePlatformWithWrongAdapter()
     {
@@ -177,7 +178,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::getProperties
+     * @covers Serquant\Persistence\Zend\Db\Table::getProperties
      */
     public function testGetProperties()
     {
@@ -193,7 +194,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::newInstance
+     * @covers Serquant\Persistence\Zend\Db\Table::newInstance
      */
     public function testNewInstance()
     {
@@ -206,7 +207,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::getPrimaryKey
+     * @covers Serquant\Persistence\Zend\Db\Table::getPrimaryKey
      */
     public function testGetPrimaryKeyWithSimpleKey()
     {
@@ -225,7 +226,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::loadEntity
+     * @covers Serquant\Persistence\Zend\Db\Table::loadEntity
      */
     public function testLoadEntityWithoutCustomMapper()
     {
@@ -293,7 +294,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::loadRow
+     * @covers Serquant\Persistence\Zend\Db\Table::loadRow
      */
     public function testLoadRowWithDefaultImplementation()
     {
@@ -340,7 +341,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::computeChangeSet
+     * @covers Serquant\Persistence\Zend\Db\Table::computeChangeSet
      */
     public function testComputeChangeSetOnBaseGateway()
     {
@@ -360,7 +361,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::getWhereClause
+     * @covers Serquant\Persistence\Zend\Db\Table::getWhereClause
      */
     public function testGetWhereClauseWithoutId()
     {
@@ -393,7 +394,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::updateEntityIdentifier
+     * @covers Serquant\Persistence\Zend\Db\Table::updateEntityIdentifier
      */
     public function testUpdateEntityIdentifier()
     {
@@ -419,7 +420,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::insert
+     * @covers Serquant\Persistence\Zend\Db\Table::insert
      */
     public function testInsertWithSimpleKey()
     {
@@ -439,7 +440,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::update
+     * @covers Serquant\Persistence\Zend\Db\Table::update
      */
     public function testUpdate()
     {
@@ -455,7 +456,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers \Serquant\Persistence\Zend\Db\Table::delete
+     * @covers Serquant\Persistence\Zend\Db\Table::delete
      */
     public function testDelete()
     {

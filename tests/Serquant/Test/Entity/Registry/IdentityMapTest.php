@@ -33,7 +33,7 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \Serquant\Entity\Registry\IdentityMap::getRootClass
+     * @covers Serquant\Entity\Registry\IdentityMap::getRootClass
      */
     public function testGetRootClassFromBaseClass()
     {
@@ -72,7 +72,7 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \Serquant\Entity\Registry\IdentityMap::get
+     * @covers Serquant\Entity\Registry\IdentityMap::get
      */
     public function testGetMissingEntity()
     {
@@ -151,7 +151,7 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \Serquant\Entity\Registry\IdentityMap::getOriginal
+     * @covers Serquant\Entity\Registry\IdentityMap::getOriginal
      */
     public function testGetOriginal()
     {
@@ -172,7 +172,7 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \Serquant\Entity\Registry\IdentityMap::has
+     * @covers Serquant\Entity\Registry\IdentityMap::has
      */
     public function testHasMissingEntity()
     {
@@ -202,9 +202,9 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \Serquant\Entity\Registry\IdentityMap::put
-     * @covers \Serquant\Entity\Exception
-     * @covers \Serquant\Entity\Exception\InvalidArgumentException
+     * @covers Serquant\Entity\Registry\IdentityMap::put
+     * @covers Serquant\Entity\Exception
+     * @covers Serquant\Entity\Exception\InvalidArgumentException
      */
     public function testPutWithoutId()
     {
@@ -305,7 +305,7 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \Serquant\Entity\Registry\IdentityMap::getId
+     * @covers Serquant\Entity\Registry\IdentityMap::getId
      */
     public function testGetId()
     {
@@ -324,7 +324,7 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \Serquant\Entity\Registry\IdentityMap::commit
+     * @covers Serquant\Entity\Registry\IdentityMap::commit
      */
     public function testCommit()
     {
@@ -359,7 +359,7 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \Serquant\Entity\Registry\IdentityMap::remove
+     * @covers Serquant\Entity\Registry\IdentityMap::remove
      */
     public function testRemoveMissingEntity()
     {
@@ -396,9 +396,9 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \Serquant\Entity\Registry\IdentityMap::propertyChanged
-     * @covers \Serquant\Entity\Exception
-     * @covers \Serquant\Entity\Exception\NotImplementedException
+     * @covers Serquant\Entity\Registry\IdentityMap::propertyChanged
+     * @covers Serquant\Entity\Exception
+     * @covers Serquant\Entity\Exception\NotImplementedException
      */
     public function testPropertyChanged()
     {

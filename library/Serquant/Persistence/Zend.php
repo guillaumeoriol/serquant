@@ -12,7 +12,10 @@
  */
 namespace Serquant\Persistence;
 
+use Doctrine\Common\EventManager;
 use Serquant\Entity\Registry\IdentityMap;
+use Serquant\Event\LifecycleEvent;
+use Serquant\Event\LifecycleEventArgs;
 use Serquant\Paginator\Adapter\DbSelect;
 use Serquant\Persistence\Persistence;
 use Serquant\Persistence\Exception\InvalidArgumentException;
@@ -36,6 +39,12 @@ use Serquant\Persistence\Zend\Db\Table;
  */
 class Zend implements Persistence
 {
+    /**
+     * The event manager that is the central point of the event system.
+     * @var Doctrine\Common\EventManager
+     */
+    private $eventManager;
+
     /**
      * Map of table data gateway names
      * The key is the entity class and the value is the gateway class
@@ -61,9 +70,11 @@ class Zend implements Persistence
      * Constructs a persister
      *
      * @param array $config Map between entity name and gateway name
+     * @param EventManager $eventManager Event manager
      */
-    public function __construct(array $config = array())
+    public function __construct(array $config, EventManager $eventManager)
     {
+        $this->eventManager = $eventManager;
         $this->config = $config;
         $this->gateways = array();
         $this->loadedMap = new IdentityMap();
@@ -286,12 +297,25 @@ class Zend implements Persistence
      */
     public function create($entity)
     {
+        if ($this->eventManager->hasListeners(LifecycleEvent::PRE_PERSIST)) {
+            $this->eventManager->dispatchEvent(
+                LifecycleEvent::PRE_PERSIST,
+                new LifecycleEventArgs($entity, $this)
+            );
+        }
+
         $gateway = $this->getTableGateway($entity);
         $row = $gateway->loadRow($entity);
         $id = $gateway->insert($row);
         $gateway->updateEntityIdentifier($entity, $id);
-
         $this->loadedMap->put($entity, $id);
+
+        if ($this->eventManager->hasListeners(LifecycleEvent::POST_PERSIST)) {
+            $this->eventManager->dispatchEvent(
+                LifecycleEvent::POST_PERSIST,
+                new LifecycleEventArgs($entity, $this)
+            );
+        }
     }
 
     /**
@@ -362,7 +386,23 @@ class Zend implements Persistence
         $gateway = $this->getTableGateway($entity);
         $original = $this->loadedMap->getOriginal($entity);
         if ($changeSet = $gateway->computeChangeSet($original, $entity)) {
+            if ($this->eventManager->hasListeners(LifecycleEvent::PRE_UPDATE)) {
+                $this->eventManager->dispatchEvent(
+                    LifecycleEvent::PRE_UPDATE,
+                    new PreUpdateLifecycleEventArgs($entity, $this, $original)
+                );
+            }
+
             $count = $gateway->update($changeSet, $this->loadedMap->getId($entity));
+            $this->loadedMap->commit($entity);
+
+            if ($this->eventManager->hasListeners(LifecycleEvent::POST_UPDATE)) {
+                $this->eventManager->dispatchEvent(
+                    LifecycleEvent::POST_UPDATE,
+                    new LifecycleEventArgs($entity, $this)
+                );
+            }
+
             if ($count === 0) {
                 throw new NoResultException(
                     'No entity matching the given identity was updated.', 61
@@ -372,8 +412,6 @@ class Zend implements Persistence
                     $count . ' entities matching the given identity were updated.', 62
                 );
             }
-
-            $this->loadedMap->commit($entity);
         }
     }
 
@@ -396,8 +434,24 @@ class Zend implements Persistence
             );
         }
 
+        if ($this->eventManager->hasListeners(LifecycleEvent::PRE_REMOVE)) {
+            $this->eventManager->dispatchEvent(
+                LifecycleEvent::PRE_REMOVE,
+                new LifecycleEventArgs($entity, $this)
+            );
+        }
+
         $gateway = $this->getTableGateway($entity);
         $count = $gateway->delete($this->loadedMap->getId($entity));
+        $this->loadedMap->remove($entity);
+
+        if ($this->eventManager->hasListeners(LifecycleEvent::POST_REMOVE)) {
+            $this->eventManager->dispatchEvent(
+                LifecycleEvent::POST_REMOVE,
+                new LifecycleEventArgs($entity, $this)
+            );
+        }
+
         if ($count === 0) {
             throw new NoResultException(
                 'No entity matching the given identity was deleted.', 71
@@ -407,7 +461,5 @@ class Zend implements Persistence
                 $count . ' entities matching the given identity were deleted.', 72
             );
         }
-
-        $this->loadedMap->remove($entity);
     }
 }
