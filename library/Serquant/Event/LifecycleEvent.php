@@ -34,7 +34,8 @@ final class LifecycleEvent
 
     /**
      * The preRemove event occurs for a given entity before the respective
-     * persister remove operation for that entity is executed.
+     * gateway delete operation for that entity is executed. If the entity
+     * is not managed, an exception is thrown and no event is dispatched.
      * @var string
      */
     const PRE_REMOVE = 'preRemove';
@@ -42,35 +43,40 @@ final class LifecycleEvent
     /**
      * The postRemove event occurs for an entity after the entity has
      * been deleted. It will be invoked after the database delete operations.
+     * The postRemove event occurs even if the gateway delete operation returns
+     * an unexpected count (different than 1).
      * @var string
      */
     const POST_REMOVE = 'postRemove';
 
     /**
      * The prePersist event occurs for a given entity before the respective
-     * persister persist operation for that entity is executed.
+     * gateway create operation for that entity is executed.
      * @var string
      */
     const PRE_PERSIST = 'prePersist';
 
     /**
-     * The postPersist event occurs for an entity after the entity has
-     * been made persistent. It will be invoked after the database insert operations.
+     * The postPersist event occurs for an entity after the entity has been made
+     * persistent. It will be invoked after the database insert operations.
      * Generated primary key values are available in the postPersist event.
      * @var string
      */
     const POST_PERSIST = 'postPersist';
 
     /**
-     * The preUpdate event occurs before the database update operations to
-     * entity data.
+     * The preUpdate event occurs for a given entity before the respective
+     * gateway update operation for that entity is executed. If the entity
+     * is not managed, an exception is thrown and no event is dispatched.
+     * If the entity changeset is empty, no event is dispatched.
      * @var string
      */
     const PRE_UPDATE = 'preUpdate';
 
     /**
      * The postUpdate event occurs after the database update operations to
-     * entity data.
+     * entity data. The postUpdate event occurs even if the gateway update
+     * operation returns an unexpected count (different than 1).
      * @var string
      */
     const POST_UPDATE = 'postUpdate';
