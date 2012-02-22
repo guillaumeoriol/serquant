@@ -807,18 +807,20 @@ $service = new Crud('User', $customPersister);
 		<code>Serquant\Persistence\Doctrine</code>
 		(a thin adapter around Doctrine). Doctrine is the most advanced ORM in
 		PHP (based on Hibernate). The second one is
-		<code>Serquant\Persistence\Zend</code> (a pseudo-ORM using Zend_Db_Table
-		for data access).
+		<code>Serquant\Persistence\Zend</code>
+		(a pseudo-ORM using Zend_Db_Table for data access).
 	</p>
-	
-    <h3>
-        <a name="persistenceZend">Zend persister</a>
-    </h3>
-    
-    <p>This persister has the following <em>limitations</em>:</p>
-    <ul>
-        <li>it doesn't manage one-to-one bidirectional associations</li>
-    </ul>
+
+	<h3>
+		<a name="persistenceZend">Zend persister</a>
+	</h3>
+
+	<p>
+		This persister has the following <em>limitations</em>:
+	</p>
+	<ul>
+		<li>it doesn't manage one-to-one bidirectional associations</li>
+	</ul>
 	<p>
 		To avoid reinventing the wheel, we use Doctrine implementation of the
 		Metadata Mapping. When the annotations are used, one can find this
@@ -844,6 +846,109 @@ $service = new Crud('User', $customPersister);
 			href="http://martinfowler.com/eaaCatalog/lazyLoad.html">Lazy Load</a>.
 	</p>
 	<p>Doctrine uses many of the patterns described by Martin Fowler.</p>
+
+	<h3>
+		<a name="lifecycleEvents">Persistence lifecycle events</a>
+	</h3>
+
+	<p>Doctrine has its own mechanism to handle lifecycle events. Here
+		we only describe lifecycle events in the context of the Zend
+		persister.</p>
+
+	<p>
+		Zend persister defines 6 lifecycle events that are fully described in
+		the class containing the following constants (
+		<code>Serquant\Event\LifecycleEvent</code>
+		):
+	</p>
+	<ol>
+		<li>PRE_PERSIST (function name: 'prePersist')</li>
+		<li>POST_PERSIST (function name: 'postPersist')</li>
+		<li>PRE_UPDATE (function name: 'preUpdate')</li>
+		<li>POST_UPDATE (function name: 'postUpdate')</li>
+		<li>PRE_REMOVE (function name: 'preRemove')</li>
+		<li>POST_REMOVE (function name: 'postRemove')</li>
+	</ol>
+	<p>
+		Events are managed by an event manager. To not reinvent the wheel, we
+		chose an existing one from the Doctrine Common project (
+		<code>Doctrine\Common\EventManager</code>
+		). The first thing to do is to obtain an event manager instance and
+		then to add listeners to this instance. This may be done in a
+		traditional way:
+	</p>
+
+	<pre>
+use Doctrine\Common\EventManager;
+use Serquant\Event\LifecycleEvent;
+use Serquant\Event\LifecycleEventArgs;
+
+class MyListener
+{
+    public function __construct($evm)
+    {
+        $evm-&gt;addEventListener(LifecycleEvent::POST_UPDATE, $this);
+    }
+
+    public function postUpdate(LifecycleEventArgs $args)
+    {
+        // do something
+    }
+}
+
+$eventManager = new EventManager();
+$listener = new MyListener($eventManager);
+</pre>
+
+	<p>or it may be done through the service configuration file:</p>
+	<pre>
+event_config:
+    listeners:
+        - MyListener
+
+event_manager:
+    class: Doctrine\Common\EventManager
+    factory_class: Serquant\DependencyInjection\Factory\EventManagerFactory
+    factory_method: get
+    arguments: [%event_config%]
+</pre>
+
+	<p>
+		To implement a lifecycle event listener, it is mandatory to respect
+		pre-defined method names (to be found in
+		<code>Serquant\Event\LifecycleEvent</code>
+		) and argument type of these methods. All but one of these methods
+		receive an
+		<code>Serquant\Event\LifecycleEventArgs</code>
+		argument. The only exception is
+		<code>preUpdate</code>
+		which receives a
+		<code>Serquant\Event\PreUpdateLifecycleEventArgs</code>
+		argument. Refer to these class API to get full documentation. A basic
+		lifecycle event listener implementation would be: 
+	</p>
+    <pre>
+use Doctrine\Common\EventManager;
+use Serquant\Event\LifecycleEvent;
+use Serquant\Event\LifecycleEventArgs;
+
+class MyListener
+{
+    public function __construct($evm)
+    {
+        $evm-&gt;addEventListener(LifecycleEvent::POST_UPDATE, $this);
+    }
+
+    public function postUpdate(LifecycleEventArgs $args)
+    {
+        $entity = $args-&gt;getEntity();
+        // Anything to do with me?
+        if ($entity instanceof \My\Domain\Entity) {
+            // do whatever you want with the entity
+        }
+    }
+}
+</pre>
 
 	<h2>
 		<a name="frontEnd">Front-end design</a>
