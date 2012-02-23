@@ -33,13 +33,13 @@ class PersisterUpdateTest extends \Serquant\Resource\Persistence\ZendTestCase
         $dataSets = array();
 
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            dirname(__FILE__) . '/fixture/people.yaml'
+            realpath(dirname(__FILE__) . '/../fixture/people.yaml')
         );
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            dirname(__FILE__) . '/fixture/issues.yaml'
+            realpath(dirname(__FILE__) . '/../fixture/issues.yaml')
         );
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            dirname(__FILE__) . '/fixture/roles.yaml'
+            realpath(dirname(__FILE__) . '/../fixture/roles.yaml')
         );
 
         $data = new \PHPUnit_Extensions_Database_DataSet_CompositeDataSet(

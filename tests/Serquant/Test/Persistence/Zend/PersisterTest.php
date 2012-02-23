@@ -22,26 +22,26 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
         $dataSets = array();
 
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            dirname(__FILE__) . '/fixture/people.yaml'
+            realpath(dirname(__FILE__) . '/../fixture/people.yaml')
         );
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            dirname(__FILE__) . '/fixture/issues.yaml'
+            realpath(dirname(__FILE__) . '/../fixture/issues.yaml')
         );
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            dirname(__FILE__) . '/fixture/cars.yaml'
+            realpath(dirname(__FILE__) . '/../fixture/cars.yaml')
         );
 
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            dirname(__FILE__) . '/fixture/cms_accounts.yaml'
+            realpath(dirname(__FILE__) . '/../fixture/cms_accounts.yaml')
         );
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            dirname(__FILE__) . '/fixture/cms_users.yaml'
+            realpath(dirname(__FILE__) . '/../fixture/cms_users.yaml')
         );
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            dirname(__FILE__) . '/fixture/cms_addresses.yaml'
+            realpath(dirname(__FILE__) . '/../fixture/cms_addresses.yaml')
         );
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            dirname(__FILE__) . '/fixture/cms_phonenumbers.yaml'
+            realpath(dirname(__FILE__) . '/../fixture/cms_phonenumbers.yaml')
         );
 
         $data = new \PHPUnit_Extensions_Database_DataSet_CompositeDataSet(

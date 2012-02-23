@@ -22,7 +22,7 @@ class PersisterCreateTest extends \Serquant\Resource\Persistence\ZendTestCase
         $dataSets = array();
 
         $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            dirname(__FILE__) . '/fixture/people.yaml'
+            realpath(dirname(__FILE__) . '/../fixture/people.yaml')
         );
 
         $data = new \PHPUnit_Extensions_Database_DataSet_CompositeDataSet(
