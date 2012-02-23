@@ -30,7 +30,7 @@ class LifecycleEventArgsTest extends \Serquant\Resource\Persistence\ZendTestCase
     protected function setUp()
     {
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend(array(), $evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
     }
 
     /**
@@ -54,7 +54,7 @@ class LifecycleEventArgsTest extends \Serquant\Resource\Persistence\ZendTestCase
         $entity = new \Serquant\Resource\Persistence\Zend\User();
         $args = new LifecycleEventArgs($entity, $this->persister);
         $actual = $args->getPersister();
-        $this->assertInstanceOf('Serquant\Persistence\Zend', $actual);
+        $this->assertInstanceOf('Serquant\Persistence\Zend\Persister', $actual);
         $this->assertSame($this->persister, $actual);
     }
 }

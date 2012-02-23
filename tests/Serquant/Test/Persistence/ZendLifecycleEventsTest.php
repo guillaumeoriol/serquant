@@ -10,7 +10,7 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Test\Persistence;
+namespace Serquant\Test\Persistence\Zend;
 
 use Serquant\Event\LifecycleEventArgs;
 
@@ -23,7 +23,8 @@ use Serquant\Event\LifecycleEventArgs;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class ZendLifecycleEventsTest extends \Serquant\Resource\Persistence\ZendTestCase
+class PersisterLifecycleEventsTest
+    extends \Serquant\Resource\Persistence\ZendTestCase
 {
     protected $db;
     protected $evm;
@@ -70,7 +71,7 @@ class ZendLifecycleEventsTest extends \Serquant\Resource\Persistence\ZendTestCas
     {
 //        $this->setupDatabase();
         $this->evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend(array(), $this->evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $this->evm);
     }
 
     public function testCreateWithPrePersistListener()

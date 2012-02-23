@@ -10,7 +10,7 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Persistence;
+namespace Serquant\Persistence\Zend;
 
 use Doctrine\Common\EventManager;
 use Serquant\Entity\Registry\IdentityMap;
@@ -37,7 +37,7 @@ use Serquant\Persistence\Zend\Db\Table;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class Zend implements Persistence
+class Persister implements Persistence
 {
     /**
      * The event manager that is the central point of the event system.
@@ -161,7 +161,7 @@ class Zend implements Persistence
     {
         // Following is a rewriting of a paragraph from Martin Fowler's book
         // [PoEAA, p. 172]:
-        // "The Identity Map is checked twice, once in the Zend#retrieve
+        // "The Identity Map is checked twice, once in the Persister#retrieve
         // function, and once here. There is a reason for this madness. I need
         // to check the map in the finder because, if the object is already
         // there, I can save myself a trip to database. But I also need to check
@@ -365,7 +365,7 @@ class Zend implements Persistence
      * {@inheritDoc}
      *
      * The given entity must have been retrieved previously with the
-     * {@link Zend#retrieve()} method.
+     * {@link Persister#retrieve()} method.
      *
      * @param object $entity The existing entity to persist
      * @return void
@@ -419,7 +419,7 @@ class Zend implements Persistence
      * {@inheritDoc}
      *
      * The given entity must have been retrieved previously with the
-     * {@link Zend#retrieve()} method.
+     * {@link Persister#retrieve()} method.
      *
      * @param object $entity The existing entity to delete
      * @return void

@@ -13,7 +13,7 @@
 namespace Serquant\Event;
 
 use Doctrine\Common\EventArgs;
-use Serquant\Persistence\Zend;
+use Serquant\Persistence\Zend\Persister;
 
 /**
  * Class that contains the arguments passed to the listener when a lifecycle
@@ -32,7 +32,7 @@ class LifecycleEventArgs extends EventArgs
 {
     /**
      * Persister that triggered the event
-     * @var Zend
+     * @var Persister
      */
     private $persister;
 
@@ -46,9 +46,9 @@ class LifecycleEventArgs extends EventArgs
      * Constructs a listener argument container
      *
      * @param object $entity Entity on which the event occurred
-     * @param Zend $persister Persister that triggered the event
+     * @param Persister $persister Persister that triggered the event
      */
-    public function __construct($entity, Zend $persister)
+    public function __construct($entity, Persister $persister)
     {
         $this->entity = $entity;
         $this->persister = $persister;
@@ -67,7 +67,7 @@ class LifecycleEventArgs extends EventArgs
     /**
      * Gets the persister that triggered the event
      *
-     * @return Zend
+     * @return Persister
      */
     public function getPersister()
     {

@@ -31,7 +31,7 @@ class PreUpdateLifecycleEventArgsTest
     protected function setUp()
     {
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend(array(), $evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
     }
 
     /**

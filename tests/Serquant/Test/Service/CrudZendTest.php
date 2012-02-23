@@ -12,7 +12,7 @@
  */
 namespace Serquant\Test\Service;
 
-use Serquant\Persistence\Zend;
+use Serquant\Persistence\Zend\Persister;
 use Serquant\Service\Crud;
 
 class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
@@ -43,7 +43,7 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     {
         $this->setupDatabase();
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend(array(), $evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
     }
 
     public function testFetchPairsWithZendPersister()
@@ -69,7 +69,6 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     /**
      * @group issue-6
-     * @group Zend
      */
     public function testFetchPairsOnDifferentServicesWithSameZendPersister()
     {

@@ -10,9 +10,9 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Test\Persistence;
+namespace Serquant\Test\Persistence\Zend;
 
-class ZendDeleteTest extends \Serquant\Resource\Persistence\ZendTestCase
+class PersisterDeleteTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
     private $persister;
@@ -45,11 +45,11 @@ class ZendDeleteTest extends \Serquant\Resource\Persistence\ZendTestCase
     {
         $this->setupDatabase();
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend(array(), $evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
     }
 
     /**
-     * @covers Serquant\Persistence\Zend::delete
+     * @covers Serquant\Persistence\Zend\Persister::delete
      */
     public function testDeleteOnEntityNotManaged()
     {

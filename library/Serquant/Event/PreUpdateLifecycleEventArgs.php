@@ -12,6 +12,8 @@
  */
 namespace Serquant\Event;
 
+use Serquant\Persistence\Zend\Persister;
+
 /**
  * Class that contains the arguments passed to the listener when a preUpdate
  * lifecycle event is dispatched.
@@ -37,10 +39,10 @@ class PreUpdateLifecycleEventArgs extends LifecycleEventArgs
      * Constructs a listener argument container
      *
      * @param object $entity Entity on which the event occurred
-     * @param Zend $persister Persister that triggered the event
+     * @param Persister $persister Persister that triggered the event
      * @param object $originalState Original state of the entity to be updated
      */
-    public function __construct($entity, $persister, $originalState)
+    public function __construct($entity, Persister $persister, $originalState)
     {
         parent::__construct($entity, $persister);
         $this->originalState = $originalState;

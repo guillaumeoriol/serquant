@@ -15,7 +15,7 @@ namespace Serquant\Persistence\Zend\Db;
 use ReflectionClass;
 use Serquant\Persistence\Exception\NotImplementedException;
 use Serquant\Persistence\Exception\RuntimeException;
-use Serquant\Persistence\Zend;
+use Serquant\Persistence\Zend\Persister;
 
 /**
  * Table data access class
@@ -71,7 +71,7 @@ class Table extends \Zend_Db_Table_Abstract
 
     /**
      * Back reference to the persister managing this class
-     * @var Serquant\Persistence\Zend
+     * @var Persister
      */
     private $persister;
 
@@ -138,13 +138,13 @@ class Table extends \Zend_Db_Table_Abstract
     /**
      * Sets a back reference to the persister managing this class
      *
-     * @param Zend $persister Persister instance
+     * @param Persister $persister Persister instance
      * @return void
      * @internal This property should be set in the constructor but, as we
      * extend an existing class from Zend, we can't change the constructor
      * signature.
      */
-    public function setPersister(Zend $persister)
+    public function setPersister(Persister $persister)
     {
         $this->persister = $persister;
     }
@@ -152,7 +152,7 @@ class Table extends \Zend_Db_Table_Abstract
     /**
      * Gets the persister managing this class
      *
-     * @return Zend
+     * @return Persister
      * @throws RuntimeException if the back reference is not set
      */
     protected function getPersister()
@@ -332,7 +332,7 @@ class Table extends \Zend_Db_Table_Abstract
      *
      * @return object
      */
-    protected function newInstance()
+    public function newInstance()
     {
         if ($this->prototype === null) {
             $this->prototype = unserialize(
@@ -344,6 +344,21 @@ class Table extends \Zend_Db_Table_Abstract
             );
         }
         return clone $this->prototype;
+    }
+
+    /**
+     * Gets a new proxy instance for the entity matching this gateway and
+     * identified by the given identifier.
+     *
+     * @param mixed $identifier
+     * @return object
+     */
+    public function newProxyInstance($identifier)
+    {
+        $proxyClassName = $this->entityName . 'Proxy';
+        $fqn = $this->persister->getProxyNamespace() . '\\' . $proxyClassName;
+
+        return new $fqn($this, $identifier);
     }
 
     /**

@@ -10,7 +10,7 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Test\Persistence\Zend;
+namespace Serquant\Test\Persistence\Zend\Db;
 
 /**
  * Test class for Table
@@ -49,7 +49,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     {
         $this->setupDatabase();
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend(array(), $evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
     }
 
     /**

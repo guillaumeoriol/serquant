@@ -10,12 +10,12 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Test\Persistence;
+namespace Serquant\Test\Persistence\Zend;
 
 // Can't use a mock object with a callback to change the entity on commit
 // as the argument gets cloneed before it is passed to the callback. See
 // http://stackoverflow.com/questions/4702132/modifing-objects-in-returncallback-of-phpunit-mocks
-class ZendUpdateTestIdentityMapStub extends \Serquant\Entity\Registry\IdentityMap
+class PersisterUpdateTestIdentityMapStub extends \Serquant\Entity\Registry\IdentityMap
 {
     function commit($entity)
     {
@@ -23,7 +23,7 @@ class ZendUpdateTestIdentityMapStub extends \Serquant\Entity\Registry\IdentityMa
     }
 }
 
-class ZendUpdateTest extends \Serquant\Resource\Persistence\ZendTestCase
+class PersisterUpdateTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
     private $persister;
@@ -56,11 +56,11 @@ class ZendUpdateTest extends \Serquant\Resource\Persistence\ZendTestCase
     {
         $this->setupDatabase();
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend(array(), $evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
     }
 
     /**
-     * @covers Serquant\Persistence\Zend::update
+     * @covers Serquant\Persistence\Zend\Persister::update
      */
     public function testUpdateOnEntityNotManaged()
     {
@@ -93,7 +93,7 @@ class ZendUpdateTest extends \Serquant\Resource\Persistence\ZendTestCase
 
         // Replace the original registry by a stub containing the test entity
         // that will change the identifier if a changeset is committed
-        $map = new ZendUpdateTestIdentityMapStub();
+        $map = new PersisterUpdateTestIdentityMapStub();
         $map->put($role, array($id));
         $property = new \ReflectionProperty($this->persister, 'loadedMap');
         $property->setAccessible(true);
@@ -126,7 +126,7 @@ class ZendUpdateTest extends \Serquant\Resource\Persistence\ZendTestCase
 
         // Replace the original registry by a stub containing the test entity
         // that will change the identifier if a changeset is committed
-        $map = new ZendUpdateTestIdentityMapStub();
+        $map = new PersisterUpdateTestIdentityMapStub();
         $map->put($person, array($id));
         $property = new \ReflectionProperty($this->persister, 'loadedMap');
         $property->setAccessible(true);

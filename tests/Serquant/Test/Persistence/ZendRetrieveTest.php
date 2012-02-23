@@ -10,11 +10,11 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Test\Persistence;
+namespace Serquant\Test\Persistence\Zend;
 
 use Serquant\Persistence\Zend\Db\Table;
 
-class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
+class PersisterRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
     private $persister;
@@ -44,11 +44,11 @@ class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
     {
         $this->setupDatabase();
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend(array(), $evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
     }
 
     /**
-     * @covers Serquant\Persistence\Zend::retrieve
+     * @covers Serquant\Persistence\Zend\Persister::retrieve
      */
     public function testRetrieveAlreadyLoadedEntity()
     {
@@ -122,7 +122,7 @@ class ZendRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
         $expected->setLastName($lastName);
 
         $persister = $this->getMock(
-        	'Serquant\Persistence\Zend',
+        	'Serquant\Persistence\Zend\Persister',
             array('loadEntity'),
             array(array(), new \Doctrine\Common\EventManager())
         );
