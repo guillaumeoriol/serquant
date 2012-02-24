@@ -63,7 +63,7 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
         $evm = new \Doctrine\Common\EventManager();
         $this->config = new Configuration();
         $this->config->setEventManager($evm);
-        $this->config->setProxyNamespace('Serquant\Resource\Persistence\Zend');
+        $this->config->setProxyNamespace('Serquant\Resource\Persistence\Zend\Proxy');
         $this->persister = new \Serquant\Persistence\Zend\Persister($this->config);
     }
 
@@ -308,7 +308,7 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
 
         foreach ($entities as $entity) {
             $this->assertInstanceOf($issueEntityClass, $entity);
-            $this->assertInstanceOf('Serquant\Resource\Persistence\Zend\PersonProxy', $entity->getReporter());
+            $this->assertInstanceOf('Serquant\Resource\Persistence\Zend\Proxy\PersonProxy', $entity->getReporter());
         }
     }
 

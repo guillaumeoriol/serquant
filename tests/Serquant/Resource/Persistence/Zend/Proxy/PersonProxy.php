@@ -10,7 +10,9 @@
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-namespace Serquant\Resource\Persistence\Zend;
+namespace Serquant\Resource\Persistence\Zend\Proxy;
+
+use Serquant\Resource\Persistence\Zend\Person;
 
 /**
  * Use case for testing entity lazy loading

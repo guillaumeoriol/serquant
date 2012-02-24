@@ -14,7 +14,6 @@ namespace Serquant\Resource\Persistence\Zend\Db\Table;
 
 use Doctrine\DBAL\Types\Type;
 use Serquant\Persistence\Zend\Db\Table;
-use Serquant\Resource\Persistence\Zend\PersonProxy;
 
 /**
  * Table data gateway for the Person entity

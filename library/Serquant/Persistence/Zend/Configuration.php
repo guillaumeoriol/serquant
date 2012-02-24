@@ -90,7 +90,7 @@ class Configuration
      */
     public function setProxyNamespace($proxyNamespace)
     {
-        if (preg_match('/^[A-Z][a-zA-Z0-9_\\]*[a-zA-Z0-9_]/', $proxyNamespace)) {
+        if (preg_match('/^[A-Z][a-zA-Z0-9_\\\\]*[a-zA-Z0-9_]$/', $proxyNamespace)) {
             $this->attributes['proxyNamespace'] = $proxyNamespace;
         } else {
             throw new InvalidArgumentException(

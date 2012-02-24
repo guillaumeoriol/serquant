@@ -41,34 +41,4 @@ abstract class ZendTestCase extends \PHPUnit_Framework_TestCase
         \Zend_Db_Table::setDefaultAdapter($adapter);
         return $adapter;
     }
-
-    /**
-     * Creates an EntityManager for testing purposes.
-     *
-     * @return Doctrine\ORM\EntityManager
-     */
-    protected function getTestEntityManager()
-    {
-        $path = TEST_PATH . '/Serquant/Resource/Persistence/Zend';
-        $cache = new \Doctrine\Common\Cache\ArrayCache;
-
-        $config = new \Doctrine\ORM\Configuration();
-        $config->setMetadataCacheImpl($cache);
-        $driverImpl = $config->newDefaultAnnotationDriver($path);
-        $config->setMetadataDriverImpl($driverImpl);
-        $config->setQueryCacheImpl($cache);
-        $config->setProxyDir($path . '/Proxy');
-        $config->setProxyNamespace('Serquant\Resource\Persistence\Zend\Proxy');
-        $config->setAutoGenerateProxyClasses(true);
-
-        $connection = array(
-            'driver'   => UNIT_TESTS_DB_ADAPTER,
-            'host'     => UNIT_TESTS_DB_HOST,
-            'user'     => UNIT_TESTS_DB_USERNAME,
-            'password' => UNIT_TESTS_DB_PASSWORD,
-            'dbname'   => UNIT_TESTS_DB_DBNAME,
-            'port'     => UNIT_TESTS_DB_PORT
-        );
-        return \Doctrine\ORM\EntityManager::create($connection, $config);
-    }
 }
