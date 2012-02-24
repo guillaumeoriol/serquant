@@ -13,6 +13,7 @@
 namespace Serquant\Test\Paginator\Adapter;
 
 use Serquant\Paginator\Adapter\DbSelect;
+use Serquant\Persistence\Zend\Configuration;
 
 /**
  * Test class for DbSelect
@@ -50,7 +51,9 @@ class DbSelectTest extends \Serquant\Resource\Persistence\ZendTestCase
     {
         $this->setupDatabase();
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
+        $config = new Configuration();
+        $config->setEventManager($evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister($config);
     }
 
     /**

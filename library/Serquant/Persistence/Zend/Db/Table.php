@@ -13,6 +13,8 @@
 namespace Serquant\Persistence\Zend\Db;
 
 use ReflectionClass;
+use Serquant\Persistence\Exception\NoResultException;
+use Serquant\Persistence\Exception\NonUniqueResultException;
 use Serquant\Persistence\Exception\NotImplementedException;
 use Serquant\Persistence\Exception\RuntimeException;
 use Serquant\Persistence\Zend\Persister;
@@ -350,13 +352,13 @@ class Table extends \Zend_Db_Table_Abstract
      * Gets a new proxy instance for the entity matching this gateway and
      * identified by the given identifier.
      *
-     * @param mixed $identifier
+     * @param array $identifier Entity identifier
      * @return object
      */
-    public function newProxyInstance($identifier)
+    public function newProxyInstance(array $identifier)
     {
-        $proxyClassName = $this->entityName . 'Proxy';
-        $fqn = $this->persister->getProxyNamespace() . '\\' . $proxyClassName;
+        $parts = explode('\\', $this->entityName);
+        $fqn = $this->persister->getProxyNamespace() . '\\' . end($parts) . 'Proxy';
 
         return new $fqn($this, $identifier);
     }
@@ -378,19 +380,19 @@ class Table extends \Zend_Db_Table_Abstract
     }
 
     /**
-     * Loads an entity from the given row
+     * Loads an entity from a row
      *
      * With this basic implementation, all entity properties are exposed and
-     * consequently may be set if their name matches a column of the given row.
+     * consequently may be set if their name match a column of the given row.
      *
      * <b>Override this method for custom needs.</b>
      *
+     * @param object $entity Entity to load
      * @param array $row Column-value pairs
-     * @return object
+     * @return void
      */
-    public function loadEntity(array $row)
+    public function loadEntity($entity, array $row)
     {
-        $entity = $this->newInstance();
         $props = $this->getProperties();
         foreach ($row as $column => $value) {
             if ($this->hasField($column)) {
@@ -398,7 +400,6 @@ class Table extends \Zend_Db_Table_Abstract
                 $props[$field]->setValue($entity, $value);
             }
         }
-        return $entity;
     }
 
     /**
@@ -491,6 +492,40 @@ class Table extends \Zend_Db_Table_Abstract
                 $props[$this->getField($column)]->setValue($entity, $value);
             }
         }
+    }
+
+    /**
+     * Retrieves a row matching the given identifier
+     *
+     * @param mixed $id Identifier of the entity to retrieve
+     * @return array
+     * @throws NoResultException If no row matching the given id is found.
+     * @throws NonUniqueResultException If several rows matching the given
+     * id are found.
+     */
+    public function retrieve($id)
+    {
+        if (is_array($id)) {
+            $rowset = call_user_func_array(
+                array($this, 'find'),
+                array_values($id)
+            );
+        } else {
+            $rowset = $this->find($id);
+        }
+
+        $count = count($rowset);
+        if ($count === 0) {
+            throw new NoResultException(
+                'No entity matching the given identity was found.', 50
+            );
+        } else if ($count > 1) {
+            throw new NonUniqueResultException(
+                $count . ' entities matching the given identity were found.', 51
+            );
+        }
+
+        return $rowset->current()->toArray();
     }
 
     /**

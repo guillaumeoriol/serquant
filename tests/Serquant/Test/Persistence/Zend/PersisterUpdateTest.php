@@ -12,6 +12,8 @@
  */
 namespace Serquant\Test\Persistence\Zend;
 
+use Serquant\Persistence\Zend\Configuration;
+
 // Can't use a mock object with a callback to change the entity on commit
 // as the argument gets cloneed before it is passed to the callback. See
 // http://stackoverflow.com/questions/4702132/modifing-objects-in-returncallback-of-phpunit-mocks
@@ -56,7 +58,9 @@ class PersisterUpdateTest extends \Serquant\Resource\Persistence\ZendTestCase
     {
         $this->setupDatabase();
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
+        $config = new Configuration();
+        $config->setEventManager($evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister($config);
     }
 
     /**

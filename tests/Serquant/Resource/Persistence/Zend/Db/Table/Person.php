@@ -53,25 +53,17 @@ class Person extends Table
     	'last_name' => 'lastName'
     );
 
-    public function loadEntity(array $row)
+    public function loadEntity($entity, array $row)
     {
-        if (array_diff_key($this->fieldNames, $row)) {
-            // Proxy object only holding its identifier
-            $entity = new PersonProxy($this->getPersister(), $this->getPrimaryKey($row));
-        } else {
-            // Fully-loaded object
-            $entity = $this->newInstance();
-            $props = $this->getProperties();
-            $p = $this->getDatabasePlatform();
+        $props = $this->getProperties();
+        $p = $this->getDatabasePlatform();
 
-            $props['id']->setValue($entity,
-                Type::getType('integer')->convertToPHPValue($row['id'], $p));
-            $props['firstName']->setValue($entity,
-                Type::getType('string')->convertToPHPValue($row['first_name'], $p));
-            $props['lastName']->setValue($entity,
-                Type::getType('string')->convertToPHPValue($row['last_name'], $p));
-        }
-        return $entity;
+        $props['id']->setValue($entity,
+            Type::getType('integer')->convertToPHPValue($row['id'], $p));
+        $props['firstName']->setValue($entity,
+            Type::getType('string')->convertToPHPValue($row['first_name'], $p));
+        $props['lastName']->setValue($entity,
+            Type::getType('string')->convertToPHPValue($row['last_name'], $p));
     }
 
     public function loadRow($entity)

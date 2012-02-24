@@ -61,10 +61,8 @@ class User extends Table
         'username' => 'username'
     );
 
-    public function loadEntity(array $row)
+    public function loadEntity($entity, array $row)
     {
-        $entity = $this->newInstance();
-
         $props = $this->getProperties();
         $p = $this->getDatabasePlatform();
 
@@ -76,7 +74,5 @@ class User extends Table
             Type::getType('string')->convertToPHPValue($row['name'], $p));
         $props['username']->setValue($entity,
             Type::getType('string')->convertToPHPValue($row['username'], $p));
-
-        return $entity;
     }
 }

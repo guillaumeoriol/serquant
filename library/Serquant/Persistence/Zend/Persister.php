@@ -50,7 +50,7 @@ class Persister implements Persistence
      * The key is the entity class and the value is the gateway class
      * @var array
      */
-    private $config;
+    private $gatewayMap;
 
     /**
      * Map of table data gateways.
@@ -61,6 +61,12 @@ class Persister implements Persistence
     private $gateways;
 
     /**
+     * Namespace of the entity proxies
+     * @var string
+     */
+    private $proxyNamespace;
+
+    /**
      * Map of the loaded entities
      * @var IdentityMap
      */
@@ -69,13 +75,20 @@ class Persister implements Persistence
     /**
      * Constructs a persister
      *
-     * @param array $config Map between entity name and gateway name
-     * @param EventManager $eventManager Event manager
+     * @param Configuration $config Configuration options
      */
-    public function __construct(array $config, EventManager $eventManager)
+    public function __construct(Configuration $config)
     {
-        $this->eventManager = $eventManager;
-        $this->config = $config;
+        $this->eventManager = $config->getEventManager();
+        if ($this->eventManager === null) {
+            throw new InvalidArgumentException(
+                'Undefined event manager in Zend persister configuration ' .
+                'options.', 1
+            );
+        }
+
+        $this->gatewayMap = $config->getGatewayMap();
+        $this->proxyNamespace = $config->getProxyNamespace();
         $this->gateways = array();
         $this->loadedMap = new IdentityMap();
     }
@@ -140,14 +153,24 @@ class Persister implements Persistence
     {
         $entityName = $this->normalizeEntityName($entityName);
         if (!isset($this->gateways[$entityName])) {
-            if (!isset($this->config[$entityName])) {
+            if (!isset($this->gatewayMap[$entityName])) {
                 throw new InvalidArgumentException(
                     'No table data gateway was found matching ' . $entityName, 30
                 );
             }
-            $this->setTableGateway($entityName, $this->config[$entityName]);
+            $this->setTableGateway($entityName, $this->gatewayMap[$entityName]);
         }
         return $this->gateways[$entityName];
+    }
+
+    /**
+     * Gets the proxy namespace
+     *
+     * @return string
+     */
+    public function getProxyNamespace()
+    {
+        return $this->proxyNamespace;
     }
 
     /**
@@ -174,7 +197,8 @@ class Persister implements Persistence
             return $entity;
         }
 
-        $entity = $gateway->loadEntity($row);
+        $entity = $gateway->newInstance();
+        $gateway->loadEntity($entity, $row);
 
         $this->loadedMap->put($entity, $pk);
         return $entity;
@@ -336,29 +360,8 @@ class Persister implements Persistence
         }
 
         $gateway = $this->getTableGateway($entityName);
-        if (is_array($id)) {
-            $rowset = call_user_func_array(
-                array($gateway, 'find'),
-                array_values($id)
-            );
-        } else {
-            $rowset = $gateway->find($id);
-        }
-
-        $count = count($rowset);
-        if ($count === 0) {
-            throw new NoResultException(
-                'No entity matching the given identity was found.', 50
-            );
-        } else if ($count > 1) {
-            throw new NonUniqueResultException(
-                $count . ' entities matching the given identity were found.', 51
-            );
-        }
-
-        // Create the entity from the row
-        $row = $rowset->current();
-        return $this->loadEntity($entityName, $row->toArray());
+        $row = $gateway->retrieve($id);
+        return $this->loadEntity($entityName, $row);
     }
 
     /**

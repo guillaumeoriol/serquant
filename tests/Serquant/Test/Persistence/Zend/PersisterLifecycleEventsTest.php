@@ -13,6 +13,7 @@
 namespace Serquant\Test\Persistence\Zend;
 
 use Serquant\Event\LifecycleEventArgs;
+use Serquant\Persistence\Zend\Configuration;
 
 /**
  * Test class on lifecycle events in Zend persister.
@@ -26,52 +27,15 @@ use Serquant\Event\LifecycleEventArgs;
 class PersisterLifecycleEventsTest
     extends \Serquant\Resource\Persistence\ZendTestCase
 {
-    protected $db;
     protected $evm;
     protected $persister;
 
-    private function setupDatabase()
-    {
-        $dataSets = array();
-
-        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            realpath(dirname(__FILE__) . '/../fixture/people.yaml')
-        );
-        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            realpath(dirname(__FILE__) . '/../fixture/issues.yaml')
-        );
-        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            realpath(dirname(__FILE__) . '/../fixture/cars.yaml')
-        );
-
-        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            realpath(dirname(__FILE__) . '/../fixture/cms_accounts.yaml')
-        );
-        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            realpath(dirname(__FILE__) . '/../fixture/cms_users.yaml')
-        );
-        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            realpath(dirname(__FILE__) . '/../fixture/cms_addresses.yaml')
-        );
-        $dataSets[] = new \PHPUnit_Extensions_Database_DataSet_YamlDataSet(
-            realpath(dirname(__FILE__) . '/../fixture/cms_phonenumbers.yaml')
-        );
-
-        $data = new \PHPUnit_Extensions_Database_DataSet_CompositeDataSet(
-            $dataSets
-        );
-
-        $this->db = $this->getTestAdapter();
-        $connection = new \Zend_Test_PHPUnit_Db_Connection($this->db, null);
-        $tester = new \Zend_Test_PHPUnit_Db_SimpleTester($connection);
-        $tester->setupDatabase($data);
-    }
-
     protected function setUp()
     {
-//        $this->setupDatabase();
         $this->evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $this->evm);
+        $config = new Configuration();
+        $config->setEventManager($this->evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister($config);
     }
 
     public function testCreateWithPrePersistListener()

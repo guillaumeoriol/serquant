@@ -45,10 +45,8 @@ class Car extends Table
         'person_id' => 'owner'
     );
 
-    public function loadEntity(array $row)
+    public function loadEntity($entity, array $row)
     {
-        $entity = $this->newInstance();
-
         $props = $this->getProperties();
         $p = $this->getDatabasePlatform();
 
@@ -56,16 +54,16 @@ class Car extends Table
             Type::getType('integer')->convertToPHPValue($row['id'], $p));
 
         if ($row['person_id'] !== null) {
+            // Fully-loaded association
             $ownerGateway = $this->getPersister()->getTableGateway('Serquant\Resource\Persistence\Zend\Person');
-            $owner = $ownerGateway->loadEntity(array(
+            $owner = $ownerGateway->newInstance();
+            $ownerGateway->loadEntity($owner, array(
             	'id' => $row['person_id'],
                 'first_name' => $row['first_name'],
                 'last_name' => $row['last_name']
             ));
             $props['owner']->setValue($entity, $owner);
         }
-
-        return $entity;
     }
 
     /**

@@ -12,9 +12,12 @@
  */
 namespace Serquant\Test\Persistence\Zend;
 
+use Serquant\Persistence\Zend\Configuration;
+
 class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
+    private $config;
     private $persister;
 
     private function setupDatabase()
@@ -58,7 +61,10 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
     {
         $this->setupDatabase();
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
+        $this->config = new Configuration();
+        $this->config->setEventManager($evm);
+        $this->config->setProxyNamespace('Serquant\Resource\Persistence\Zend');
+        $this->persister = new \Serquant\Persistence\Zend\Persister($this->config);
     }
 
     /**
@@ -99,8 +105,7 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
         $gateway = new $gatewayClass;
 
         // Build a new persister to have an empty gateway map
-        $evm = new \Doctrine\Common\EventManager();
-        $persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
+        $persister = new \Serquant\Persistence\Zend\Persister($this->config);
         $persister->setTableGateway($name, $gateway);
 
         // Check that the given gateway can now been retrieved...
@@ -116,8 +121,7 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
         $gatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\Person';
 
         // Build a new persister to have an empty gateway map
-        $evm = new \Doctrine\Common\EventManager();
-        $persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
+        $persister = new \Serquant\Persistence\Zend\Persister($this->config);
         $persister->setTableGateway($name, $gatewayClass);
 
         // Check that the given gateway can now been retrieved...
@@ -153,7 +157,10 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
 
         // Build a new persister to have an empty gateway map
         $evm = new \Doctrine\Common\EventManager();
-        $persister = new \Serquant\Persistence\Zend\Persister(array($name => $gatewayClass), $evm);
+        $config = new Configuration();
+        $config->setEventManager($evm);
+        $config->setGatewayMap(array($name => $gatewayClass));
+        $persister = new \Serquant\Persistence\Zend\Persister($config);
 
         // Check that the given gateway can now been retrieved...
         $actual = $persister->getTableGateway($name);
@@ -167,10 +174,13 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
      */
     public function testLoadEntityFromGateway()
     {
+        $entityName = 'Serquant\Resource\Persistence\Zend\Role';
+        $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\Role;
+        $this->persister->setTableGateway($entityName, $gateway);
+
         $id = 1;
         $name = 'member';
 
-        $entityName = 'Serquant\Resource\Persistence\Zend\Role';
         $expected = new $entityName;
         $expected->setId($id);
         $expected->setName($name);
@@ -186,12 +196,6 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
 
         // Be sure the entity is not already in the identity map
         $this->assertNull($loadedMap->get($entityName, array($id)));
-
-        $gateway = $this->getMock('Serquant\Resource\Persistence\Zend\Db\Table\Role', array('loadEntity'));
-        $gateway->expects($this->any())
-                ->method('loadEntity')
-                ->will($this->returnValue($expected));
-        $this->persister->setTableGateway($entityName, $gateway);
 
         $actual = $this->persister->loadEntity($entityName, $row);
         // Verify we get an entity with the right values

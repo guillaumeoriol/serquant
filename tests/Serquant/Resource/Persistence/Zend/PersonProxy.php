@@ -23,34 +23,33 @@ namespace Serquant\Resource\Persistence\Zend;
  */
 class PersonProxy extends Person implements \Doctrine\ORM\Proxy\Proxy
 {
-    private $persister;
+    private $_gateway;
 
-    private $identifier;
+    private $_identifier;
 
     public $__isInitialized__ = false;
 
-    public function __construct($persister, $identifier)
+    public function __construct($gateway, $identifier)
     {
-        $this->persister = $persister;
-        $this->identifier = $identifier;
+        $this->_gateway = $gateway;
+        $this->_identifier = $identifier;
     }
 
     public function __load()
     {
-        if (!$this->__isInitialized__ && $this->persister) {
+        if (!$this->__isInitialized__ && $this->_gateway) {
             $this->__isInitialized__ = true;
 
-            if (method_exists($this, "__wakeup")) {
+            if (method_exists($this, '__wakeup')) {
                 // call this after __isInitialized__to avoid infinite recursion
-                // but before loading to emulate what ClassMetadata::newInstance()
+                // but before loading to emulate what Table::newInstance()
                 // provides.
                 $this->__wakeup();
             }
 
-            if ($this->persister->retrieve('Serquant\Resource\Persistence\Zend\Person', $this->identifier) === null) {
-                throw new \Doctrine\ORM\EntityNotFoundException();
-            }
-            unset($this->persister, $this->identifier);
+            $row = $this->_gateway->retrieve($this->_identifier);
+            $this->_gateway->loadEntity($this, $row);
+            unset($this->_gateway, $this->_identifier);
         }
     }
 
@@ -97,16 +96,17 @@ class PersonProxy extends Person implements \Doctrine\ORM\Proxy\Proxy
 
     public function __clone()
     {
-        if (!$this->__isInitialized__ && $this->persister) {
+        if (!$this->__isInitialized__ && $this->_gateway) {
             $this->__isInitialized__ = true;
-            $original = $this->persister->retrieve('Serquant\Resource\Persistence\Zend\Person', $this->identifier);
-            if ($original === null) {
-                throw new \Doctrine\ORM\EntityNotFoundException();
-            }
+            $original = $this->_gateway->newInstance();
+            $row = $this->_gateway->retrieve($this->_identifier);
+            $this->_gateway->loadEntity($original, $row);
+
             $this->id = $original->id;
             $this->firstName = $original->firstName;
             $this->lastName = $original->lastName;
-            unset($this->persister, $this->identifier);
+
+            unset($this->_gateway, $this->_identifier);
         }
     }
 }

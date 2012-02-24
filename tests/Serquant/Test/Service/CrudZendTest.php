@@ -12,6 +12,7 @@
  */
 namespace Serquant\Test\Service;
 
+use Serquant\Persistence\Zend\Configuration;
 use Serquant\Persistence\Zend\Persister;
 use Serquant\Service\Crud;
 
@@ -43,7 +44,9 @@ class CrudZendTest extends \Serquant\Resource\Persistence\ZendTestCase
     {
         $this->setupDatabase();
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
+        $config = new Configuration();
+        $config->setEventManager($evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister($config);
     }
 
     public function testFetchPairsWithZendPersister()

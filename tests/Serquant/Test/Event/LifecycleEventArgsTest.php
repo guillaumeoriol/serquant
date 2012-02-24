@@ -13,6 +13,7 @@
 namespace Serquant\Test\Event;
 
 use Serquant\Event\LifecycleEventArgs;
+use Serquant\Persistence\Zend\Configuration;
 
 /**
  * Test class for LifecycleEventArgs
@@ -30,7 +31,9 @@ class LifecycleEventArgsTest extends \Serquant\Resource\Persistence\ZendTestCase
     protected function setUp()
     {
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
+        $config = new Configuration();
+        $config->setEventManager($evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister($config);
     }
 
     /**

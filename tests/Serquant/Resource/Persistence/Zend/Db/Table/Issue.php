@@ -54,10 +54,8 @@ class Issue extends Table
         'last_name' => 'lastname'
     );
 
-    public function loadEntity(array $row)
+    public function loadEntity($entity, array $row)
     {
-        $entity = $this->newInstance();
-
         $props = $this->getProperties();
         $p = $this->getDatabasePlatform();
 
@@ -67,16 +65,16 @@ class Issue extends Table
             Type::getType('string')->convertToPHPValue($row['title'], $p));
 
         if ($row['person_id'] !== null) {
+            // Fully-loaded association
             $reporterGateway = $this->getPersister()->getTableGateway('Serquant\Resource\Persistence\Zend\Person');
-            $reporter = $reporterGateway->loadEntity(array(
+            $reporter = $reporterGateway->newInstance();
+            $reporterGateway->loadEntity($reporter, array(
             	'id' => $row['person_id'],
                 'first_name' => $row['first_name'],
                 'last_name' => $row['last_name']
             ));
             $props['reporter']->setValue($entity, $reporter);
         }
-
-        return $entity;
     }
 
     /**

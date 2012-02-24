@@ -30,10 +30,8 @@ use Doctrine\DBAL\Types\Type;
  */
 class IssueWithoutFetchJoin extends Issue
 {
-    public function loadEntity(array $row)
+    public function loadEntity($entity, array $row)
     {
-        $entity = $this->newInstance();
-
         $props = $this->getProperties();
         $p = $this->getDatabasePlatform();
 
@@ -43,12 +41,11 @@ class IssueWithoutFetchJoin extends Issue
             Type::getType('string')->convertToPHPValue($row['title'], $p));
 
         if ($row['person_id'] !== null) {
+            // Partially-loaded association
             $reporterGateway = $this->getPersister()->getTableGateway('Serquant\Resource\Persistence\Zend\Person');
-            $reporter = $reporterGateway->loadEntity(array('id' => $row['person_id']));
+            $reporter = $reporterGateway->newProxyInstance(array('id' => $row['person_id']));
             $props['reporter']->setValue($entity, $reporter);
         }
-
-        return $entity;
     }
 
     public function select($withFromPart = self::SELECT_WITHOUT_FROM_PART)

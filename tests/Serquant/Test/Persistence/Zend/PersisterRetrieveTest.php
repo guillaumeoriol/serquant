@@ -12,11 +12,13 @@
  */
 namespace Serquant\Test\Persistence\Zend;
 
+use Serquant\Persistence\Zend\Configuration;
 use Serquant\Persistence\Zend\Db\Table;
 
 class PersisterRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
 {
     private $db;
+    private $config;
     private $persister;
 
     private function setupDatabase()
@@ -44,7 +46,9 @@ class PersisterRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
     {
         $this->setupDatabase();
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
+        $this->config = new Configuration();
+        $this->config->setEventManager($evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister($this->config);
     }
 
     /**
@@ -66,34 +70,6 @@ class PersisterRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
         $this->assertSame($entity, $this->persister->retrieve($className, 1));
     }
 
-    public function testRetrieveNoEntityThrowsNoResultException()
-    {
-        $gateway = $this->getMock('Serquant\Persistence\Zend\Db\Table');
-        $gateway->expects($this->any())
-                ->method('find')
-                ->will($this->returnValue(array()));
-
-        $className = 'Serquant\Resource\Persistence\Zend\Person';
-        $this->persister->setTableGateway($className, $gateway);
-
-        $this->setExpectedException('Serquant\Persistence\Exception\NoResultException');
-        $this->persister->retrieve($className, 1);
-    }
-
-    public function testRetrieveMultipleEntitiesThrowsNonUniqueResultException()
-    {
-        $gateway = $this->getMock('Serquant\Persistence\Zend\Db\Table');
-        $gateway->expects($this->any())
-                ->method('find')
-                ->will($this->returnValue(array(1, 2, 3)));
-
-        $className = 'Serquant\Resource\Persistence\Zend\Person';
-        $this->persister->setTableGateway($className, $gateway);
-
-        $this->setExpectedException('Serquant\Persistence\Exception\NonUniqueResultException');
-        $this->persister->retrieve($className, 1);
-    }
-
     public function testRetrieveNotLoadedEntityWithStub()
     {
         $id = 1;
@@ -108,8 +84,7 @@ class PersisterRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
         $row = new \Zend_Db_Table_Row(array('data' => $row));
         $gateway = $this->getMock(
         	'Serquant\Persistence\Zend\Db\Table',
-            array('find', 'loadEntity'),
-            array(array(), new \Doctrine\Common\EventManager())
+            array('find', 'loadEntity')
         );
         $gateway->expects($this->any())
                 ->method('find')
@@ -124,7 +99,7 @@ class PersisterRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
         $persister = $this->getMock(
         	'Serquant\Persistence\Zend\Persister',
             array('loadEntity'),
-            array(array(), new \Doctrine\Common\EventManager())
+            array($this->config)
         );
         $persister->expects($this->any())
                   ->method('loadEntity')

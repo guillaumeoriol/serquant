@@ -12,6 +12,8 @@
  */
 namespace Serquant\Test\Persistence\Zend\Db;
 
+use Serquant\Persistence\Zend\Configuration;
+
 /**
  * Test class for Table
  *
@@ -49,7 +51,10 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     {
         $this->setupDatabase();
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
+        $config = new Configuration();
+        $config->setEventManager($evm);
+        $config->setProxyNamespace('Serquant\Resource\Persistence\Zend\Proxy');
+        $this->persister = new \Serquant\Persistence\Zend\Persister($config);
     }
 
     /**
@@ -244,8 +249,8 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
         );
 
         $table = new \Serquant\Resource\Persistence\Zend\Db\Table\Role;
-        $actual = $table->loadEntity($row);
-        $this->assertInstanceOf($entityName, $actual);
+        $actual = $table->newInstance();
+        $table->loadEntity($actual, $row);
         $this->assertEquals($expected, $actual);
     }
 
@@ -267,8 +272,8 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
         );
 
         $table = new \Serquant\Resource\Persistence\Zend\Db\Table\User;
-        $actual = $table->loadEntity($row);
-        $this->assertInstanceOf($entityName, $actual);
+        $actual = $table->newInstance();
+        $table->loadEntity($actual, $row);
         $this->assertEquals($expected, $actual);
     }
 
@@ -288,8 +293,8 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
         );
 
         $table = new \Serquant\Resource\Persistence\Zend\Db\Table\Person;
-        $actual = $table->loadEntity($row);
-        $this->assertInstanceOf($entityName, $actual);
+        $actual = $table->newInstance();
+        $table->loadEntity($actual, $row);
         $this->assertEquals($expected, $actual);
     }
 
@@ -469,5 +474,30 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
         // ...so we can be sure it has been called
         $this->setExpectedException('DomainException');
         $table->delete(array(1));
+    }
+
+    /**
+     * @covers Serquant\Persistence\Zend\Db\Table::retrieve
+     */
+    public function testRetrieveNoEntityThrowsNoResultException()
+    {
+        $gateway = $this->getMock('Serquant\Persistence\Zend\Db\Table', array('find'));
+        $gateway->expects($this->any())
+                ->method('find')
+                ->will($this->returnValue(array()));
+
+        $this->setExpectedException('Serquant\Persistence\Exception\NoResultException');
+        $gateway->retrieve(1);
+    }
+
+    public function testRetrieveMultipleEntitiesThrowsNonUniqueResultException()
+    {
+        $gateway = $this->getMock('Serquant\Persistence\Zend\Db\Table', array('find'));
+        $gateway->expects($this->any())
+                ->method('find')
+                ->will($this->returnValue(array(1, 2, 3)));
+
+        $this->setExpectedException('Serquant\Persistence\Exception\NonUniqueResultException');
+        $gateway->retrieve(1);
     }
 }

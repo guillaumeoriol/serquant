@@ -13,6 +13,7 @@
 namespace Serquant\Test\Event;
 
 use Serquant\Event\PreUpdateLifecycleEventArgs;
+use Serquant\Persistence\Zend\Configuration;
 
 /**
  * Test class for PreUpdateLifecycleEventArgs
@@ -31,7 +32,9 @@ class PreUpdateLifecycleEventArgsTest
     protected function setUp()
     {
         $evm = new \Doctrine\Common\EventManager();
-        $this->persister = new \Serquant\Persistence\Zend\Persister(array(), $evm);
+        $config = new Configuration();
+        $config->setEventManager($evm);
+        $this->persister = new \Serquant\Persistence\Zend\Persister($config);
     }
 
     /**
