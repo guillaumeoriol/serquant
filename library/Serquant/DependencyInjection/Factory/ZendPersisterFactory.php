@@ -71,17 +71,17 @@ class ZendPersisterFactory
      *
      * Sample configuration file:
      * <pre>
+     * parameters:
+     *   persister_config:
+     *     gatewayMap:
+     *       My\Domain\Entity\User: My\Domain\Gateway\User
+     *       # ...
+     *     eventManager: @event_manager
+     *     proxyNamespace: My\Domain\Proxy
+     *
      * services:
      *   event_manager:
      *     # ...
-     *   persister_config:
-     *     class: Serquant\Persistence\Zend\Configuration
-     *     arguments:
-     *       gatewayMap:
-     *         My\Domain\Entity\User: My\Domain\Gateway\User
-     *         # ...
-     *       eventManager: @event_manager
-     *       proxyNamespace: My\Domain\Proxy
      *   persister:
      *     class: Serquant\Persistence\Zend\Persister
      *     factory_class: Serquant\DependencyInjection\Factory\ZendPersisterFactory
