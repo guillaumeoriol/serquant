@@ -110,39 +110,15 @@ class EventManagerFactoryTest extends \PHPUnit_Framework_TestCase
         $evm = EventManagerFactory::get($config);
     }
 
-    public function testGetWithListenerOptionsMissingListener()
-    {
-        $config = array(
-            'listeners' => array(
-                array('events' => 'dummy')
-            )
-        );
-        $this->setExpectedException('Serquant\DependencyInjection\Exception\InvalidArgumentException', null, 20);
-        $evm = EventManagerFactory::get($config);
-    }
-
-    public function testGetWithListenerOptionsMissingEvents()
-    {
-        $config = array(
-            'listeners' => array(
-                array('listener' => 'dummy')
-            )
-        );
-        $this->setExpectedException('Serquant\DependencyInjection\Exception\InvalidArgumentException', null, 20);
-        $evm = EventManagerFactory::get($config);
-    }
-
     public function testGetWithListenerOfWrongType()
     {
+        $wrong = new \stdClass();
         $config = array(
             'listeners' => array(
-                array(
-                	'events' => TestListener::TEST_LISTENER_EVENT1,
-                    'listener' => 123
-                )
+                $wrong
             )
         );
-        $this->setExpectedException('Serquant\DependencyInjection\Exception\InvalidArgumentException', null, 21);
+        $this->setExpectedException('Serquant\DependencyInjection\Exception\InvalidArgumentException', null, 20);
         $evm = EventManagerFactory::get($config);
     }
 
@@ -150,47 +126,7 @@ class EventManagerFactoryTest extends \PHPUnit_Framework_TestCase
     {
         $config = array(
             'listeners' => array(
-                array(
-                	'events' => TestListener::TEST_LISTENER_EVENT1,
-                    'listener' => 'Serquant\Test\DependencyInjection\Factory\TestListener'
-                )
-            )
-        );
-        $evm = EventManagerFactory::get($config);
-        $this->assertInstanceOf('Doctrine\Common\EventManager', $evm);
-        $this->assertTrue(
-            $evm->hasListeners(TestListener::TEST_LISTENER_EVENT1)
-        );
-    }
-
-    public function testGetWithListenerClass()
-    {
-        $config = array(
-            'listeners' => array(
-                array(
-                	'events' => TestListener::TEST_LISTENER_EVENT1,
-                    'listener' => new TestListener()
-                )
-            )
-        );
-        $evm = EventManagerFactory::get($config);
-        $this->assertInstanceOf('Doctrine\Common\EventManager', $evm);
-        $this->assertTrue(
-            $evm->hasListeners(TestListener::TEST_LISTENER_EVENT1)
-        );
-    }
-
-    public function testGetWithListenerOnMultipleEvents()
-    {
-        $config = array(
-            'listeners' => array(
-                array(
-                	'events' => array(
-                        TestListener::TEST_LISTENER_EVENT1,
-                        TestListener::TEST_LISTENER_EVENT2
-                    ),
-                    'listener' => new TestListener()
-                )
+                'Serquant\Test\DependencyInjection\Factory\TestListener'
             )
         );
         $evm = EventManagerFactory::get($config);
@@ -228,6 +164,14 @@ class TestListener
 
     public $invoked1 = false;
     public $invoked2 = false;
+
+    public function __construct($evm)
+    {
+        $evm->addEventListener(
+            array(self::TEST_LISTENER_EVENT1, self::TEST_LISTENER_EVENT2),
+            $this
+        );
+    }
 
     public function testListenerEvent1()
     {

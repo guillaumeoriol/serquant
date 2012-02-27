@@ -72,14 +72,8 @@ class EventManagerFactory
      * parameters:
      *   event_manager_config:
      *     listeners:
-     *       -
-     *         events: postDelete
-     *         listener: My\Listener\CascadeDelete
-     *       -
-     *         events:
-     *           - postCreate
-     *           - postUpdate
-     *         listener: My\Listener\Informer
+     *       - My\Listener\CascadeDelete
+     *       - My\Listener\AuditLog
      *     subscribers:
      *       - My\Subscriber\Logger
      * services:
@@ -109,27 +103,17 @@ class EventManagerFactory
      */
     protected function addListeners(array $listeners)
     {
-        foreach ($listeners as $options) {
-            if (!isset($options['events']) || !isset($options['listener'])) {
+        foreach ($listeners as $listener) {
+            if (!is_string($listener)) {
                 throw new InvalidArgumentException(
-                    "Either 'event' or 'listener' is not set in the listener " .
-                    'options. Listener not added to the event manager.', 20
+                    'One of the listeners passed to the event manager factory ' .
+                    'is not a class name. It should be the name of a class ' .
+                    'having a constructor whose single argument is the event ' .
+                    'manager.', 20
                 );
             }
 
-            $listener = $options['listener'];
-            if (is_string($listener)) {
-                $listener = new $listener;
-            }
-
-            if (!is_object($listener)) {
-                throw new InvalidArgumentException(
-                    'The given listener ('. $listener .
-                    ') is not a string nor an object', 21
-                );
-            }
-
-            $this->eventManager->addEventListener($options['events'], $listener);
+            $listener = new $listener($this->eventManager);
         }
     }
 
