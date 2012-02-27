@@ -580,7 +580,7 @@ class EntityManagerFactoryTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    public function testGetConnectionWithScalarEvent()
+    public function testGetConnectionWithCharset()
     {
         $config = array(
             'metadata' => array(
@@ -600,112 +600,12 @@ class EntityManagerFactoryTest extends \PHPUnit_Framework_TestCase
                 'host' => 'localhost',
                 'user' => 'user',
                 'password' => 'password',
-                'dbname' => 'dbname'
-            ),
-            'event' => 'Doctrine\DBAL\Event\Listeners\MysqlSessionInit'
-        );
-        $em = EntityManagerFactory::get($config);
-        $this->assertInstanceOf('Doctrine\ORM\EntityManager', $em);
-        $this->assertTrue($em->getEventManager()->hasListeners(Events::postConnect));
-    }
-
-    public function testGetConnectionWithVectorEvent()
-    {
-        $config = array(
-            'metadata' => array(
-                'mappingPaths' => '/dummy/path',
-                'driver' => 'annotation'
-            ),
-            'query' => array(
-                'cache' => 'array'
-            ),
-            'proxy' => array(
-                'directory' => $this->proxyDir,
-                'namespace' => 'Serquant\Resource\Persistence\Doctrine\Proxy',
-                'autogenerate' => true
-            ),
-            'adapter' => 'pdo_mysql',
-            'params' => array(
-                'host' => 'localhost',
-                'user' => 'user',
-                'password' => 'password',
-                'dbname' => 'dbname'
-            ),
-            'event' => array(
-            	'class' => 'Doctrine\DBAL\Event\Listeners\MysqlSessionInit',
-                'args' => array('utf8', 'utf8_general_ci')
-        	)
-        );
-        $em = EntityManagerFactory::get($config);
-        $this->assertInstanceOf('Doctrine\ORM\EntityManager', $em);
-        $this->assertTrue($em->getEventManager()->hasListeners(Events::postConnect));
-    }
-
-    public function testGetConnectionWithArrayOfVectorEventHavingScalarArgs()
-    {
-        $config = array(
-            'metadata' => array(
-                'mappingPaths' => '/dummy/path',
-                'driver' => 'annotation'
-            ),
-            'query' => array(
-                'cache' => 'array'
-            ),
-            'proxy' => array(
-                'directory' => $this->proxyDir,
-                'namespace' => 'Serquant\Resource\Persistence\Doctrine\Proxy',
-                'autogenerate' => true
-            ),
-            'adapter' => 'pdo_mysql',
-            'params' => array(
-                'host' => 'localhost',
-                'user' => 'user',
-                'password' => 'password',
-                'dbname' => 'dbname'
-            ),
-            'event' => array(
-                array(
-                    'class' => 'Doctrine\DBAL\Event\Listeners\MysqlSessionInit',
-                    'args' => 'utf8'
-                )
+                'dbname' => 'dbname',
+                'charset' => 'utf8'
             )
         );
         $em = EntityManagerFactory::get($config);
         $this->assertInstanceOf('Doctrine\ORM\EntityManager', $em);
-        $this->assertTrue($em->getEventManager()->hasListeners(Events::postConnect));
-    }
-
-    public function testGetConnectionWithInvalidEventSubscriber()
-    {
-        $config = array(
-            'metadata' => array(
-                'mappingPaths' => '/dummy/path',
-                'driver' => 'annotation'
-            ),
-            'query' => array(
-                'cache' => 'array'
-            ),
-            'proxy' => array(
-                'directory' => $this->proxyDir,
-                'namespace' => 'Serquant\Resource\Persistence\Doctrine\Proxy',
-                'autogenerate' => true
-            ),
-            'adapter' => 'pdo_mysql',
-            'params' => array(
-                'host' => 'localhost',
-                'user' => 'user',
-                'password' => 'password',
-                'dbname' => 'dbname'
-            ),
-            'event' => array(
-                array('class' => 'stdClass')
-            )
-        );
-        $this->setExpectedException(
-        	'Serquant\DependencyInjection\Exception\InvalidArgumentException',
-        	'The class defined as an event subscriber (stdClass) is not an instance of \Doctrine\Common\EventSubscriber. Unable to setup Doctrine connection.'
-		);
-        $em = EntityManagerFactory::get($config);
     }
 
     public function testInitLogger()
@@ -789,5 +689,103 @@ class EntityManagerFactoryTest extends \PHPUnit_Framework_TestCase
         $em = EntityManagerFactory::get($config);
         $this->assertInstanceOf('Doctrine\ORM\EntityManager', $em);
         $this->assertTrue(\Doctrine\DBAL\Types\Type::hasType('blob'));
+    }
+
+    public function testInitEventManagerWithoutEventManager()
+    {
+        $config = array(
+            'metadata' => array(
+                'mappingPaths' => '/dummy/path',
+                'driver' => 'annotation'
+            ),
+            'proxy' => array(
+                'directory' => $this->proxyDir,
+                'namespace' => 'Serquant\Resource\Persistence\Doctrine\Proxy'
+            ),
+            'adapter' => 'pdo_mysql',
+            'params' => array(
+                'host' => 'localhost',
+                'user' => 'user',
+                'password' => 'password',
+                'dbname' => 'dbname'
+            )
+        );
+        $em = EntityManagerFactory::get($config);
+        $this->assertInstanceOf('Doctrine\ORM\EntityManager', $em);
+        $this->assertNotNull($em->getEventManager());
+    }
+
+    public function testInitEventManagerWithArgumentOfWrongType()
+    {
+        $config = array(
+            'metadata' => array(
+                'mappingPaths' => '/dummy/path',
+                'driver' => 'annotation'
+            ),
+            'proxy' => array(
+                'directory' => $this->proxyDir,
+                'namespace' => 'Serquant\Resource\Persistence\Doctrine\Proxy'
+            ),
+            'adapter' => 'pdo_mysql',
+            'params' => array(
+                'host' => 'localhost',
+                'user' => 'user',
+                'password' => 'password',
+                'dbname' => 'dbname'
+            ),
+            'eventManager' => 'dummy'
+        );
+        $this->setExpectedException('Serquant\DependencyInjection\Exception\InvalidArgumentException', null, 50);
+        $em = EntityManagerFactory::get($config);
+    }
+
+    public function testInitEventManagerWithArgumentOfWrongClass()
+    {
+        $config = array(
+            'metadata' => array(
+                'mappingPaths' => '/dummy/path',
+                'driver' => 'annotation'
+            ),
+            'proxy' => array(
+                'directory' => $this->proxyDir,
+                'namespace' => 'Serquant\Resource\Persistence\Doctrine\Proxy'
+            ),
+            'adapter' => 'pdo_mysql',
+            'params' => array(
+                'host' => 'localhost',
+                'user' => 'user',
+                'password' => 'password',
+                'dbname' => 'dbname'
+            ),
+            'eventManager' => new \stdClass()
+        );
+        $this->setExpectedException('Serquant\DependencyInjection\Exception\InvalidArgumentException', null, 50);
+        $em = EntityManagerFactory::get($config);
+    }
+
+    public function testInitEventManager()
+    {
+        $evm = new \Doctrine\Common\EventManager();
+        $config = array(
+            'metadata' => array(
+                'mappingPaths' => '/dummy/path',
+                'driver' => 'annotation'
+            ),
+            'proxy' => array(
+                'directory' => $this->proxyDir,
+                'namespace' => 'Serquant\Resource\Persistence\Doctrine\Proxy'
+            ),
+            'adapter' => 'pdo_mysql',
+            'params' => array(
+                'host' => 'localhost',
+                'user' => 'user',
+                'password' => 'password',
+                'dbname' => 'dbname'
+            ),
+            'eventManager' => $evm
+        );
+        $em = EntityManagerFactory::get($config);
+        $this->assertInstanceOf('Doctrine\ORM\EntityManager', $em);
+        $this->assertSame($evm, $em->getEventManager());
     }
 }

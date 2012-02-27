@@ -12,13 +12,13 @@
  */
 namespace Serquant\DependencyInjection\Factory;
 
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\AnnotationRegistry;
+use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Annotations\AnnotationRegistry;
-use Doctrine\Common\EventManager;
 use Serquant\DependencyInjection\Exception\InvalidArgumentException;
 use Serquant\Doctrine\Logger;
 
@@ -59,6 +59,9 @@ class EntityManagerFactory
      *
      * Sample configuration file:
      * <pre>
+     * parameters:
+     *   doctrine_config:
+     *     # ...
      * services:
      *   doctrine:
      *     class: Doctrine\ORM\EntityManager
@@ -67,22 +70,22 @@ class EntityManagerFactory
      *     arguments: [%doctrine_config%]
      * </pre>
      *
-     * @param array $config Service configuration options
+     * @param array $options Entity manager configuration options
      * @return EntityManager
      */
-    public static function get(array $config)
+    public static function get(array $options)
     {
-        $factory = new EntityManagerFactory($config);
+        $factory = new EntityManagerFactory($options);
         return $factory->getEntityManager();
     }
 
     /**
      * Constructs a Doctrine entity manager according to configuration options.
      *
-     * @param array $options Service configuration options
+     * @param array $options Entity manager configuration options
      * @return void
      */
-    private function __construct($options)
+    private function __construct(array $options)
     {
         $this->config = new Configuration();
 
@@ -91,17 +94,17 @@ class EntityManagerFactory
         $this->initProxy($options);
         $this->initLogger($options);
         $this->initType($options);
+        $this->initEventManager($options);
 
-        $connection = $this->getConnection($options);
         $this->em = EntityManager::create(
-            $connection,
+            $this->getConnection($options),
             $this->config,
             $this->eventManager
         );
     }
 
     /**
-     * Get the entity manager instance
+     * Gets the entity manager instance
      *
      * @return EntityManager
      */
@@ -111,18 +114,18 @@ class EntityManagerFactory
     }
 
     /**
-     * Configure the metadata driver.
+     * Configures the metadata driver
      *
      * This is a REQUIRED configuration option.
      *
-     * @param array $options Service configuration options
+     * @param array $options Entity manager configuration options
      * @return void
      */
     protected function initMetadata(array $options)
     {
         if (!isset($options['metadata']) || !is_array($options['metadata'])) {
             throw new InvalidArgumentException(
-                'Doctrine metadata configuration is undefined.'
+                'Doctrine metadata configuration is undefined.', 10
             );
         }
         $metadata = $options['metadata'];
@@ -135,7 +138,7 @@ class EntityManagerFactory
         if (!isset($metadata['mappingPaths']) || !isset($metadata['driver'])) {
             throw new InvalidArgumentException(
                 'Either \'mappingPaths\' or \'driver\' metadata is undefined ' .
-                'in Doctrine metadata configuration.'
+                'in Doctrine metadata configuration.', 11
             );
         }
 
@@ -155,7 +158,7 @@ class EntityManagerFactory
                     if (!$reader instanceof \Doctrine\Common\Annotations\Reader) {
                         throw new InvalidArgumentException(
                             'The given annotation reader does not implement ' .
-                            'Doctrine\Common\Annotations\Reader interface.'
+                            'Doctrine\Common\Annotations\Reader interface.', 12
                         );
                     }
                     $driverImpl = new AnnotationDriver($reader, $paths);
@@ -174,16 +177,18 @@ class EntityManagerFactory
 
             default:
                 throw new InvalidArgumentException(
-                    "Invalid Doctrine metadata driver: $driver"
+                    "Invalid Doctrine metadata driver: $driver", 13
                 );
         }
         $this->config->setMetadataDriverImpl($driverImpl);
     }
 
     /**
-     * Configure the query cache. This option is RECOMMENDED.
+     * Configures the query cache.
      *
-     * @param array $options Service configuration options
+     * This option is RECOMMENDED.
+     *
+     * @param array $options Entity manager configuration options
      * @return void
      */
     protected function initQuery(array $options)
@@ -196,7 +201,7 @@ class EntityManagerFactory
     }
 
     /**
-     * Get a Doctrine cache object from its name.
+     * Gets a Doctrine cache object matching the given name
      *
      * @param string $name Cache name
      * @return \Doctrine\Common\Cache\AbstractCache
@@ -222,24 +227,25 @@ class EntityManagerFactory
 
             default:
                 throw new InvalidArgumentException(
-                    "Invalid cache driver specified: $name"
+                    "Invalid cache driver specified: $name", 20
                 );
         }
         return $cache;
     }
 
     /**
-     * Configure the proxy options. Proxy directory and namespace
-     * are REQUIRED options.
+     * Configures the proxy options.
      *
-     * @param array $options Service configuration options
+     * Proxy directory and namespace are REQUIRED options.
+     *
+     * @param array $options Entity manager configuration options
      * @return void
      */
     protected function initProxy(array $options)
     {
         if (!isset($options['proxy']) || !is_array($options['proxy'])) {
             throw new InvalidArgumentException(
-                'Doctrine proxy configuration is undefined.'
+                'Doctrine proxy configuration is undefined.', 30
             );
         }
         $proxy = $options['proxy'];
@@ -247,7 +253,7 @@ class EntityManagerFactory
         if (!isset($proxy['directory']) || !isset($proxy['namespace'])) {
             throw new InvalidArgumentException(
                 'Either directory or namespace option is undefined ' .
-                'in Doctrine proxy configuration.'
+                'in Doctrine proxy configuration.', 31
             );
         }
 
@@ -266,10 +272,11 @@ class EntityManagerFactory
     }
 
     /**
-     * Get connection options. Adapter and corresponding parameters
-     * are REQUIRED options.
+     * Gets connection options
      *
-     * @param array $options Service configuration options
+     * Adapter and corresponding parameters are REQUIRED options.
+     *
+     * @param array $options Entity manager configuration options
      * @return array
      */
     protected function getConnection(array $options)
@@ -278,7 +285,7 @@ class EntityManagerFactory
             || !isset($options['params'])
         ) {
             throw new InvalidArgumentException(
-                'Doctrine connection configuration is undefined.'
+                'Doctrine connection configuration is undefined.', 40
             );
         }
 
@@ -289,72 +296,37 @@ class EntityManagerFactory
             $adapter['driver'] = $options['adapter'];
         }
 
-        if (isset($options['event'])) {
-            $subscribers = $options['event'];
-            if (!is_array($subscribers)) {
-                $subscribers = array($subscribers);
-            }
-
-            foreach ($subscribers as $subscriber) {
-                if (!is_array($subscriber)) {
-                    $subscriber = array('class' => $subscriber);
-                }
-                $this->addSubscriber($subscriber);
-            }
-        }
         return $adapter;
     }
 
     /**
-     * Get Doctrine event manager
+     * Gets Doctrine event manager
      *
-     * @return EventManager
-     */
-    protected function getEventManager()
-    {
-        if ($this->eventManager === null) {
-            $this->eventManager = new EventManager();
-        }
-
-        return $this->eventManager;
-    }
-
-    /**
-     * Add a subscriber to the event manager.
-     *
-     * @param array $options Service configuration options
+     * @param array $options Entity manager configuration options
      * @return void
-     * @throws InvalidArgumentException
      */
-    protected function addSubscriber(array $options)
+    protected function initEventManager(array $options)
     {
-        if (isset($options['class'])) {
-            $className = $options['class'];
-            if (isset($options['args'])) {
-                $class = new \ReflectionClass($className);
-                $args = $options['args'];
-                if (!is_array($args)) {
-                    $args = array($args);
-                }
-                $subscriber = $class->newInstanceArgs($args);
+        if (isset($options['eventManager'])) {
+            $evm = $options['eventManager'];
+            if (is_object($evm) && ($evm instanceof EventManager)) {
+                $this->eventManager = $evm;
             } else {
-                $subscriber = new $className;
-            }
-            if (!$subscriber instanceof \Doctrine\Common\EventSubscriber) {
                 throw new InvalidArgumentException(
-                    "The class defined as an event subscriber ($className) " .
-                    'is not an instance of \Doctrine\Common\EventSubscriber. ' .
-                    'Unable to setup Doctrine connection.'
+                    'The \'eventManager\' option of the entity manager ' .
+                    'factory is not set properly. It should be an instance ' .
+                    'of Doctrine\Common\EventManager.', 50
                 );
             }
-            $this->getEventManager()->addEventSubscriber($subscriber);
+        } else {
+            $this->eventManager = new EventManager();
         }
     }
 
     /**
-     * Configure the optional logger.
+     * Configures the optional logger
      *
-     * @param array $options Service configuration options
+     * @param array $options Entity manager configuration options
      * @return void
      */
     protected function initLogger(array $options)
@@ -366,9 +338,9 @@ class EntityManagerFactory
     }
 
     /**
-     * Configure the optional custom types.
+     * Configure the optional custom types
      *
-     * @param array $options Service configuration options
+     * @param array $options Entity manager configuration options
      * @return void
      */
     protected function initType(array $options)
@@ -379,7 +351,7 @@ class EntityManagerFactory
                 throw new InvalidArgumentException(
                     'Doctrine custom types shall be an array whose key ' .
                     'is the name used in field metadata and value is ' .
-                    'the corresponding fully qualified class name.'
+                    'the corresponding fully qualified class name.', 60
                 );
             }
 
