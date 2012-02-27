@@ -16,6 +16,7 @@ use Doctrine\Common\EventManager;
 use Serquant\Entity\Registry\IdentityMap;
 use Serquant\Event\LifecycleEvent;
 use Serquant\Event\LifecycleEventArgs;
+use Serquant\Event\PreUpdateLifecycleEventArgs;
 use Serquant\Paginator\Adapter\DbSelect;
 use Serquant\Persistence\Persistence;
 use Serquant\Persistence\Exception\InvalidArgumentException;
