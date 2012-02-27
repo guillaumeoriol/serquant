@@ -170,6 +170,15 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
+     * @covers Serquant\Persistence\Zend\Persister::getProxyNamespace
+     */
+    public function testGetProxyNamespace()
+    {
+        $actual = $this->persister->getProxyNamespace();
+        $this->assertEquals($this->config->getProxyNamespace(), $actual);
+    }
+
+    /**
      * @covers Serquant\Persistence\Zend\Persister::loadEntity
      */
     public function testLoadEntityFromGateway()

@@ -204,11 +204,21 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     public function testNewInstance()
     {
         $table = new \Serquant\Resource\Persistence\Zend\Db\Table\Car;
+        $instance = $table->newInstance();
+        $this->assertInstanceOf('Serquant\Resource\Persistence\Zend\Car', $instance);
+    }
 
-        $method = new \ReflectionMethod($table, 'newInstance');
-        $method->setAccessible(true);
-        $prototype = $method->invoke($table);
-        $this->assertInstanceOf('Serquant\Resource\Persistence\Zend\Car', $prototype);
+    /**
+     * @covers Serquant\Persistence\Zend\Db\Table::newProxyInstance
+     */
+    public function testNewProxyInstance()
+    {
+        $table = new \Serquant\Resource\Persistence\Zend\Db\Table\Person;
+        $table->setPersister($this->persister);
+
+        $proxy = $table->newProxyInstance(array('id' => 1));
+        $this->assertInstanceOf('Doctrine\ORM\Proxy\Proxy', $proxy);
+        $this->assertInstanceOf('Serquant\Resource\Persistence\Zend\Person', $proxy);
     }
 
     /**
