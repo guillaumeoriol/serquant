@@ -1387,6 +1387,15 @@ tt|e |i |o r
         </exec>
     </target>
     
+    <target name="php-dox"
+            description="phpDox is a documentation generator for PHP code"
+            depends="init">
+        <echo>Building project documentation</echo>
+        <exec dir="${basedir}" executable="${phpdox.executable}">
+            <arg line="--file ${conf.dir}/phpdox.xml.dist" />
+        </exec>
+    </target>
+    
     <target name="php-depend"
             description="generate design quality metrics with PHP_Depend"
             depends="init">
