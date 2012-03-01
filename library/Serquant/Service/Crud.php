@@ -24,8 +24,8 @@ use Symfony\Component\Validator\ConstraintViolationList;
 /**
  * Basic service layer implementing CRUD functions for persistent entities.
  *
- * <i>Note: as we are here in a service context and not in a REST context,
- * we speak about entities and not resources.</i>
+ * Note: as we are here in a service context and not in a REST context,
+ * we speak about entities and not resources.
  *
  * Implements the {@link http://martinfowler.com/eaaCatalog/serviceLayer.html
  * Service Layer} [PoEAA] pattern.

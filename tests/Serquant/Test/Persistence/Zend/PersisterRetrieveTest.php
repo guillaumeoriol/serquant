@@ -57,6 +57,9 @@ class PersisterRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
     public function testRetrieveAlreadyLoadedEntity()
     {
         $className = 'Serquant\Resource\Persistence\Zend\Person';
+        $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\Person();
+        $this->persister->setTableGateway($className, $gateway);
+
         $entity = new $className;
         $entity->setId(1);
         $entity->setFirstName('Charles');
@@ -81,14 +84,19 @@ class PersisterRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
             'first_name' => $firstName,
             'last_name' => $lastName
         );
-        $row = new \Zend_Db_Table_Row(array('data' => $row));
+
+        // The loaded map is empty
+
         $gateway = $this->getMock(
         	'Serquant\Persistence\Zend\Db\Table',
-            array('find', 'loadEntity')
+            array('retrieve', 'getPrimaryKey')
         );
         $gateway->expects($this->any())
-                ->method('find')
-                ->will($this->returnValue(new \ArrayIterator(array($row))));
+                ->method('retrieve')
+                ->will($this->returnValue($row));
+        $gateway->expects($this->any())
+                ->method('getPrimaryKey')
+                ->will($this->returnValue(array('id' => 1)));
 
         $entityName = 'Serquant\Resource\Persistence\Zend\Person';
         $expected = new $entityName;
@@ -104,6 +112,7 @@ class PersisterRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
         $persister->expects($this->any())
                   ->method('loadEntity')
                   ->will($this->returnValue($expected));
+
         $persister->setTableGateway($entityName, $gateway);
 
         $entity = $persister->retrieve($entityName, 1);

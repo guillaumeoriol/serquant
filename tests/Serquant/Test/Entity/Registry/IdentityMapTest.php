@@ -305,9 +305,9 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Serquant\Entity\Registry\IdentityMap::getId
+     * @covers Serquant\Entity\Registry\IdentityMap::getPrimaryKey
      */
-    public function testGetId()
+    public function testGetPrimaryKey()
     {
         $className = 'Serquant\Resource\Persistence\Zend\User';
         $entity = new $className;
@@ -318,7 +318,7 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
 
         $registry = new IdentityMap();
         $registry->put($entity, array('id' => 1));
-        $id = $registry->getId($entity);
+        $id = $registry->getPrimaryKey($entity);
         $this->assertInternalType('array', $id);
         $this->assertEquals(array('id' => 1), $id);
     }
@@ -384,7 +384,7 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
 
         $this->assertFalse($registry->has($entity));
 
-        $hashToIdMapProp = new \ReflectionProperty($registry, 'hashToIdMap');
+        $hashToIdMapProp = new \ReflectionProperty($registry, 'hashToPkMap');
         $hashToIdMapProp->setAccessible(true);
         $hashToIdMap = $hashToIdMapProp->getValue($registry);
         $this->assertNotContains($oid, $hashToIdMap);
@@ -393,17 +393,5 @@ class IdentityMapTest extends \PHPUnit_Framework_TestCase
         $originalEntitiesProp->setAccessible(true);
         $originalEntities = $originalEntitiesProp->getValue($registry);
         $this->assertNotContains($oid, $originalEntities);
-    }
-
-    /**
-     * @covers Serquant\Entity\Registry\IdentityMap::propertyChanged
-     * @covers Serquant\Entity\Exception
-     * @covers Serquant\Entity\Exception\NotImplementedException
-     */
-    public function testPropertyChanged()
-    {
-        $registry = new IdentityMap();
-        $this->setExpectedException('Serquant\Entity\Exception\NotImplementedException');
-        $registry->propertyChanged(1, 2, 3, 4);
     }
 }

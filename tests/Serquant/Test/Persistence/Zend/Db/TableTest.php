@@ -222,21 +222,21 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
     }
 
     /**
-     * @covers Serquant\Persistence\Zend\Db\Table::getPrimaryKey
+     * @covers Serquant\Persistence\Zend\Db\Table::extractPrimaryKey
      */
-    public function testGetPrimaryKeyWithSimpleKey()
+    public function testExtractPrimaryKeyWithSimpleKey()
     {
         $table = new \Serquant\Resource\Persistence\Zend\Db\Table\User;
 
-        $actual = $table->getPrimaryKey(array('id' => 1, 'username' => 'a'));
+        $actual = $table->extractPrimaryKey(array('id' => 1, 'username' => 'a'));
         $this->assertEquals(array('id' => 1), $actual);
     }
 
-    public function testGetPrimaryKeyWithCompoundKey()
+    public function testExtractPrimaryKeyWithCompoundKey()
     {
         $table = new \Serquant\Resource\Persistence\Zend\Db\Table\Permission;
 
-        $actual = $table->getPrimaryKey(array('resource' => 34, 'role' => 12));
+        $actual = $table->extractPrimaryKey(array('resource' => 34, 'role' => 12));
         $this->assertEquals(array('role' => 12, 'resource' => 34), $actual);
     }
 
@@ -423,6 +423,9 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
         $this->assertEquals(1, $entity->getId());
     }
 
+    /**
+     * The entity identifier shall not be updated when Table#_sequence is FALSE
+     */
     public function testUpdateEntityIdentifierOnTableHavingApplicationAssignedKey()
     {
         $entityName = 'Serquant\Resource\Persistence\Zend\Permission';
@@ -451,6 +454,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
         $table->setPersister($this->persister);
         $pk = $table->insert(array('role' => 1, 'resource' => 9));
         $this->assertInternalType('array', $pk);
+        // The primary key is returned even if _sequence is FALSE
         $this->assertEquals(array('role' => 1, 'resource' => 9), $pk);
     }
 
@@ -497,7 +501,7 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
                 ->will($this->returnValue(array()));
 
         $this->setExpectedException('Serquant\Persistence\Exception\NoResultException');
-        $gateway->retrieve(1);
+        $gateway->retrieve(array('id' => 1));
     }
 
     public function testRetrieveMultipleEntitiesThrowsNonUniqueResultException()
@@ -508,6 +512,58 @@ class TableTest extends \Serquant\Resource\Persistence\ZendTestCase
                 ->will($this->returnValue(array(1, 2, 3)));
 
         $this->setExpectedException('Serquant\Persistence\Exception\NonUniqueResultException');
-        $gateway->retrieve(1);
+        $gateway->retrieve(array('id' => 1));
+    }
+
+    /**
+     * @covers Serquant\Persistence\Zend\Db\Table::getPrimaryKey
+     */
+    public function testGetPrimaryKeyWithScalarValueOnIntegralKey()
+    {
+        $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\Person;
+        $pk = $gateway->getPrimaryKey(1);
+        $this->assertEquals(array('id' => 1), $pk);
+    }
+
+    public function testGetPrimaryKeyWithIndexedArrayOnIntegralKey()
+    {
+        $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\Person;
+        $pk = $gateway->getPrimaryKey(array(1));
+        $this->assertEquals(array('id' => 1), $pk);
+    }
+
+    public function testGetPrimaryKeyWithAssociativeArrayOnIntegralKey()
+    {
+        $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\Person;
+        $pk = $gateway->getPrimaryKey(array('id' => 1));
+        $this->assertEquals(array('id' => 1), $pk);
+    }
+
+    public function testGetPrimaryKeyWithAssociativeArrayOnIntegralKeyHavingInflection()
+    {
+        $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\RoleWithInflection;
+        $pk = $gateway->getPrimaryKey(array('roleId' => 1));
+        $this->assertEquals(array('id' => 1), $pk);
+    }
+
+    public function testGetPrimaryKeyWithIndexedArrayOnCompoundKey()
+    {
+        $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\Permission;
+        $pk = $gateway->getPrimaryKey(array(1, 2));
+        $this->assertEquals(array('role' => 1, 'resource' => 2), $pk);
+    }
+
+    public function testGetPrimaryKeyWithAssociativeArrayOnCompoundKey()
+    {
+        $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\Permission;
+        $pk = $gateway->getPrimaryKey(array('resource' => 1, 'role' => 2));
+        $this->assertEquals(array('role' => 2, 'resource' => 1), $pk);
+    }
+
+    public function testGetPrimaryKeyWithAssociativeArrayOnCompoundKeyHavingInflection()
+    {
+        $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\PermissionWithInflection;
+        $pk = $gateway->getPrimaryKey(array('resourceId' => 1, 'roleId' => 2));
+        $this->assertEquals(array('role' => 2, 'resource' => 1), $pk);
     }
 }

@@ -15,7 +15,6 @@ namespace Serquant\Persistence\Zend\Db;
 use ReflectionClass;
 use Serquant\Persistence\Exception\NoResultException;
 use Serquant\Persistence\Exception\NonUniqueResultException;
-use Serquant\Persistence\Exception\NotImplementedException;
 use Serquant\Persistence\Exception\RuntimeException;
 use Serquant\Persistence\Zend\Persister;
 
@@ -350,17 +349,42 @@ class Table extends \Zend_Db_Table_Abstract
 
     /**
      * Gets a new proxy instance for the entity matching this gateway and
-     * identified by the given identifier.
+     * identified by the given primary key.
      *
-     * @param array $identifier Entity identifier
+     * @param array $pk Primary key
      * @return object
      */
-    public function newProxyInstance(array $identifier)
+    public function newProxyInstance(array $pk)
     {
         $parts = explode('\\', $this->entityName);
         $fqn = $this->persister->getProxyNamespace() . '\\' . end($parts) . 'Proxy';
 
-        return new $fqn($this, $identifier);
+        return new $fqn($this, $pk);
+    }
+
+    /**
+     * Gets a primary key from a given entity identifier
+     *
+     * @param mixed $id Scalar or vector identifier of the entity
+     * @return array
+     */
+    public function getPrimaryKey($id)
+    {
+        $this->_setupPrimaryKey();
+        $pk = array();
+        if (is_array($id)) {
+            $i = 1;
+            foreach ($id as $field => $value) {
+                if (is_int($field)) {
+                    $pk[$this->_primary[$i++]] = $value;
+                } else {
+                    $pk[$this->getColumn($field)] = $value;
+                }
+            }
+        } else {
+            $pk[reset($this->_primary)] = $id;
+        }
+        return $pk;
     }
 
     /**
@@ -369,14 +393,10 @@ class Table extends \Zend_Db_Table_Abstract
      * @param array $row Associative array of column-value pairs
      * @return array
      */
-    public function getPrimaryKey($row)
+    public function extractPrimaryKey($row)
     {
         $this->_setupPrimaryKey();
-        $pk = array();
-        foreach ($this->_primary as $column) {
-            $pk[$this->getField($column)] = $row[$column];
-        }
-        return $pk;
+        return array_intersect_key($row, array_flip($this->_primary));
     }
 
     /**
@@ -456,31 +476,30 @@ class Table extends \Zend_Db_Table_Abstract
     }
 
     /**
-     * Constructs a WHERE clause from the given identifier
+     * Constructs a WHERE clause from the given primary key
      *
      * The returned WHERE clause is an SQL expression conforming to
      * {@link \Zend_Db_Table#update} and {@link \Zend_Db_Table#delete} API.
      *
-     * @param array $id Field-value pairs
+     * @param array $pk Column-value pairs
      * @return array
      */
-    protected function getWhereClause(array $id)
+    protected function getWhereClause(array $pk)
     {
         $where = array();
-        foreach ($id as $field => $value) {
-            $where[$this->getColumn($field) . ' = ?'] = $value;
+        foreach ($pk as $column => $value) {
+            $where[$column . ' = ?'] = $value;
         }
         return $where;
     }
 
     /**
-     * Updates an entity with a database assigned identifier
+     * Updates an entity with a database assigned key
      *
      * @param object $entity Entity to update
-     * @param array $pk Primary key of the row inserted as returned by
-     * {@link insert} (ie primary key value if the PK is a single column,
-     * else an associative array of the PK column/value pairs).
+     * @param array $pk Primary key of the inserted row
      * @return void
+     * @todo Implement type conversion
      */
     public function updateEntityIdentifier($entity, array $pk)
     {
@@ -495,23 +514,23 @@ class Table extends \Zend_Db_Table_Abstract
     }
 
     /**
-     * Retrieves a row matching the given identifier
+     * Retrieves a row matching the given primary key
      *
-     * @param mixed $id Identifier of the entity to retrieve
+     * @param array $pk Primary key
      * @return array
-     * @throws NoResultException If no row matching the given id is found.
+     * @throws NoResultException If no row matching the given key is found.
      * @throws NonUniqueResultException If several rows matching the given
-     * id are found.
+     * key are found.
      */
-    public function retrieve($id)
+    public function retrieve(array $pk)
     {
-        if (is_array($id)) {
+        if (count($pk) === 1) {
+            $rowset = $this->find(reset($pk));
+        } else {
             $rowset = call_user_func_array(
                 array($this, 'find'),
-                array_values($id)
+                array_values($pk)
             );
-        } else {
-            $rowset = $this->find($id);
         }
 
         $count = count($rowset);
@@ -532,47 +551,43 @@ class Table extends \Zend_Db_Table_Abstract
      * Inserts a new row
      *
      * @param array $data Column-value pairs.
-     * @return array The identifier of the inserted entity.
-     * @todo Implement type conversion on primary key
+     * @return array The primary key of the inserted row
      */
     public function insert(array $data)
     {
         $pk = parent::insert($data);
 
-        // Map the primary key to the entity identifier
-        $id = array();
-        if (is_array($pk)) {
-            foreach ($pk as $column => $value) {
-                $id[$this->getField($column)] = $value;
-            }
-        } else {
+        // Re-normalize the primary key on exit as a mixed value is returned
+        if (!is_array($pk)) {
             // As _setupPrimaryKey() is called at the beginning of insert(),
-            // $this->_primary is necessarily an array
-            $id[reset($this->_primary)] = $pk;
+            // $this->_primary is necessarily an array here
+            $pk = array(reset($this->_primary) => $pk);
         }
-        return $id;
+        return $pk;
     }
 
     /**
      * Updates an existing row
      *
      * @param array $data Column-value pairs.
-     * @param array $id Indexed array representing the entity identifier
+     * @param array $pk Indexed array representing the primary key
      * @return int The number of rows updated.
+     * @todo Enforce type hinting on primary key when refactoring the class
      */
-    public function update(array $data, $id)
+    public function update(array $data, $pk)
     {
-        return parent::update($data, $this->getWhereClause($id));
+        return parent::update($data, $this->getWhereClause($pk));
     }
 
     /**
      * Deletes an existing row
      *
-     * @param array $id Indexed array representing the entity identifier
+     * @param array $pk Indexed array representing the primary key
      * @return int The number of rows deleted.
+     * @todo Enforce type hinting on primary key when refactoring the class
      */
-    public function delete($id)
+    public function delete($pk)
     {
-        return parent::delete($this->getWhereClause($id));
+        return parent::delete($this->getWhereClause($pk));
     }
 }

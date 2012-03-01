@@ -12,27 +12,33 @@
  */
 namespace Serquant\Entity\Registry;
 
-use Doctrine\Common\PropertyChangedListener;
 use Serquant\Entity\Exception\InvalidArgumentException;
-use Serquant\Entity\Exception\NotImplementedException;
+use Serquant\Persistence\Zend\Persister;
 
 /**
  * Registry of all loaded entities for non-ORM persistence layer.
  *
  * This class implements a
- * <a href="http://martinfowler.com/eaaCatalog/registry.html">Registry</a> of
- * <a href="http://martinfowler.com/eaaCatalog/identityMap.html">Identity
- * Maps</a>.
+ * {@link http://martinfowler.com/eaaCatalog/registry.html Registry} of
+ * {@link http://martinfowler.com/eaaCatalog/identityMap.html Identity Maps}.
  *
  * Entities may have no identifier at all at some point of their lifecycle
  * (ie before they are persisted). But only persisted entities may be registered
- * in this Identity Map. As once persisted, they all get an identifier, entities
- * are registered under their identifier (combined with their class name for
- * uniqueness).
+ * in this Identity Map. As, once persisted, they all have such an identifier,
+ * entities are registered under a key consisting of this identifier combined
+ * with their class name (for uniqueness).
  *
  * However, under certain circumstances, only their identifier is known and no
  * entity object is available to get its hash from. Thus, we need two different
  * ways to get entities from the registry: by hash and by identifier.
+ *
+ * As stated above, the key of this map consists of the entity identifier
+ * combined with the class name. The entity identifier is the primary key of
+ * of the corresponding database table in the form of an associative array whose
+ * keys are column names. Array keys of the identifier are useless in
+ * {@link get} and {@link put} methods, but they matter in {@link getPrimaryKey}
+ * as they are used in {@link Persister::update} and {@link Persister::delete}
+ * as an argument passed to the corresponding method of the gateway.
  *
  * @category Serquant
  * @package  Entity
@@ -40,7 +46,7 @@ use Serquant\Entity\Exception\NotImplementedException;
  * @license  http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License
  * @link     http://www.serquant.com/
  */
-class IdentityMap implements PropertyChangedListener
+class IdentityMap
 {
     /**
      * Identity map of the managed entities.
@@ -51,15 +57,15 @@ class IdentityMap implements PropertyChangedListener
     private $identityMap = array();
 
     /**
-     * Map between the entity hash and its identifier.
+     * Map between the entity hash and its primary key.
      * @var array
      */
-    private $hashToIdMap = array();
+    private $hashToPkMap = array();
 
     /**
      * Original state of managed entities.
-     * Key is an <a href="http://php.net/manual/en/function.spl-object-hash.php">
-     * object hash</a>. This is used for calculating changeset at commit time.
+     * Key is an {@link http://php.net/manual/en/function.spl-object-hash.php
+     * object hash}. This is used for calculating changeset at commit time.
      * @var array
      * @internal Note that PHPs "copy-on-write" behavior helps a lot with memory
      * usage. A value will only really be copied if the value in the entity is
@@ -83,21 +89,32 @@ class IdentityMap implements PropertyChangedListener
     }
 
     /**
-     * Gets the registered entity of given name and identifier.
+     * Computes a hash of the given primary key
+     *
+     * @param array $pk Primary key
+     * @return string
+     */
+    protected function hash(array $pk)
+    {
+        return implode(' ', $pk);
+    }
+
+    /**
+     * Gets the entity matching the given name and primary key.
      *
      * @param string $className Class name of the entity
-     * @param array $id Entity identifier
+     * @param array $pk Primary key
      * @return object The registered entity or NULL if no entity is found
      */
-    public function get($className, array $id)
+    public function get($className, array $pk)
     {
         $className = $this->getRootClass($className);
-        $idHash = implode(' ', $id);
-        if (!isset($this->identityMap[$className][$idHash])) {
+        $pkHash = $this->hash($pk);
+        if (!isset($this->identityMap[$className][$pkHash])) {
             return null;
         }
 
-        return $this->identityMap[$className][$idHash];
+        return $this->identityMap[$className][$pkHash];
     }
 
     /**
@@ -119,52 +136,52 @@ class IdentityMap implements PropertyChangedListener
      */
     public function has($entity)
     {
-        return isset($this->hashToIdMap[spl_object_hash($entity)]);
+        return isset($this->hashToPkMap[spl_object_hash($entity)]);
     }
 
     /**
-     * Puts the given entity in the registry
+     * Puts the given entity into the registry
      *
      * @param object $entity The entity instance to register
-     * @param array $id Entity identifier
+     * @param array $pk Primary key
      * @return boolean TRUE if the registration was successful, FALSE if
      * the entity is already present in the registry
      * @throws InvalidArgumentException If no identity is provided.
      */
-    public function put($entity, array $id)
+    public function put($entity, array $pk)
     {
-        if (empty($id)) {
+        if (empty($pk)) {
             throw new InvalidArgumentException(
-                'The given entity ' . get_class($entity) . ' has no identity.'
+                'The given entity ' . get_class($entity) . ' has no primary key.'
             );
         }
 
         $className = $this->getRootClass($entity);
-        $idHash = implode(' ', $id);
-        if (isset($this->identityMap[$className][$idHash])) {
+        $pkHash = $this->hash($pk);
+        if (isset($this->identityMap[$className][$pkHash])) {
             return false;
         }
 
         $oid = spl_object_hash($entity);
-        $this->hashToIdMap[$oid] = $id;
-        $this->identityMap[$className][$idHash] = $entity;
+        $this->hashToPkMap[$oid] = $pk;
+        $this->identityMap[$className][$pkHash] = $entity;
         $this->originalEntities[$oid] = clone $entity;
         return true;
     }
 
     /**
-     * Gets the identifier of the given entity
+     * Gets the primary key of the given entity
      *
      * @param object $entity Entity instance
      * @return array
      */
-    public function getId($entity)
+    public function getPrimaryKey($entity)
     {
-        return $this->hashToIdMap[spl_object_hash($entity)];
+        return $this->hashToPkMap[spl_object_hash($entity)];
     }
 
     /**
-     * Commit changes to the entity, replacing its old state by the new one.
+     * Commits changes to the entity, replacing its old state by the new one.
      *
      * Following this function call,
      * {@link Serquant\Persistence\Zend\Db\Table#computeChangeSet} returns an
@@ -192,32 +209,18 @@ class IdentityMap implements PropertyChangedListener
     public function remove($entity)
     {
         $oid = spl_object_hash($entity);
-        if (!isset($this->hashToIdMap[$oid])) {
+        if (!isset($this->hashToPkMap[$oid])) {
             return false;
         }
 
         $className = $this->getRootClass($entity);
-        $idHash = implode(' ', $this->hashToIdMap[$oid]);
+        $pkHash = $this->hash($this->hashToPkMap[$oid]);
 
         unset(
-            $this->identityMap[$className][$idHash],
+            $this->identityMap[$className][$pkHash],
             $this->originalEntities[$oid],
-            $this->hashToIdMap[$oid]
+            $this->hashToPkMap[$oid]
         );
         return true;
-    }
-
-    /**
-     * Executes listeners when a property value changes
-     *
-     * @param object $entity Entity instance
-     * @param string $propertyName Name of the property
-     * @param mixed $oldValue Old value
-     * @param mixed $newValue New value
-     * @return void
-     */
-    public function propertyChanged($entity, $propertyName, $oldValue, $newValue)
-    {
-        throw new NotImplementedException('This method is not yet implemented');
     }
 }

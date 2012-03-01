@@ -63,4 +63,21 @@ class PersisterCreateTest extends \Serquant\Resource\Persistence\ZendTestCase
         $this->persister->create($entity);
         $this->assertNotNull($entity->getId());
     }
+
+    /**
+     * @group issue-20
+     */
+    public function testCreateWithDbAssignedIdOnTableHavingNameMapping()
+    {
+        $entityClass = 'Serquant\Resource\Persistence\Zend\RoleWithInflection';
+        $gatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\RoleWithInflection';
+        $this->persister->setTableGateway($entityClass, $gatewayClass);
+
+        $entity = new $entityClass;
+        $entity->setName('guest');
+
+        $this->assertNull($entity->getRoleId());
+        $this->persister->create($entity);
+        $this->assertNotNull($entity->getRoleId());
+    }
 }

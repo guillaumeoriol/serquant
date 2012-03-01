@@ -88,16 +88,20 @@ code {
 
 	<h2>Table of contents</h2>
 	<ol>
-		<li><a href="#frontEnd">Front-end</a></li>
+		<li><a href="#frontEnd">Front-end</a>
+		</li>
 		<li>Back-end layers (these layers should be coupled together as
 			little as possible)
 			<ol>
-				<li><a href="#controller">Controller</a></li>
-				<li><a href="#service">Service</a></li>
-				<li><a href="#domain">Domain (business logic)</a></li>
-				<li><a href="#persistence">Persistence (or Data source)</a>
+				<li><a href="#controller">Controller</a>
 				</li>
-			</ol></li>
+				<li><a href="#service">Service</a>
+				</li>
+				<li><a href="#domain">Domain (business logic)</a>
+				</li>
+				<li><a href="#persistence">Persistence (or Data source)</a></li>
+			</ol>
+		</li>
 	</ol>
 
 	<h2>
@@ -106,6 +110,17 @@ code {
 	<p>The main purpose of the controller (on input) is to transform
 		the incoming request to conform with the service layer API
 		requirements and inject the result into the view script.</p>
+
+	<h3>Compound keys in REST architecture</h3>
+
+	<p>
+		In case of compound key, <a
+			href="http://wiki.eclipse.org/EclipseLink/UserGuide/JPA/Advanced_JPA_Development/JPA_RESTful_Service">JPA</a>
+		suggests the following URL syntax:<br/>
+		<code>http://www.example.com/customer-app/rest/customers/id=1;country=CA</code>
+	</p>
+
+	<h3>Type of the input data</h3>
 	<p>
 		When a controller (Default, Rest, etc.) receives an HTTP request from
 		a client (browser or any other client such as a web service), some
@@ -195,8 +210,7 @@ array(
     'a' => string '1' (length=1)
   )
   'date' => string '2010-09-09' (length=10)
-)</pre>
-		</li>
+)</pre></li>
 		<li>With default form <code>enctype</code>, the native PHP
 			function <code>parse_str</code> is used, which does no type
 			conversion at all.</li>
@@ -706,11 +720,13 @@ class Customer
 	<ul>
 		<li>To retrieve the <strong>metadata driver</strong> from the
 			configuration:<br /> <code>$this-&gt;em-&gt;getConfiguration()-&gt;getMetadataDriverImpl()</code><br />
-			<em>There is no setter to do it otherwise.</em></li>
+			<em>There is no setter to do it otherwise.</em>
+		</li>
 		<li>To retrieve the <strong>database platform</strong> from the
 			database connection:<br /> <code>$this-&gt;em-&gt;getConnection()-&gt;getDatabasePlatform()</code><br />The
 			database platform is only needed to complete the ID generator
-			mapping.<br /> <em>There is no setter to do it otherwise.</em></li>
+			mapping.<br /> <em>There is no setter to do it otherwise.</em>
+		</li>
 		<li>To get the <strong>event manager</strong>:<br /> <code>$this-&gt;em-&gt;getEventManager()</code><br />The
 			event manager is used to trigger a listener if one is registered for
 			metadata loading.<br /> <em>There is no setter to do it
@@ -925,9 +941,9 @@ event_manager:
 		which receives a
 		<code>Serquant\Event\PreUpdateLifecycleEventArgs</code>
 		argument. Refer to these class API to get full documentation. A basic
-		lifecycle event listener implementation would be: 
+		lifecycle event listener implementation would be:
 	</p>
-    <pre>
+	<pre>
 use Doctrine\Common\EventManager;
 use Serquant\Event\LifecycleEvent;
 use Serquant\Event\LifecycleEventArgs;
@@ -1023,17 +1039,18 @@ class MyListener
 						qui renvoie à <code>UnitOfWork#doPersist($entity, $visited)</code>
 					</li>
 					<li>quand l'état est STATE_NEW, la fonction appelle <code>persistNew($class,
-							$entity)</code></li>
+							$entity)</code>
+					</li>
 					<li>la fonction invoque les événements liés au cycle de vie</li>
 					<li>la fonction génère, le cas échéant (assignation d'un
 						identifiant avant l'insertion), un identifiant et l'enregistre
-						dans les <em>entityIdentifiers</em></li>
+						dans les <em>entityIdentifiers</em>
+					</li>
 					<li>puis elle appelle <code>scheduleForInsert($entity)</code>
 					</li>
 					<li>If the entity already has an identifier, it will be added
 						to the <em>identity map</em>.</li>
-				</ul>
-			</li>
+				</ul></li>
 			<li>Au moment du <code>EntityManager#flush()</code>, <code>UnitOfWork#commit()</code>
 				est appelée
 				<ul>
@@ -1043,19 +1060,20 @@ class MyListener
 						qui réalise, grosso modo, les opérations suivantes :
 						<ul>
 							<li><code>$stmt =
-									$this->_conn->prepare($this->_getInsertSQL());</code>
-							</li>
+									$this->_conn->prepare($this->_getInsertSQL());</code></li>
 							<li><code>$insertData =
-									$this->_prepareInsertData($entity);</code></li>
+									$this->_prepareInsertData($entity);</code>
+							</li>
 							<li><code>$stmt->bindValue($paramIndex++, $value,
-									$this->_columnTypes[$column])</code></li>
-							<li><code>$stmt->execute();</code></li>
-						</ul></li>
-					<li>Les identifiants retournés après insertion sont utilisés
-						pour mettre à jour l'entité et les <em>entityIdentifiers</em>
+									$this->_columnTypes[$column])</code>
+							</li>
+							<li><code>$stmt->execute();</code>
+							</li>
+						</ul>
 					</li>
-				</ul>
-			</li>
+					<li>Les identifiants retournés après insertion sont utilisés
+						pour mettre à jour l'entité et les <em>entityIdentifiers</em></li>
+				</ul></li>
 		</ol>
 
 		<p>Côté Zend, les choses sont différentes :</p>
@@ -1070,10 +1088,12 @@ class MyListener
 						méthode <code>Zend_Db_Table_Row_Abstract#_transformColumn()</code>
 						est surcharghée)</li>
 					<li>Puis la valeur transmise est assignée à la colonne <strong>sans
-							transtypage</strong></li>
+							transtypage</strong>
+					</li>
 					<li>Enfin, un indicateur est positionné pour signaler que la
 						valeur de la colonne a été modifiée</li>
-				</ol></li>
+				</ol>
+			</li>
 		</ol>
 
 		<h4>retrieve</h4>
@@ -1125,7 +1145,8 @@ class MyListener
 			<li>si la clé a changé, effectue des updates en cascade sur les
 				tables dépendantes</li>
 			<li>si les données ont changé, réalise la modification en
-				appelant <code>Zend_Db_Table#update()</code></li>
+				appelant <code>Zend_Db_Table#update()</code>
+			</li>
 			<li>invoque une méthode qui est un point d'extension post-update</li>
 			<li>renvoie la clé</li>
 		</ul>
@@ -1154,8 +1175,7 @@ class MyListener
 		<h4>principe des metadata chez Doctrine</h4>
 		<ol>
 			<li>Tout commence par l'instanciation d'une factory : <code>new
-					$metadataFactoryClassName;</code>
-			</li>
+					$metadataFactoryClassName;</code></li>
 			<li>Puis, les métadonnées sont obtenues par <code>ClassMetadataFactory#getMetadataFor(ltrim($entityName,
 					'\\'))</code><br />qui appelle <code>ClassMetadataFactory#loadMetadata($className)</code>.<br />
 				Cette dernière réalise les opérations suivantes :
@@ -1183,12 +1203,12 @@ class MyListener
         
         return new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($reader, (array)$paths);
     }								</pre> <em><code>$path</code> est le chemin où se trouvent
-											les entités</em>
-									</li>
-								</ul></li>
-						</ol>
-					</li>
-				</ol></li>
+											les entités</em></li>
+								</ul>
+							</li>
+						</ol></li>
+				</ol>
+			</li>
 		</ol>
 	</div>
 
@@ -1209,8 +1229,7 @@ $container-&gt;setDefinition('service_country', new Definition(
 &nbsp;&nbsp;&nbsp;&nbsp;new Reference('persistence_doctrine')
 &nbsp;&nbsp;)
 ));
-</pre>
-		</li>
+</pre></li>
 		<li>Write a default controller to prepare the GUI.<br /> This
 			controller must extend <code>Zend_Controller_Action</code>.<br />
 			Alternatively, it may extend <code>Serquant\Controller\Action</code>

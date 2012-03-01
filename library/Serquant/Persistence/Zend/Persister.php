@@ -42,12 +42,12 @@ class Persister implements Persistence
 {
     /**
      * The event manager that is the central point of the event system.
-     * @var Doctrine\Common\EventManager
+     * @var EventManager
      */
     private $eventManager;
 
     /**
-     * Map of table data gateway names
+     * Map of table data gateway names.
      * The key is the entity class and the value is the gateway class
      * @var array
      */
@@ -56,19 +56,19 @@ class Persister implements Persistence
     /**
      * Map of table data gateways.
      * The key is the entity name and the value an instance of
-     * {@link Serquant\Persistence\Zend\Db\Table} (i.e. the gateway)
+     * {@link Table} (i.e. the gateway)
      * @var array
      */
     private $gateways;
 
     /**
-     * Namespace of the entity proxies
+     * Namespace of the entity proxies.
      * @var string
      */
     private $proxyNamespace;
 
     /**
-     * Map of the loaded entities
+     * Map of the loaded entities.
      * @var IdentityMap
      */
     private $loadedMap;
@@ -76,15 +76,14 @@ class Persister implements Persistence
     /**
      * Constructs a persister
      *
-     * @param Configuration $config Configuration options
+     * @param Configuration $config Configuration options.
      */
     public function __construct(Configuration $config)
     {
         $this->eventManager = $config->getEventManager();
         if ($this->eventManager === null) {
             throw new InvalidArgumentException(
-                'Undefined event manager in Zend persister configuration ' .
-                'options.', 1
+                'Undefined event manager in Zend persister configuration.', 1
             );
         }
 
@@ -192,7 +191,7 @@ class Persister implements Persistence
         // here because I may have queries that I cant't be sure or resolving in
         // the Identity Map."
         $gateway = $this->getTableGateway($entityName);
-        $pk = $gateway->getPrimaryKey($row);
+        $pk = $gateway->extractPrimaryKey($row);
         $entity = $this->loadedMap->get($entityName, $pk);
         if ($entity) {
             return $entity;
@@ -331,9 +330,9 @@ class Persister implements Persistence
 
         $gateway = $this->getTableGateway($entity);
         $row = $gateway->loadRow($entity);
-        $id = $gateway->insert($row);
-        $gateway->updateEntityIdentifier($entity, $id);
-        $this->loadedMap->put($entity, $id);
+        $pk = $gateway->insert($row);
+        $gateway->updateEntityIdentifier($entity, $pk);
+        $this->loadedMap->put($entity, $pk);
 
         if ($this->eventManager->hasListeners(LifecycleEvent::POST_PERSIST)) {
             $this->eventManager->dispatchEvent(
@@ -355,13 +354,15 @@ class Persister implements Persistence
      */
     public function retrieve($entityName, $id)
     {
-        $entity = $this->loadedMap->get($entityName, (array) $id);
+        $gateway = $this->getTableGateway($entityName);
+        $pk = $gateway->getPrimaryKey($id);
+
+        $entity = $this->loadedMap->get($entityName, $pk);
         if ($entity) {
             return $entity;
         }
 
-        $gateway = $this->getTableGateway($entityName);
-        $row = $gateway->retrieve($id);
+        $row = $gateway->retrieve($pk);
         return $this->loadEntity($entityName, $row);
     }
 
@@ -397,7 +398,7 @@ class Persister implements Persistence
                 );
             }
 
-            $count = $gateway->update($changeSet, $this->loadedMap->getId($entity));
+            $count = $gateway->update($changeSet, $this->loadedMap->getPrimaryKey($entity));
             $this->loadedMap->commit($entity);
 
             if ($this->eventManager->hasListeners(LifecycleEvent::POST_UPDATE)) {
@@ -446,7 +447,7 @@ class Persister implements Persistence
         }
 
         $gateway = $this->getTableGateway($entity);
-        $count = $gateway->delete($this->loadedMap->getId($entity));
+        $count = $gateway->delete($this->loadedMap->getPrimaryKey($entity));
         $this->loadedMap->remove($entity);
 
         if ($this->eventManager->hasListeners(LifecycleEvent::POST_REMOVE)) {
