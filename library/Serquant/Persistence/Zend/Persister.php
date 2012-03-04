@@ -174,6 +174,18 @@ class Persister implements Persistence
     }
 
     /**
+     * Gets an entity matching the given key from the loaded map
+     *
+     * @param string $entityName Entity class name
+     * @param array $pk Primary key
+     * @return object The entity or NULL if no entity is found
+     */
+    public function loaded($entityName, array $pk)
+    {
+        return $this->loadedMap->get($entityName, $pk);
+    }
+
+    /**
      * Loads an entity from a database row
      *
      * @param string $entityName Entity class name
@@ -192,15 +204,17 @@ class Persister implements Persistence
         // the Identity Map."
         $gateway = $this->getTableGateway($entityName);
         $pk = $gateway->extractPrimaryKey($row);
-        $entity = $this->loadedMap->get($entityName, $pk);
+        $entity = $this->loaded($entityName, $pk);
         if ($entity) {
             return $entity;
         }
 
         $entity = $gateway->newInstance();
+        // We put the domain object into the map very early (it is still empty)
+        // to avoid infinite loop with cyclic references.
+        $this->loadedMap->put($entity, $pk);
         $gateway->loadEntity($entity, $row);
 
-        $this->loadedMap->put($entity, $pk);
         return $entity;
     }
 
@@ -357,7 +371,7 @@ class Persister implements Persistence
         $gateway = $this->getTableGateway($entityName);
         $pk = $gateway->getPrimaryKey($id);
 
-        $entity = $this->loadedMap->get($entityName, $pk);
+        $entity = $this->loaded($entityName, $pk);
         if ($entity) {
             return $entity;
         }

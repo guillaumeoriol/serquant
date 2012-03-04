@@ -48,6 +48,7 @@ class PersisterRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
         $evm = new \Doctrine\Common\EventManager();
         $this->config = new Configuration();
         $this->config->setEventManager($evm);
+        $this->config->setProxyNamespace('Serquant\Resource\Persistence\Zend\Proxy');
         $this->persister = new \Serquant\Persistence\Zend\Persister($this->config);
     }
 
@@ -150,5 +151,57 @@ class PersisterRetrieveTest extends \Serquant\Resource\Persistence\ZendTestCase
         $this->assertInstanceOf($permissionEntityClass, $entity);
         $this->assertEquals($role, $entity->getRole());
         $this->assertEquals($resource, $entity->getResource());
+    }
+
+    /**
+     * @group issue-21
+     */
+    public function testRetrieveOneToManyBidirectionalAssociation()
+    {
+        // Permission is the owning side of the association
+        $permissionEntityClass = 'Serquant\Resource\Persistence\Zend\PermissionWithRoleAssoc';
+        $permissionGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\PermissionWithRoleAssoc';
+        $this->persister->setTableGateway($permissionEntityClass, $permissionGatewayClass);
+
+        // Role is the inverse side of the association
+        $roleEntityClass = 'Serquant\Resource\Persistence\Zend\RoleWithPermissionAssoc';
+        $roleGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\RoleWithPermissionAssoc';
+        $this->persister->setTableGateway($roleEntityClass, $roleGatewayClass);
+
+        $role = $this->persister->retrieve($roleEntityClass, array('id' => 2));
+        $this->assertInstanceOf($roleEntityClass, $role);
+        $permissions = $role->getPermissions();
+
+        $this->assertInternalType('array', $permissions);
+        foreach ($permissions as $permission) {
+            $this->assertInstanceOf($permissionEntityClass, $permission);
+            $this->assertSame($role, $permission->getRole());
+        }
+    }
+
+    /**
+     * @group issue-21
+     */
+    public function testRetrieveOneSideOfOneToManyBidirectionalAssociation()
+    {
+        // Permission is the owning side of the association
+        $permissionEntityClass = 'Serquant\Resource\Persistence\Zend\PermissionWithRoleAssoc';
+        $permissionGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\PermissionWithRoleAssoc';
+        $this->persister->setTableGateway($permissionEntityClass, $permissionGatewayClass);
+
+        // Role is the inverse side of the association
+        $roleEntityClass = 'Serquant\Resource\Persistence\Zend\RoleWithPermissionAssoc';
+        $roleGatewayClass = 'Serquant\Resource\Persistence\Zend\Db\Table\RoleWithPermissionAssoc';
+        $this->persister->setTableGateway($roleEntityClass, $roleGatewayClass);
+
+        $permission = $this->persister->retrieve($permissionEntityClass, array('role' => 2, 'resource' => 100));
+        $this->assertInstanceOf($permissionEntityClass, $permission);
+        $role = $permission->getRole();
+        $this->assertInstanceOf($roleEntityClass, $role);
+        // Only a proxy of role is built from the retrieved permission
+        $this->assertInstanceOf('Doctrine\ORM\Proxy\Proxy', $role);
+
+        // Assert everything is ok when the role is actually retrieved
+        $this->assertEquals('member', $role->getName());
     }
 }

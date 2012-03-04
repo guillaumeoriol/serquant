@@ -8,3 +8,12 @@ permissions:
   -
     role: 6
     resource: 34
+  -
+    role: 2
+    resource: 100
+  -
+    role: 2
+    resource: 101
+  -
+    role: 2
+    resource: 102
