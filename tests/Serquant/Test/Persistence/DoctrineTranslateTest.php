@@ -108,10 +108,10 @@ class DoctrineTranslateTest extends \Doctrine\Tests\OrmTestCase
 
         $method = new \ReflectionMethod($this->persister, 'translate');
         $method->setAccessible(true);
-        list ($query, $pageNumber, $pageSize) = $method->invoke($this->persister, $entityName, $expressions);
+        list ($query, $limitStart, $limitCount) = $method->invoke($this->persister, $entityName, $expressions);
         $this->assertInstanceOf('Doctrine\ORM\Query', $query);
-        $this->assertEquals(4, $pageNumber);
-        $this->assertEquals(10, $pageSize);
+        $this->assertEquals(30, $limitStart);
+        $this->assertEquals(10, $limitCount);
     }
 
     public function testTranslateWithAlternateComparisonSyntax()

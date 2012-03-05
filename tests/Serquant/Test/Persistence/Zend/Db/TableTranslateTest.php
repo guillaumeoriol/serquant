@@ -128,10 +128,10 @@ class TableTranslateTest extends \Serquant\Resource\Persistence\ZendTestCase
         $gateway = new \Serquant\Resource\Persistence\Zend\Db\Table\User;
         $expressions = array('limit(30,10)');
 
-        list ($query, $pageNumber, $pageSize) = $gateway->translate($expressions);
+        list ($query, $itemStart, $itemCount) = $gateway->translate($expressions);
         $this->assertInstanceOf('Zend_Db_Select', $query);
-        $this->assertEquals(4, $pageNumber);
-        $this->assertEquals(10, $pageSize);
+        $this->assertEquals(30, $itemStart);
+        $this->assertEquals(10, $itemCount);
     }
 
     public function testTranslateWithAlternateComparisonSyntax()

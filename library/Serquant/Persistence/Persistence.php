@@ -62,7 +62,7 @@ interface Persistence
      *
      * @param string $entityName Entity class name
      * @param array $expressions Fetch criteria
-     * @return \Zend_Paginator Paginator
+     * @return Paginator Paginator
      */
     public function fetchPage($entityName, array $expressions);
 

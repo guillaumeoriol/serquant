@@ -17,6 +17,7 @@ use Serquant\Entity\Registry\IdentityMap;
 use Serquant\Event\LifecycleEvent;
 use Serquant\Event\LifecycleEventArgs;
 use Serquant\Event\PreUpdateLifecycleEventArgs;
+use Serquant\Paginator\Paginator;
 use Serquant\Paginator\Adapter\DbSelect;
 use Serquant\Persistence\Persistence;
 use Serquant\Persistence\Exception\InvalidArgumentException;
@@ -287,19 +288,19 @@ class Persister implements Persistence
      *
      * @param string $entityName Entity class name
      * @param array $expressions Fetch criteria
-     * @return \Zend_Paginator Paginator
+     * @return Paginator Paginator
      */
     public function fetchPage($entityName, array $expressions)
     {
         $gateway = $this->getTableGateway($entityName);
-        list ($select, $pageNumber, $pageSize)
+        list ($select, $limitStart, $limitCount)
             = $gateway->translate($expressions);
 
         $adapter = new DbSelect($select, $this, $entityName);
-        $paginator = new \Zend_Paginator($adapter);
-        if (($pageNumber !== null) && ($pageSize !== null)) {
-            $paginator->setCurrentPageNumber($pageNumber)
-                ->setItemCountPerPage($pageSize);
+        $paginator = new Paginator($adapter);
+        if (($limitStart !== null) && ($limitCount !== null)) {
+            $paginator->setItemCountPerPage($limitCount)
+                ->setItemOffset($limitStart);
         }
         return $paginator;
     }

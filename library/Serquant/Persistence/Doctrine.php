@@ -15,6 +15,7 @@ namespace Serquant\Persistence;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\UnitOfWork;
 use DoctrineExtensions\Paginate\PaginationAdapter;
+use Serquant\Paginator\Paginator;
 use Serquant\Persistence\Persistence;
 use Serquant\Persistence\Exception\NoResultException;
 use Serquant\Persistence\Exception\NonUniqueResultException;
@@ -79,7 +80,7 @@ class Doctrine implements Persistence
      *
      * @param string $entityName Class name of the entity
      * @param array $expressions RQL query
-     * @return array consisting of Doctrine\ORM\Query, page number and page size
+     * @return array consisting of Doctrine\ORM\Query, item start and item count
      * @throws RuntimeException If non-implemented operator is used, if the sort
      * order is not specified or if a parenthesis-enclosed group syntax is used.
      * @todo This function could be built on a ABNF parser that would use
@@ -89,17 +90,16 @@ class Doctrine implements Persistence
      */
     protected function translate($entityName, array $expressions)
     {
-        $pageNumber = $pageSize = null;
+        $limitStart = $limitCount = null;
         if (count($expressions) === 0) {
             $query = $this->entityManager->createQuery("select e from $entityName e");
-            return array($query, $pageNumber, $pageSize);
+            return array($query, $limitStart, $limitCount);
         }
 
         $select = array();
         $where = array();
         $orderBy = array();
         $parameters = array();
-        $limitStart = $limitCount = null;
         $entityMetadata = $this->getClassMetadata($entityName);
 
         foreach ($expressions as $key => $value) {
@@ -175,11 +175,7 @@ class Doctrine implements Persistence
         $query = $this->entityManager->createQuery($dql);
         $query->setParameters($parameters);
 
-        if (($limitStart !== null) && ($limitCount !== null)) {
-            $pageNumber = ($limitStart / $limitCount) + 1;
-            $pageSize = $limitCount;
-        }
-        return array($query, $pageNumber, $pageSize);
+        return array($query, $limitStart, $limitCount);
     }
 
     /**
@@ -231,20 +227,20 @@ class Doctrine implements Persistence
      *
      * @param string $entityName Entity class name
      * @param array $expressions Fetch criteria
-     * @return \Zend_Paginator Paginator
+     * @return Paginator Paginator
      * @todo Implement a simple paginator for non fetch-joined queries,
      * as explained here: http://github.com/beberlei/DoctrineExtensions
      */
     public function fetchPage($entityName, array $expressions)
     {
-        list ($query, $pageNumber, $pageSize)
+        list ($query, $limitStart, $limitCount)
             = $this->translate($entityName, $expressions);
 
         $adapter = new PaginationAdapter($query);
-        $paginator = new \Zend_Paginator($adapter);
-        if (($pageNumber !== null) && ($pageSize !== null)) {
-            $paginator->setCurrentPageNumber($pageNumber)
-                ->setItemCountPerPage($pageSize);
+        $paginator = new Paginator($adapter);
+        if (($limitStart !== null) && ($limitCount !== null)) {
+            $paginator->setItemCountPerPage($limitCount)
+                ->setItemOffset($limitStart);
         }
         return $paginator;
     }

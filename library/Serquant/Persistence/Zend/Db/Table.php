@@ -202,22 +202,21 @@ class Table extends \Zend_Db_Table_Abstract
      *
      * @param array $expressions RQL query
      * @param \Zend_Db_Select $select Optional select object to use
-     * @return array consisting of Zend_Db_Select, page number and page size
+     * @return array consisting of Zend_Db_Select, item start and item count
      * @throws RuntimeException If non-implemented operator is used, if the sort
      * order is not specified or if a parenthesis-enclosed group syntax is used.
      */
     public function translate(array $expressions, \Zend_Db_Select $select = null)
     {
-        $pageNumber = $pageSize = null;
+        $limitStart = $limitCount = null;
         if ($select === null) {
             $select = $this->select();
         }
         if (count($expressions) === 0) {
-            return array($select, $pageNumber, $pageSize);
+            return array($select, $limitStart, $limitCount);
         }
 
         $orderBy = array();
-        $limitStart = $limitCount = null;
         foreach ($expressions as $key => $value) {
             if (is_int($key)) {
                 // Regular operator syntax
@@ -279,12 +278,7 @@ class Table extends \Zend_Db_Table_Abstract
             $select->order($orderBy);
         }
 
-        if (($limitStart !== null) && ($limitCount !== null)) {
-            $pageNumber = ($limitStart / $limitCount) + 1;
-            $pageSize = $limitCount;
-        }
-
-        return array($select, $pageNumber, $pageSize);
+        return array($select, $limitStart, $limitCount);
     }
 
     /**
