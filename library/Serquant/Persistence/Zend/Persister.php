@@ -211,10 +211,13 @@ class Persister implements Persistence
         }
 
         $entity = $gateway->newInstance();
-        // We put the domain object into the map very early (it is still empty)
-        // to avoid infinite loop with cyclic references.
+        // We put the domain object into the map very early (it is still empty
+        // at this stage) to avoid infinite loop with cyclic references.
         $this->loadedMap->put($entity, $pk);
         $gateway->loadEntity($entity, $row);
+        // For this reason, the original state of this object is also empty.
+        // Therefore, we need to commit changes that occured in loadEntity.
+        $this->loadedMap->commit($entity);
 
         return $entity;
     }

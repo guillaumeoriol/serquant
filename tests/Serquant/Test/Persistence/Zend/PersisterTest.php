@@ -180,6 +180,7 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
 
     /**
      * @covers Serquant\Persistence\Zend\Persister::loadEntity
+     * @group issue-24
      */
     public function testLoadEntityFromGateway()
     {
@@ -212,6 +213,10 @@ class PersisterTest extends \Serquant\Resource\Persistence\ZendTestCase
         $this->assertEquals($expected, $actual);
         // and check this entity has been stored in the identity map
         $this->assertSame($actual, $loadedMap->get($entityName, array($id)));
+
+        // Finally check the original and current state are identical.
+        // (See issue #24)
+        $this->assertEquals($actual, $loadedMap->getOriginal($actual));
     }
 
     public function testLoadEntityFromRegistry()
