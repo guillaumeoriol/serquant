@@ -1,6 +1,5 @@
 <?php
 define('APPLICATION_ROOT', realpath(dirname(__FILE__) . '/../..'));
-
 define('TEST_PATH', APPLICATION_ROOT . '/tests');
 
 // Ensure Zend is on include_path for Zend Framework internal 'require_once'
@@ -8,6 +7,9 @@ set_include_path(implode(PATH_SEPARATOR, array(
     TEST_PATH . '/library',
     get_include_path(),
 )));
+
+// XHProf configuration
+include_once XHPROF_ROOT . '/xhprof_lib/config.php';
 
 require_once TEST_PATH . '/library/Symfony/Component/ClassLoader/UniversalClassLoader.php';
 $loader = new \Symfony\Component\ClassLoader\UniversalClassLoader();
@@ -20,3 +22,4 @@ $loader->registerNamespaces(array(
 ));
 $loader->registerPrefix('Zend_', TEST_PATH . '/library');
 $loader->register();
+
